@@ -74,7 +74,9 @@ export interface Submission {
   teamId: string;
   team?: Team;
   trackId?: string;
+  trackIds?: string[];
   track?: Track;
+  tracks?: Track[];
 
   // Project details
   title: string;
