@@ -1,4 +1,4 @@
-export type UserRole = "admin" | "judge" | "participant";
+export type UserRole = "admin" | "sponsor" | "judge" | "participant";
 
 export interface User {
   id: string;
@@ -6,6 +6,7 @@ export interface User {
   name: string;
   avatar?: string;
   role: UserRole;
+  sponsorId?: string;
   walletAddress?: string;
   bio?: string;
   twitter?: string;
@@ -40,6 +41,7 @@ export interface Prize {
 export interface Track {
   id: string;
   cohortId: string;
+  sponsorId?: string;
   name: string;
   description: string;
   prizePool?: string;
@@ -123,17 +125,25 @@ export interface Review {
   createdAt: Date;
 }
 
+export type WorkshopStatus = "draft" | "published" | "archived";
+
 export interface Workshop {
   id: string;
   title: string;
   description: string;
+  content?: string;
   videoUrl?: string;
   articleUrl?: string;
-  partnerName: string;
+  partnerName?: string;
   partnerLogo?: string;
+  sponsorId?: string;
+  createdBy?: string;
   category: string;
   duration?: string;
-  publishedAt: Date;
+  status: WorkshopStatus;
+  publishedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface Template {
@@ -148,4 +158,42 @@ export interface Template {
   forkCount: number;
   isFeatured: boolean;
   createdAt: Date;
+}
+
+export type SponsorTier = "platinum" | "gold" | "silver" | "bronze" | "community";
+
+export interface Sponsor {
+  id: string;
+  cohortId: string;
+  name: string;
+  logo: string;
+  website: string;
+  description: string;
+  tier: SponsorTier;
+  prizePoolContribution: number;
+  hasDedicatedTrack: boolean;
+  contactName: string;
+  contactEmail: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface MediaAsset {
+  id: string;
+  filename: string;
+  url: string;
+  mimeType: string;
+  size: number;
+  uploadedBy: string;
+  createdAt: Date;
+}
+
+export interface WorkshopVersion {
+  id: string;
+  workshopId: string;
+  content: string;
+  title: string;
+  authorId: string;
+  createdAt: Date;
+  changeNote?: string;
 }

@@ -30,7 +30,7 @@ interface NavItem {
   href: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
-  roles?: ("admin" | "judge" | "participant")[];
+  roles?: ("admin" | "sponsor" | "judge" | "participant")[];
   badge?: number | string;
   external?: boolean;
 }
@@ -38,7 +38,7 @@ interface NavItem {
 interface NavSection {
   title?: string;
   items: NavItem[];
-  roles?: ("admin" | "judge" | "participant")[];
+  roles?: ("admin" | "sponsor" | "judge" | "participant")[];
 }
 
 export function Sidebar() {
@@ -88,6 +88,20 @@ export function Sidebar() {
       ],
     },
     {
+      title: "Sponsor",
+      roles: ["sponsor"],
+      items: [
+        { href: "/sponsor/workshops", label: "My Workshops", icon: GraduationCap },
+        { href: "/sponsor/tracks", label: "My Tracks", icon: Trophy },
+        {
+          href: "/sponsor/reviews",
+          label: "Review Queue",
+          icon: Star,
+          badge: pendingReviews > 0 ? pendingReviews : undefined,
+        },
+      ],
+    },
+    {
       title: "Admin",
       roles: ["admin"],
       items: [
@@ -99,6 +113,7 @@ export function Sidebar() {
           badge: totalSubmissions,
         },
         { href: "/admin/judges", label: "Judges", icon: Users },
+        { href: "/admin/sponsors", label: "Sponsors", icon: Users },
         { href: "/admin/workshop", label: "Workshop", icon: GraduationCap },
       ],
     },
@@ -135,6 +150,8 @@ export function Sidebar() {
     switch (role) {
       case "admin":
         return "bg-red-500/10 text-red-600 border-red-500/20";
+      case "sponsor":
+        return "bg-purple-500/10 text-purple-600 border-purple-500/20";
       case "judge":
         return "bg-blue-500/10 text-blue-600 border-blue-500/20";
       case "participant":
@@ -242,8 +259,8 @@ export function Sidebar() {
             <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
               Dev Mode: Switch Role
             </p>
-            <div className="flex gap-1.5">
-              {(["participant", "judge", "admin"] as const).map((role) => (
+            <div className="flex gap-1.5 flex-wrap">
+              {(["participant", "judge", "sponsor", "admin"] as const).map((role) => (
                 <button
                   key={role}
                   onClick={() => switchRole(role)}

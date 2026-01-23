@@ -205,7 +205,7 @@ export default function AdminWorkshopPage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    {new Date(workshop.publishedAt).toLocaleDateString()}
+                    {workshop.publishedAt ? new Date(workshop.publishedAt).toLocaleDateString() : "-"}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">

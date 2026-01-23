@@ -1,4 +1,4 @@
-import type { User, Cohort, Track, Team, Submission, Review, Workshop, Template } from "@/types";
+import type { User, Cohort, Track, Team, Submission, Review, Workshop, Template, Sponsor, MediaAsset, WorkshopVersion } from "@/types";
 
 // Mock Users
 export const mockUsers: User[] = [
@@ -37,6 +37,15 @@ export const mockUsers: User[] = [
     role: "participant",
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=sam",
     createdAt: new Date("2024-02-15"),
+  },
+  {
+    id: "user-5",
+    email: "sponsor@gamefi.com",
+    name: "Sarah Sponsor",
+    role: "sponsor",
+    sponsorId: "sponsor-1",
+    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=sponsor",
+    createdAt: new Date("2024-02-01"),
   },
 ];
 
@@ -259,11 +268,16 @@ export const mockWorkshops: Workshop[] = [
     id: "workshop-1",
     title: "Getting Started with Story Protocol",
     description: "Learn the basics of Story Protocol and how to register your first IP asset.",
+    content: JSON.stringify({ type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: "Welcome to Story Protocol!" }] }] }),
     videoUrl: "https://youtube.com/watch?v=intro",
     partnerName: "Story Foundation",
     category: "Basics",
     duration: "30 min",
+    status: "published",
+    createdBy: "user-1",
     publishedAt: new Date("2024-01-15"),
+    createdAt: new Date("2024-01-10"),
+    updatedAt: new Date("2024-01-15"),
   },
   {
     id: "workshop-2",
@@ -272,9 +286,14 @@ export const mockWorkshops: Workshop[] = [
     videoUrl: "https://youtube.com/watch?v=ai-agents",
     articleUrl: "https://docs.story.foundation/ai-agents",
     partnerName: "AI Labs",
+    sponsorId: "sponsor-2",
     category: "Advanced",
     duration: "45 min",
+    status: "published",
+    createdBy: "user-5",
     publishedAt: new Date("2024-02-20"),
+    createdAt: new Date("2024-02-15"),
+    updatedAt: new Date("2024-02-20"),
   },
   {
     id: "workshop-3",
@@ -284,7 +303,11 @@ export const mockWorkshops: Workshop[] = [
     partnerName: "Story Foundation",
     category: "Basics",
     duration: "20 min",
+    status: "published",
+    createdBy: "user-1",
     publishedAt: new Date("2024-03-01"),
+    createdAt: new Date("2024-02-25"),
+    updatedAt: new Date("2024-03-01"),
   },
   {
     id: "workshop-4",
@@ -294,7 +317,10 @@ export const mockWorkshops: Workshop[] = [
     partnerName: "Builder Academy",
     category: "Business",
     duration: "60 min",
-    publishedAt: new Date("2024-04-10"),
+    status: "draft",
+    createdBy: "user-1",
+    createdAt: new Date("2024-04-05"),
+    updatedAt: new Date("2024-04-10"),
   },
 ];
 
@@ -335,4 +361,90 @@ export function getReviewsByJudge(judgeId: string): Review[] {
 // Helper function to get tracks by cohort
 export function getTracksByCohort(cohortId: string): Track[] {
   return mockTracks.filter(t => t.cohortId === cohortId);
+}
+
+// Mock Sponsors
+export const mockSponsors: Sponsor[] = [
+  {
+    id: "sponsor-1",
+    cohortId: "cohort-2",
+    name: "GameFi Labs",
+    logo: "https://api.dicebear.com/7.x/shapes/svg?seed=gamefi",
+    website: "https://gamefi.example.com",
+    description: "Leading gaming infrastructure provider for Web3",
+    tier: "gold",
+    prizePoolContribution: 5000,
+    hasDedicatedTrack: true,
+    contactName: "Sarah Sponsor",
+    contactEmail: "sponsor@gamefi.com",
+    createdAt: new Date("2024-05-15"),
+    updatedAt: new Date("2024-05-15"),
+  },
+  {
+    id: "sponsor-2",
+    cohortId: "cohort-2",
+    name: "AI Labs",
+    logo: "https://api.dicebear.com/7.x/shapes/svg?seed=ailabs",
+    website: "https://ailabs.example.com",
+    description: "Pioneering AI research and applications",
+    tier: "platinum",
+    prizePoolContribution: 10000,
+    hasDedicatedTrack: false,
+    contactName: "Alex AI",
+    contactEmail: "alex@ailabs.example.com",
+    createdAt: new Date("2024-05-10"),
+    updatedAt: new Date("2024-05-10"),
+  },
+];
+
+// Mock Media Assets
+export const mockMediaAssets: MediaAsset[] = [
+  {
+    id: "media-1",
+    filename: "workshop-banner.png",
+    url: "https://picsum.photos/seed/banner1/800/400",
+    mimeType: "image/png",
+    size: 245000,
+    uploadedBy: "user-1",
+    createdAt: new Date("2024-03-01"),
+  },
+  {
+    id: "media-2",
+    filename: "sponsor-logo.svg",
+    url: "https://api.dicebear.com/7.x/shapes/svg?seed=logo",
+    mimeType: "image/svg+xml",
+    size: 12000,
+    uploadedBy: "user-5",
+    createdAt: new Date("2024-03-15"),
+  },
+];
+
+// Mock Workshop Versions
+export const mockWorkshopVersions: WorkshopVersion[] = [
+  {
+    id: "version-1",
+    workshopId: "workshop-1",
+    content: JSON.stringify({ type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: "Initial version" }] }] }),
+    title: "Getting Started with Story Protocol",
+    authorId: "user-1",
+    createdAt: new Date("2024-01-15"),
+    changeNote: "Initial publish",
+  },
+];
+
+// Helper function to get sponsors by cohort
+export function getSponsorsByCohort(cohortId: string): Sponsor[] {
+  return mockSponsors.filter(s => s.cohortId === cohortId);
+}
+
+// Helper function to get workshops by sponsor
+export function getWorkshopsBySponsor(sponsorId: string): Workshop[] {
+  return mockWorkshops.filter(w => w.sponsorId === sponsorId);
+}
+
+// Helper function to get sponsor by user
+export function getSponsorByUser(userId: string): Sponsor | undefined {
+  const user = mockUsers.find(u => u.id === userId);
+  if (!user?.sponsorId) return undefined;
+  return mockSponsors.find(s => s.id === user.sponsorId);
 }
