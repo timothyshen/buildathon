@@ -144,6 +144,16 @@ export interface Workshop {
   duration?: string;
   status: WorkshopStatus;
   publishedAt?: Date;
+
+  // Scheduling fields
+  scheduledAt?: Date;
+  endTime?: Date;
+  timezone?: string;
+  isLive?: boolean;
+  maxAttendees?: number;
+  location?: string;
+  meetingUrl?: string;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -198,4 +208,15 @@ export interface WorkshopVersion {
   authorId: string;
   createdAt: Date;
   changeNote?: string;
+}
+
+export type RSVPStatus = "registered" | "attended" | "cancelled";
+
+export interface WorkshopRSVP {
+  id: string;
+  workshopId: string;
+  userId: string;
+  user?: User;
+  status: RSVPStatus;
+  registeredAt: Date;
 }
