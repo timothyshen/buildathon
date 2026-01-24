@@ -1,4 +1,4 @@
-import type { User, Cohort, Track, Team, Submission, Review, Workshop, Template, Sponsor, MediaAsset, WorkshopVersion } from "@/types";
+import type { User, Cohort, Track, Team, Submission, Review, Workshop, Template, Sponsor, MediaAsset, WorkshopVersion, WorkshopRSVP } from "@/types";
 
 // Mock Users
 export const mockUsers: User[] = [
@@ -271,6 +271,7 @@ export const mockWorkshops: Workshop[] = [
     content: JSON.stringify({ type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: "Welcome to Story Protocol!" }] }] }),
     videoUrl: "https://youtube.com/watch?v=intro",
     partnerName: "Story Foundation",
+    partnerLogo: "https://api.dicebear.com/7.x/shapes/svg?seed=storyfoundation",
     category: "Basics",
     duration: "30 min",
     status: "published",
@@ -278,6 +279,13 @@ export const mockWorkshops: Workshop[] = [
     publishedAt: new Date("2024-01-15"),
     createdAt: new Date("2024-01-10"),
     updatedAt: new Date("2024-01-15"),
+    scheduledAt: new Date("2026-01-27T10:00:00"),
+    endTime: new Date("2026-01-27T10:30:00"),
+    timezone: "America/Los_Angeles",
+    isLive: true,
+    location: "Online",
+    maxAttendees: 100,
+    meetingUrl: "https://meet.story.foundation/workshop-1",
   },
   {
     id: "workshop-2",
@@ -286,6 +294,7 @@ export const mockWorkshops: Workshop[] = [
     videoUrl: "https://youtube.com/watch?v=ai-agents",
     articleUrl: "https://docs.story.foundation/ai-agents",
     partnerName: "AI Labs",
+    partnerLogo: "https://api.dicebear.com/7.x/shapes/svg?seed=ailabs",
     sponsorId: "sponsor-2",
     category: "Advanced",
     duration: "45 min",
@@ -294,6 +303,13 @@ export const mockWorkshops: Workshop[] = [
     publishedAt: new Date("2024-02-20"),
     createdAt: new Date("2024-02-15"),
     updatedAt: new Date("2024-02-20"),
+    scheduledAt: new Date("2026-01-28T14:00:00"),
+    endTime: new Date("2026-01-28T14:45:00"),
+    timezone: "America/Los_Angeles",
+    isLive: true,
+    location: "Online",
+    maxAttendees: 50,
+    meetingUrl: "https://meet.story.foundation/workshop-2",
   },
   {
     id: "workshop-3",
@@ -301,6 +317,7 @@ export const mockWorkshops: Workshop[] = [
     description: "Understanding programmable licenses and royalty policies.",
     articleUrl: "https://docs.story.foundation/licensing",
     partnerName: "Story Foundation",
+    partnerLogo: "https://api.dicebear.com/7.x/shapes/svg?seed=storyfoundation",
     category: "Basics",
     duration: "20 min",
     status: "published",
@@ -308,6 +325,11 @@ export const mockWorkshops: Workshop[] = [
     publishedAt: new Date("2024-03-01"),
     createdAt: new Date("2024-02-25"),
     updatedAt: new Date("2024-03-01"),
+    scheduledAt: new Date("2026-01-30T16:00:00"),
+    endTime: new Date("2026-01-30T16:20:00"),
+    timezone: "America/Los_Angeles",
+    isLive: true,
+    location: "Online",
   },
   {
     id: "workshop-4",
@@ -315,12 +337,63 @@ export const mockWorkshops: Workshop[] = [
     description: "How to take your buildathon project and turn it into a real product.",
     videoUrl: "https://youtube.com/watch?v=production",
     partnerName: "Builder Academy",
+    partnerLogo: "https://api.dicebear.com/7.x/shapes/svg?seed=builderacademy",
     category: "Business",
     duration: "60 min",
-    status: "draft",
+    status: "published",
     createdBy: "user-1",
+    publishedAt: new Date("2024-04-05"),
     createdAt: new Date("2024-04-05"),
     updatedAt: new Date("2024-04-10"),
+    scheduledAt: new Date("2026-02-03T11:00:00"),
+    endTime: new Date("2026-02-03T12:00:00"),
+    timezone: "America/Los_Angeles",
+    isLive: true,
+    location: "Online",
+    maxAttendees: 200,
+    meetingUrl: "https://meet.story.foundation/workshop-4",
+  },
+  {
+    id: "workshop-5",
+    title: "Smart Contract Security for IP",
+    description: "Learn best practices for securing your IP smart contracts and avoiding common vulnerabilities.",
+    videoUrl: "https://youtube.com/watch?v=security",
+    partnerName: "Security Guild",
+    partnerLogo: "https://api.dicebear.com/7.x/shapes/svg?seed=securityguild",
+    category: "Advanced",
+    duration: "45 min",
+    status: "published",
+    createdBy: "user-1",
+    publishedAt: new Date("2024-04-15"),
+    createdAt: new Date("2024-04-10"),
+    updatedAt: new Date("2024-04-15"),
+    scheduledAt: new Date("2026-02-05T15:00:00"),
+    endTime: new Date("2026-02-05T15:45:00"),
+    timezone: "America/Los_Angeles",
+    isLive: true,
+    location: "Online",
+    meetingUrl: "https://meet.story.foundation/workshop-5",
+  },
+  {
+    id: "workshop-6",
+    title: "Tokenizing Creative Works",
+    description: "A comprehensive guide to tokenizing art, music, and other creative works as IP assets.",
+    articleUrl: "https://docs.story.foundation/tokenizing",
+    partnerName: "Creative DAO",
+    partnerLogo: "https://api.dicebear.com/7.x/shapes/svg?seed=creativedao",
+    category: "Creator Tools",
+    duration: "35 min",
+    status: "published",
+    createdBy: "user-1",
+    publishedAt: new Date("2024-05-01"),
+    createdAt: new Date("2024-04-25"),
+    updatedAt: new Date("2024-05-01"),
+    scheduledAt: new Date("2026-02-10T13:00:00"),
+    endTime: new Date("2026-02-10T13:35:00"),
+    timezone: "America/Los_Angeles",
+    isLive: true,
+    location: "Online",
+    maxAttendees: 75,
   },
 ];
 
@@ -432,6 +505,34 @@ export const mockWorkshopVersions: WorkshopVersion[] = [
   },
 ];
 
+// Mock Workshop RSVPs
+export const mockWorkshopRSVPs: WorkshopRSVP[] = [
+  {
+    id: "rsvp-1",
+    workshopId: "workshop-1",
+    userId: "user-3",
+    user: mockUsers[2],
+    status: "registered",
+    registeredAt: new Date("2026-01-20"),
+  },
+  {
+    id: "rsvp-2",
+    workshopId: "workshop-1",
+    userId: "user-4",
+    user: mockUsers[3],
+    status: "registered",
+    registeredAt: new Date("2026-01-21"),
+  },
+  {
+    id: "rsvp-3",
+    workshopId: "workshop-2",
+    userId: "user-3",
+    user: mockUsers[2],
+    status: "registered",
+    registeredAt: new Date("2026-01-22"),
+  },
+];
+
 // Helper function to get sponsors by cohort
 export function getSponsorsByCohort(cohortId: string): Sponsor[] {
   return mockSponsors.filter(s => s.cohortId === cohortId);
@@ -447,4 +548,37 @@ export function getSponsorByUser(userId: string): Sponsor | undefined {
   const user = mockUsers.find(u => u.id === userId);
   if (!user?.sponsorId) return undefined;
   return mockSponsors.find(s => s.id === user.sponsorId);
+}
+
+// Helper function to get workshops by date range
+export function getWorkshopsByDateRange(start: Date, end: Date): Workshop[] {
+  return mockWorkshops.filter(w => {
+    if (!w.scheduledAt) return false;
+    return w.scheduledAt >= start && w.scheduledAt <= end;
+  });
+}
+
+// Helper function to get RSVPs by workshop
+export function getRSVPsByWorkshop(workshopId: string): WorkshopRSVP[] {
+  return mockWorkshopRSVPs.filter(r => r.workshopId === workshopId);
+}
+
+// Helper function to get RSVPs by user
+export function getRSVPsByUser(userId: string): WorkshopRSVP[] {
+  return mockWorkshopRSVPs.filter(r => r.userId === userId);
+}
+
+// Helper function to get submissions by cohort
+export function getSubmissionsByCohort(cohortId: string): Submission[] {
+  return mockSubmissions.filter(s => s.cohortId === cohortId);
+}
+
+// Helper function to get cohort by slug
+export function getCohortBySlug(slug: string): Cohort | undefined {
+  return mockCohorts.find(c => c.slug === slug);
+}
+
+// Helper function to get submission by ID
+export function getSubmissionById(id: string): Submission | undefined {
+  return mockSubmissions.find(s => s.id === id);
 }
