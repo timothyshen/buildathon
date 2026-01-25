@@ -10,6 +10,7 @@ import { CalendarAgendaView } from "@/components/workshops/calendar-agenda-view"
 import { WorkshopDetailModal } from "@/components/workshops/workshop-detail-modal";
 import { WorkshopCard } from "@/components/workshops/workshop-card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { generateGoogleCalendarUrl, downloadICSFile } from "@/lib/calendar-utils";
@@ -132,17 +133,28 @@ export default function WorkshopsPage() {
   }, [user, userRsvps, publishedWorkshops]);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-teal-600 to-cyan-600 py-16">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="text-4xl font-bold text-white">
-            Workshops & Learning Sessions
+      <section className="relative overflow-hidden bg-slate-900 mx-4 mt-4 rounded-3xl">
+        {/* Subtle pattern overlay */}
+        <div
+          className="absolute inset-0 opacity-5"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          }}
+        />
+        <div className="relative max-w-6xl mx-auto px-8 py-16 text-center">
+          <Badge className="bg-teal-500/20 text-teal-400 border-teal-500/30 mb-4">
+            <Calendar className="h-3 w-3 mr-1.5" />
+            Live Sessions
+          </Badge>
+          <h1 className="text-4xl lg:text-5xl font-bold text-white">
+            Workshops & Learning
           </h1>
-          <p className="mt-4 text-lg text-teal-100 max-w-2xl mx-auto">
+          <p className="mt-4 text-xl text-slate-400 max-w-2xl mx-auto">
             Join live sessions, RSVP for upcoming workshops, and learn from Story Protocol experts.
           </p>
-          <Button asChild variant="secondary" className="mt-6">
+          <Button asChild className="mt-8 bg-white text-slate-900 hover:bg-slate-100">
             <Link href="/workshops/resources">
               <BookOpen className="h-4 w-4 mr-2" />
               Browse Learning Resources
@@ -153,7 +165,7 @@ export default function WorkshopsPage() {
 
       {/* Main Content */}
       <section className="py-8">
-        <div className="container mx-auto px-4">
+        <div className="max-w-6xl mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
             {/* Main Calendar Area (3 columns) */}
             <div className="lg:col-span-3 space-y-6">

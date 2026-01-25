@@ -19,6 +19,10 @@ import {
   Video,
   FileText,
   ExternalLink,
+  GraduationCap,
+  Sparkles,
+  Briefcase,
+  Check,
 } from "lucide-react";
 
 interface WorkshopDetailModalProps {
@@ -30,16 +34,28 @@ interface WorkshopDetailModalProps {
   onAddToCalendar: (type: "google" | "apple" | "ics") => void;
 }
 
-function getCategoryBadgeClasses(category: string): string {
+function getCategoryBadge(category: string) {
   switch (category.toLowerCase()) {
     case "basics":
-      return "bg-green-100 text-green-800 border-green-200";
+      return {
+        className: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
+        icon: <GraduationCap className="h-3 w-3 mr-1" />,
+      };
     case "advanced":
-      return "bg-purple-100 text-purple-800 border-purple-200";
+      return {
+        className: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20",
+        icon: <Sparkles className="h-3 w-3 mr-1" />,
+      };
     case "business":
-      return "bg-blue-100 text-blue-800 border-blue-200";
+      return {
+        className: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
+        icon: <Briefcase className="h-3 w-3 mr-1" />,
+      };
     default:
-      return "bg-gray-100 text-gray-800 border-gray-200";
+      return {
+        className: "bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20",
+        icon: null,
+      };
   }
 }
 
@@ -88,6 +104,7 @@ export function WorkshopDetailModal({
   const attendeeCount = rsvps.length;
   const duration = formatDuration(workshop);
   const hasUserRsvp = userRsvp && userRsvp.status === "registered";
+  const categoryBadge = getCategoryBadge(workshop.category);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -95,22 +112,33 @@ export function WorkshopDetailModal({
         <DialogHeader>
           {/* Partner Logo and Title */}
           <div className="flex items-start gap-4">
-            {workshop.partnerLogo && (
+            {workshop.partnerLogo ? (
               <img
                 src={workshop.partnerLogo}
                 alt={workshop.partnerName || "Partner"}
-                className="h-12 w-12 rounded-full object-cover flex-shrink-0"
+                className="h-14 w-14 rounded-xl object-cover flex-shrink-0 bg-slate-100 dark:bg-slate-800"
               />
+            ) : (
+              <div className="h-14 w-14 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center flex-shrink-0">
+                <GraduationCap className="h-7 w-7 text-slate-400" />
+              </div>
             )}
             <div className="flex-1 min-w-0">
-              <div className="flex items-start justify-between gap-2">
-                <DialogTitle className="text-xl leading-tight">
-                  {workshop.title}
-                </DialogTitle>
-                <Badge className={getCategoryBadgeClasses(workshop.category)}>
+              <div className="flex flex-wrap items-start gap-2 mb-1">
+                <Badge className={categoryBadge.className}>
+                  {categoryBadge.icon}
                   {workshop.category}
                 </Badge>
+                {hasUserRsvp && (
+                  <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
+                    <Check className="h-3 w-3 mr-1" />
+                    RSVP'd
+                  </Badge>
+                )}
               </div>
+              <DialogTitle className="text-xl leading-tight">
+                {workshop.title}
+              </DialogTitle>
               {workshop.partnerName && (
                 <p className="text-sm text-muted-foreground mt-1">
                   by {workshop.partnerName}
@@ -206,25 +234,29 @@ export function WorkshopDetailModal({
         )}
 
         {/* Action Buttons */}
-        <div className="flex flex-col gap-2 pt-2">
+        <div className="flex flex-col gap-3 pt-4 border-t">
           <Button
-            variant={hasUserRsvp ? "secondary" : "default"}
+            variant={hasUserRsvp ? "outline" : "default"}
+            size="lg"
             onClick={onRsvp}
+            className={hasUserRsvp ? "" : "bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100"}
           >
-            {hasUserRsvp ? "Cancel RSVP" : "RSVP"}
+            {hasUserRsvp ? "Cancel RSVP" : "RSVP for this Workshop"}
           </Button>
 
           <div className="flex gap-2">
             <Button
               variant="outline"
+              size="sm"
               className="flex-1"
               onClick={() => onAddToCalendar("google")}
             >
               <Calendar className="h-4 w-4 mr-2" />
-              Add to Google Calendar
+              Google Calendar
             </Button>
             <Button
               variant="outline"
+              size="sm"
               className="flex-1"
               onClick={() => onAddToCalendar("ics")}
             >
