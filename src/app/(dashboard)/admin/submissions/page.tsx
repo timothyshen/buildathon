@@ -127,11 +127,11 @@ export default function AdminSubmissionsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Project</TableHead>
-                <TableHead>Team</TableHead>
-                <TableHead>Cohort</TableHead>
-                <TableHead>Track</TableHead>
+                <TableHead className="hidden md:table-cell">Team</TableHead>
+                <TableHead className="hidden md:table-cell">Cohort</TableHead>
+                <TableHead className="hidden md:table-cell">Track</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Submitted</TableHead>
+                <TableHead className="hidden md:table-cell">Submitted</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -147,17 +147,17 @@ export default function AdminSubmissionsPage() {
                       </p>
                     </div>
                   </TableCell>
-                  <TableCell>{submission.team?.name || "-"}</TableCell>
-                  <TableCell>
+                  <TableCell className="hidden md:table-cell">{submission.team?.name || "-"}</TableCell>
+                  <TableCell className="hidden md:table-cell">
                     <Badge variant="outline">{submission.cohort?.name}</Badge>
                   </TableCell>
-                  <TableCell>{submission.track?.name || "Open"}</TableCell>
+                  <TableCell className="hidden md:table-cell">{submission.track?.name || "Open"}</TableCell>
                   <TableCell>
                     <Badge className={getStatusColor(submission.status)}>
                       {submission.status}
                     </Badge>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden md:table-cell">
                     {submission.submittedAt
                       ? new Date(submission.submittedAt).toLocaleDateString()
                       : "-"}

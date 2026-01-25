@@ -51,7 +51,7 @@ export default function AdminJudgesPage() {
         className="mb-4"
       />
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold">Judges</h1>
           <p className="mt-2 text-muted-foreground">
@@ -160,11 +160,11 @@ export default function AdminJudgesPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Judge</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Assigned</TableHead>
+                  <TableHead className="hidden md:table-cell">Email</TableHead>
+                  <TableHead className="hidden md:table-cell">Assigned</TableHead>
                   <TableHead>Completed</TableHead>
-                  <TableHead>Pending</TableHead>
-                  <TableHead>Avg Score</TableHead>
+                  <TableHead className="hidden md:table-cell">Pending</TableHead>
+                  <TableHead className="hidden md:table-cell">Avg Score</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -202,19 +202,19 @@ export default function AdminJudgesPage() {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell>{judge.email}</TableCell>
-                      <TableCell>{judgeReviews.length}</TableCell>
+                      <TableCell className="hidden md:table-cell">{judge.email}</TableCell>
+                      <TableCell className="hidden md:table-cell">{judgeReviews.length}</TableCell>
                       <TableCell>
                         <Badge className="bg-green-100 text-green-800">
                           {completed.length}
                         </Badge>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden md:table-cell">
                         <Badge className="bg-yellow-100 text-yellow-800">
                           {pending.length}
                         </Badge>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden md:table-cell">
                         {avgScore > 0 ? avgScore.toFixed(1) : "-"}
                       </TableCell>
                       <TableCell className="text-right">

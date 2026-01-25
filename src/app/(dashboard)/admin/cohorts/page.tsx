@@ -48,7 +48,7 @@ export default function CohortsPage() {
         className="mb-4"
       />
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold">Cohorts</h1>
           <p className="mt-2 text-muted-foreground">
@@ -61,7 +61,7 @@ export default function CohortsPage() {
         </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Total Cohorts</CardTitle>

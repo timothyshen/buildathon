@@ -297,7 +297,7 @@ export default function SponsorCohortPage({ params }: SponsorCohortPageProps) {
                       placeholder="What are you looking for?"
                     />
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <Button size="sm" onClick={handleAddTrack} disabled={!newTrack.name}>
                       Add Track
                     </Button>
@@ -344,7 +344,7 @@ export default function SponsorCohortPage({ params }: SponsorCohortPageProps) {
                           </p>
                         )}
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex flex-col sm:flex-row gap-2">
                         <Button
                           variant="ghost"
                           size="icon"

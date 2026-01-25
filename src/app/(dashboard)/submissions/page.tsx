@@ -34,7 +34,7 @@ export default function SubmissionsPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold">My Submissions</h1>
           <p className="mt-2 text-muted-foreground">
@@ -111,7 +111,7 @@ export default function SubmissionsPage() {
                     )}
                   </div>
 
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     {submission.demoUrl && (
                       <Button variant="outline" size="sm" asChild>
                         <a

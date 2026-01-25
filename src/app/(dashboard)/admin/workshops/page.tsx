@@ -51,7 +51,7 @@ export default function AdminWorkshopPage() {
         className="mb-4"
       />
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold">Workshop Content</h1>
           <p className="mt-2 text-muted-foreground">
@@ -145,7 +145,7 @@ export default function AdminWorkshopPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Total Content</CardTitle>
@@ -196,10 +196,10 @@ export default function AdminWorkshopPage() {
                   <TableRow className="bg-muted/50">
                     <TableHead className="w-[300px]">Title</TableHead>
                     <TableHead>Category</TableHead>
-                    <TableHead>Partner</TableHead>
-                    <TableHead>Duration</TableHead>
-                    <TableHead>Content</TableHead>
-                    <TableHead>Published</TableHead>
+                    <TableHead className="hidden md:table-cell">Partner</TableHead>
+                    <TableHead className="hidden md:table-cell">Duration</TableHead>
+                    <TableHead className="hidden md:table-cell">Content</TableHead>
+                    <TableHead className="hidden md:table-cell">Published</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -217,13 +217,13 @@ export default function AdminWorkshopPage() {
                       <TableCell>
                         <Badge variant="outline">{workshop.category}</Badge>
                       </TableCell>
-                      <TableCell className="text-muted-foreground">
+                      <TableCell className="hidden md:table-cell text-muted-foreground">
                         {workshop.partnerName}
                       </TableCell>
-                      <TableCell className="text-muted-foreground">
+                      <TableCell className="hidden md:table-cell text-muted-foreground">
                         {workshop.duration || "-"}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden md:table-cell">
                         <div className="flex gap-1">
                           {workshop.videoUrl && (
                             <Badge variant="secondary" className="gap-1">
@@ -239,7 +239,7 @@ export default function AdminWorkshopPage() {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="text-muted-foreground">
+                      <TableCell className="hidden md:table-cell text-muted-foreground">
                         {workshop.publishedAt
                           ? new Date(workshop.publishedAt).toLocaleDateString()
                           : "-"}

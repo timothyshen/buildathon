@@ -9,7 +9,6 @@ import {
   Trophy,
   Star,
   Users,
-  Settings,
   FolderKanban,
   GraduationCap,
   LogOut,
@@ -23,7 +22,6 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { mockSubmissions, mockReviews } from "@/data/mock-data";
 
 interface NavItem {
@@ -41,7 +39,11 @@ interface NavSection {
   roles?: ("admin" | "sponsor" | "judge" | "participant")[];
 }
 
-export function Sidebar() {
+interface SidebarContentProps {
+  onNavigate?: () => void;
+}
+
+export function SidebarContent({ onNavigate }: SidebarContentProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout, switchRole } = useAuth();
@@ -162,15 +164,19 @@ export function Sidebar() {
     }
   };
 
+  const handleNavClick = () => {
+    onNavigate?.();
+  };
+
   return (
-    <aside className="flex h-full w-72 flex-col bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-900">
+    <div className="flex h-full flex-col bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-900">
       {/* Logo Section */}
       <div className="flex h-16 items-center gap-3 border-b border-slate-200/80 px-6 dark:border-slate-800">
         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 shadow-lg shadow-violet-500/25">
           <Sparkles className="h-5 w-5 text-white" />
         </div>
         <div className="flex flex-col">
-          <Link href="/" className="text-lg font-bold tracking-tight">
+          <Link href="/" className="text-lg font-bold tracking-tight" onClick={handleNavClick}>
             SWA.XYZ
           </Link>
           <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
@@ -198,6 +204,7 @@ export function Sidebar() {
                     <Link
                       key={item.href}
                       href={item.href}
+                      onClick={handleNavClick}
                       className={cn(
                         "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
                         isActive
@@ -246,6 +253,7 @@ export function Sidebar() {
       <div className="border-t border-slate-200/80 p-4 dark:border-slate-800">
         <Link
           href="/"
+          onClick={handleNavClick}
           className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800"
         >
           <Home className="h-4 w-4" />
@@ -323,6 +331,14 @@ export function Sidebar() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+export function Sidebar() {
+  return (
+    <aside className="hidden md:flex h-full w-72 flex-col">
+      <SidebarContent />
     </aside>
   );
 }

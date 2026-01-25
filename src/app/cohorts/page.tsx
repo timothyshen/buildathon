@@ -253,7 +253,7 @@ export default function CohortsPage() {
           <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
             {filter === "all" ? "All Buildathons" : `${filter.charAt(0).toUpperCase() + filter.slice(1)} Buildathons`}
           </h2>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             {["all", "upcoming", "completed"].map((status) => (
               <Button
                 key={status}

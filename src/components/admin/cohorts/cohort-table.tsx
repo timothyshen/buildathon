@@ -39,9 +39,9 @@ export function CohortTable({ cohorts, onEdit }: CohortTableProps) {
         <TableRow>
           <TableHead>Name</TableHead>
           <TableHead>Status</TableHead>
-          <TableHead>Dates</TableHead>
-          <TableHead>Sponsors</TableHead>
-          <TableHead>Visibility</TableHead>
+          <TableHead className="hidden md:table-cell">Dates</TableHead>
+          <TableHead className="hidden md:table-cell">Sponsors</TableHead>
+          <TableHead className="hidden md:table-cell">Visibility</TableHead>
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
@@ -59,7 +59,7 @@ export function CohortTable({ cohorts, onEdit }: CohortTableProps) {
                 {cohort.status}
               </Badge>
             </TableCell>
-            <TableCell>
+            <TableCell className="hidden md:table-cell">
               <div className="text-sm">
                 <p>{new Date(cohort.startDate).toLocaleDateString()}</p>
                 <p className="text-muted-foreground">
@@ -67,13 +67,13 @@ export function CohortTable({ cohorts, onEdit }: CohortTableProps) {
                 </p>
               </div>
             </TableCell>
-            <TableCell>
+            <TableCell className="hidden md:table-cell">
               <div className="flex items-center gap-1">
                 <Users className="h-4 w-4 text-muted-foreground" />
                 <span>{getSponsorCount(cohort.id)}</span>
               </div>
             </TableCell>
-            <TableCell>
+            <TableCell className="hidden md:table-cell">
               <Badge variant={cohort.isPublic ? "default" : "outline"}>
                 {cohort.isPublic ? "Public" : "Private"}
               </Badge>

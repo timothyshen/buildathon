@@ -145,7 +145,7 @@ export default function WorkshopEditPage({ params }: WorkshopEditPageProps) {
         ]}
       />
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
             <Link href="/sponsor/workshops">

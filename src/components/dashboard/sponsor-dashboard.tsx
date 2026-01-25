@@ -74,7 +74,7 @@ export function SponsorDashboard() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
           <div className="flex items-center gap-3">
             {sponsor.logo && (
@@ -90,7 +90,7 @@ export function SponsorDashboard() {
             </div>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <Button variant="outline" asChild>
             <Link href="/sponsor/tracks">
               <Target className="mr-2 h-4 w-4" />
@@ -107,7 +107,7 @@ export function SponsorDashboard() {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Pending Reviews</CardTitle>

@@ -50,9 +50,9 @@ export function SponsorTable({ sponsors, onEdit, onDelete, onInvite }: SponsorTa
         <TableRow>
           <TableHead>Sponsor</TableHead>
           <TableHead>Tier</TableHead>
-          <TableHead>Contribution</TableHead>
-          <TableHead>Track</TableHead>
-          <TableHead>Contact</TableHead>
+          <TableHead className="hidden md:table-cell">Contribution</TableHead>
+          <TableHead className="hidden md:table-cell">Track</TableHead>
+          <TableHead className="hidden md:table-cell">Contact</TableHead>
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
@@ -92,17 +92,17 @@ export function SponsorTable({ sponsors, onEdit, onDelete, onInvite }: SponsorTa
                 <span className="text-muted-foreground text-sm">—</span>
               )}
             </TableCell>
-            <TableCell>
+            <TableCell className="hidden md:table-cell">
               {sponsor.totalContribution > 0
                 ? `$${sponsor.totalContribution.toLocaleString()}`
                 : "—"}
             </TableCell>
-            <TableCell>
+            <TableCell className="hidden md:table-cell">
               <Badge variant={sponsor.hasDedicatedTrack ? "default" : "outline"}>
                 {sponsor.hasDedicatedTrack ? "Yes" : "No"}
               </Badge>
             </TableCell>
-            <TableCell>
+            <TableCell className="hidden md:table-cell">
               <div className="text-sm">
                 <p>{sponsor.contactName}</p>
                 <p className="text-muted-foreground">{sponsor.contactEmail}</p>

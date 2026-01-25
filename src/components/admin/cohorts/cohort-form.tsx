@@ -137,7 +137,7 @@ export function CohortForm({ open, onOpenChange, cohort, onSubmit }: CohortFormP
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex gap-2 mb-4">
+        <div className="flex flex-col sm:flex-row gap-2 mb-4">
           {steps.map((s, i) => (
             <div
               key={s}
@@ -328,7 +328,7 @@ export function CohortForm({ open, onOpenChange, cohort, onSubmit }: CohortFormP
 
               <div className="space-y-3">
                 {prizes.map((prize, index) => (
-                  <div key={index} className="flex gap-2 items-start">
+                  <div key={index} className="flex flex-col sm:flex-row gap-2 items-start">
                     <div className="w-20">
                       <Input
                         value={prize.place}
@@ -374,7 +374,7 @@ export function CohortForm({ open, onOpenChange, cohort, onSubmit }: CohortFormP
             >
               Previous
             </Button>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Button
                 type="button"
                 variant="outline"
