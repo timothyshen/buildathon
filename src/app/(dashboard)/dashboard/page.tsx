@@ -3,6 +3,7 @@
 import { useAuth } from "@/contexts/auth-context";
 import { AdminDashboard } from "@/components/dashboard/admin-dashboard";
 import { JudgeDashboard } from "@/components/dashboard/judge-dashboard";
+import { SponsorDashboard } from "@/components/dashboard/sponsor-dashboard";
 import { ParticipantDashboard } from "@/components/dashboard/participant-dashboard";
 
 export default function DashboardPage() {
@@ -15,6 +16,8 @@ export default function DashboardPage() {
       return <AdminDashboard />;
     case "judge":
       return <JudgeDashboard />;
+    case "sponsor":
+      return <SponsorDashboard />;
     case "participant":
     default:
       return <ParticipantDashboard />;
