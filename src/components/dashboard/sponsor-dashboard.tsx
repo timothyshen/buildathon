@@ -337,7 +337,7 @@ export function SponsorDashboard() {
                       )}
                     </div>
                     <Button variant="outline" className="w-full mt-3" size="sm" asChild>
-                      <Link href={`/cohorts/${cohort.slug}`}>View Cohort</Link>
+                      <Link href={`/sponsor/cohorts/${cohort.id}`}>Manage Sponsorship</Link>
                     </Button>
                   </div>
                 );

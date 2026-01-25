@@ -11,6 +11,7 @@ const dashboardRoutes = [
   "/submit",
   "/reviews",
   "/admin",
+  "/sponsor",
   "/settings",
 ];
 

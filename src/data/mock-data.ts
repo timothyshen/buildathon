@@ -516,6 +516,7 @@ export const mockCohortSponsors: CohortSponsor[] = [
     tier: "gold",
     prizePoolContribution: 5000,
     hasDedicatedTrack: true,
+    description: "<p>GameFi Labs is excited to sponsor the Summer Buildathon 2024! We're looking for innovative projects that push the boundaries of gaming and blockchain technology.</p><h2>What We're Looking For</h2><ul><li>Creative use of NFTs in gaming</li><li>Novel tokenomics for play-to-earn</li><li>Cross-chain gaming experiences</li></ul><p>Top submissions will be considered for our accelerator program!</p>",
   },
   {
     id: "cs-2",

@@ -199,6 +199,7 @@ export interface CohortSponsor {
   tier: SponsorTier;
   prizePoolContribution: number;
   hasDedicatedTrack: boolean;
+  description?: string; // Rich text description for this sponsor in this cohort
 }
 
 // Legacy alias for backwards compatibility during migration

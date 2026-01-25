@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
 import { mockWorkshops, mockSponsorOrgs } from "@/data/mock-data";
 import { useAuth } from "@/contexts/auth-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,9 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { PlusCircle, Pencil, Trash2, Play, FileText } from "lucide-react";
-import { WorkshopForm } from "@/components/shared/workshop/workshop-form";
 import type { Workshop } from "@/types";
-import type { WorkshopFormData } from "@/lib/schemas";
 
 const statusColors: Record<Workshop["status"], string> = {
   draft: "bg-slate-100 text-slate-700",
@@ -27,31 +25,14 @@ const statusColors: Record<Workshop["status"], string> = {
 
 export default function SponsorWorkshopsPage() {
   const { user } = useAuth();
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingWorkshop, setEditingWorkshop] = useState<Workshop | undefined>();
 
   const sponsor = mockSponsorOrgs.find((s) => s.id === user?.sponsorOrgId);
   const sponsorWorkshops = mockWorkshops.filter((w) => w.sponsorOrgId === sponsor?.id);
-
-  const handleEdit = (workshop: Workshop) => {
-    setEditingWorkshop(workshop);
-    setIsFormOpen(true);
-  };
 
   const handleDelete = (workshop: Workshop) => {
     if (confirm(`Delete workshop "${workshop.title}"?`)) {
       console.log("Delete:", workshop.id);
     }
-  };
-
-  const handleSubmit = (data: WorkshopFormData) => {
-    console.log("Workshop form submitted:", data);
-    setEditingWorkshop(undefined);
-  };
-
-  const handleOpenChange = (open: boolean) => {
-    setIsFormOpen(open);
-    if (!open) setEditingWorkshop(undefined);
   };
 
   if (!sponsor) {
@@ -76,9 +57,11 @@ export default function SponsorWorkshopsPage() {
             Manage learning content for {sponsor.name}
           </p>
         </div>
-        <Button onClick={() => setIsFormOpen(true)}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Create Workshop
+        <Button asChild>
+          <Link href="/sponsor/workshops/new">
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Create Workshop
+          </Link>
         </Button>
       </div>
 
@@ -126,12 +109,15 @@ export default function SponsorWorkshopsPage() {
               {sponsorWorkshops.map((workshop) => (
                 <TableRow key={workshop.id}>
                   <TableCell>
-                    <div>
+                    <Link
+                      href={`/sponsor/workshops/${workshop.id}`}
+                      className="hover:underline"
+                    >
                       <p className="font-medium">{workshop.title}</p>
                       <p className="text-xs text-muted-foreground line-clamp-1">
                         {workshop.description}
                       </p>
-                    </div>
+                    </Link>
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline">{workshop.category}</Badge>
@@ -160,12 +146,10 @@ export default function SponsorWorkshopsPage() {
                   <TableCell>{workshop.duration || "-"}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleEdit(workshop)}
-                      >
-                        <Pencil className="h-4 w-4" />
+                      <Button variant="ghost" size="icon" asChild>
+                        <Link href={`/sponsor/workshops/${workshop.id}`}>
+                          <Pencil className="h-4 w-4" />
+                        </Link>
                       </Button>
                       <Button
                         variant="ghost"
@@ -190,13 +174,6 @@ export default function SponsorWorkshopsPage() {
           </Table>
         </CardContent>
       </Card>
-
-      <WorkshopForm
-        open={isFormOpen}
-        onOpenChange={handleOpenChange}
-        workshop={editingWorkshop}
-        onSubmit={handleSubmit}
-      />
     </div>
   );
 }
