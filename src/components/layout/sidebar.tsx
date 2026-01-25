@@ -114,7 +114,7 @@ export function Sidebar() {
         },
         { href: "/admin/judges", label: "Judges", icon: Users },
         { href: "/admin/sponsors", label: "Sponsors", icon: Users },
-        { href: "/admin/workshop", label: "Workshop", icon: GraduationCap },
+        { href: "/admin/workshops", label: "Workshops", icon: GraduationCap },
       ],
     },
     {

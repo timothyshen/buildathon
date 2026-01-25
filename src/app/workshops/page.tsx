@@ -135,7 +135,7 @@ export default function WorkshopsPage() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-slate-900 mx-4 mt-4 rounded-3xl">
+      <section className="relative overflow-hidden bg-slate-900">
         {/* Subtle pattern overlay */}
         <div
           className="absolute inset-0 opacity-5"

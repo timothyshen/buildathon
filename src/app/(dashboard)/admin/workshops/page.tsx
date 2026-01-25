@@ -162,68 +162,86 @@ export default function AdminWorkshopPage() {
 
       {/* Content Table */}
       <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Title</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Partner</TableHead>
-                <TableHead>Duration</TableHead>
-                <TableHead>Content</TableHead>
-                <TableHead>Published</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {mockWorkshops.map((workshop) => (
-                <TableRow key={workshop.id}>
-                  <TableCell>
-                    <div>
-                      <p className="font-medium">{workshop.title}</p>
-                      <p className="text-xs text-muted-foreground line-clamp-1">
-                        {workshop.description}
-                      </p>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{workshop.category}</Badge>
-                  </TableCell>
-                  <TableCell>{workshop.partnerName}</TableCell>
-                  <TableCell>{workshop.duration || "-"}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-1">
-                      {workshop.videoUrl && (
-                        <Badge variant="secondary" className="gap-1">
-                          <Play className="h-3 w-3" />
-                          Video
-                        </Badge>
-                      )}
-                      {workshop.articleUrl && (
-                        <Badge variant="secondary" className="gap-1">
-                          <FileText className="h-3 w-3" />
-                          Article
-                        </Badge>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {workshop.publishedAt ? new Date(workshop.publishedAt).toLocaleDateString() : "-"}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="icon">
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="text-red-600">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+        <CardHeader>
+          <CardTitle>All Content</CardTitle>
+          <CardDescription>
+            {mockWorkshops.length} workshop{mockWorkshops.length !== 1 ? "s" : ""} available
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50">
+                  <TableHead className="w-[300px]">Title</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Partner</TableHead>
+                  <TableHead>Duration</TableHead>
+                  <TableHead>Content</TableHead>
+                  <TableHead>Published</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {mockWorkshops.map((workshop) => (
+                  <TableRow key={workshop.id}>
+                    <TableCell>
+                      <div className="max-w-[280px]">
+                        <p className="font-medium truncate">{workshop.title}</p>
+                        <p className="text-xs text-muted-foreground line-clamp-1">
+                          {workshop.description}
+                        </p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{workshop.category}</Badge>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {workshop.partnerName}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {workshop.duration || "-"}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        {workshop.videoUrl && (
+                          <Badge variant="secondary" className="gap-1">
+                            <Play className="h-3 w-3" />
+                            Video
+                          </Badge>
+                        )}
+                        {workshop.articleUrl && (
+                          <Badge variant="secondary" className="gap-1">
+                            <FileText className="h-3 w-3" />
+                            Article
+                          </Badge>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {workshop.publishedAt
+                        ? new Date(workshop.publishedAt).toLocaleDateString()
+                        : "-"}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>
