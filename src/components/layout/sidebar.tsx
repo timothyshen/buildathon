@@ -120,8 +120,9 @@ export function Sidebar() {
     {
       title: "Explore",
       items: [
+        { href: "/cohorts", label: "Cohorts", icon: GraduationCap },
+        { href: "/workshops", label: "Workshops", icon: BookOpen },
         { href: "/explore", label: "Templates", icon: Compass },
-        { href: "/workshop", label: "Learn", icon: BookOpen },
       ],
     },
   ];
