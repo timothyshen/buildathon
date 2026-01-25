@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { mockSponsors, mockCohorts } from "@/data/mock-data";
+import { AdminNav } from "@/components/admin/admin-nav";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -77,7 +78,9 @@ export default function AdminSponsorsPage() {
   );
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
+      <AdminNav />
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Sponsors</h1>

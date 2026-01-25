@@ -1,10 +1,11 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getSubmissionById, getSubmissionsByCohort, getTracksByCohort } from "@/data/mock-data";
+import { getSubmissionById, getSubmissionsByCohort, getTracksByCohort, getCohortById } from "@/data/mock-data";
 import { ProjectHero } from "@/components/projects/project-hero";
 import { ProjectGallery } from "@/components/projects/project-gallery";
 import { ProjectTeam } from "@/components/projects/project-team";
 import { ProjectCard } from "@/components/projects/project-card";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Shield, FileCheck } from "lucide-react";
@@ -26,6 +27,9 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   // Get the track info if projectTrack exists
   const tracks = submission.cohortId ? getTracksByCohort(submission.cohortId) : [];
   const projectTrack = tracks.find((t) => t.id === submission.trackId);
+
+  // Get cohort info for breadcrumb
+  const cohort = submission.cohortId ? getCohortById(submission.cohortId) : null;
 
   // Get related projects from same cohort (excluding current and drafts)
   const cohortSubmissions = getSubmissionsByCohort(submission.cohortId);
@@ -56,8 +60,25 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
     }
   };
 
+  // Build breadcrumb items
+  const breadcrumbItems = cohort
+    ? [
+        { label: "Cohorts", href: "/cohorts" },
+        { label: cohort.name, href: `/cohorts/${cohort.slug}` },
+        { label: submission.title },
+      ]
+    : [
+        { label: "Explore", href: "/explore" },
+        { label: submission.title },
+      ];
+
   return (
     <div className="min-h-screen bg-background">
+      {/* Breadcrumb */}
+      <div className="max-w-6xl mx-auto px-6 lg:px-8 pt-6">
+        <Breadcrumb items={breadcrumbItems} />
+      </div>
+
       {/* Hero Section */}
       <ProjectHero project={submission} />
 

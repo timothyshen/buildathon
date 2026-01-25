@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { mockWorkshops } from "@/data/mock-data";
+import { AdminNav } from "@/components/admin/admin-nav";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -39,7 +40,9 @@ export default function AdminWorkshopPage() {
   const categories = Array.from(new Set(mockWorkshops.map((w) => w.category)));
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
+      <AdminNav />
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Workshop Content</h1>

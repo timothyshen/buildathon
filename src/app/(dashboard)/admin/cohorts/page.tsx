@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { mockCohorts } from "@/data/mock-data";
+import { AdminNav } from "@/components/admin/admin-nav";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
@@ -36,7 +37,9 @@ export default function CohortsPage() {
   const completedCohorts = mockCohorts.filter((c) => c.status === "completed").length;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
+      <AdminNav />
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Cohorts</h1>

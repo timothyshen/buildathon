@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { getSubmissionById, mockReviews, getTracksByCohort } from "@/data/mock-data";
 import { ProjectGallery } from "@/components/projects/project-gallery";
 import { ProjectTeam } from "@/components/projects/project-team";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -149,7 +150,16 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
   const StatusIcon = statusBanner.icon;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
+      {/* Breadcrumb */}
+      <Breadcrumb
+        items={[
+          { label: "Submissions", href: "/submissions" },
+          { label: submission.title },
+        ]}
+        showHome={false}
+      />
+
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>

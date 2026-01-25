@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { mockReviews } from "@/data/mock-data";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -73,20 +74,22 @@ export default function ReviewDetailPage() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
+      {/* Breadcrumb */}
+      <Breadcrumb
+        items={[
+          { label: "Reviews", href: "/reviews" },
+          { label: submission.title },
+        ]}
+        showHome={false}
+      />
+
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild>
-          <Link href="/reviews">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold">Review: {submission.title}</h1>
-          <p className="text-muted-foreground">
-            {submission.team?.name} • {submission.cohort?.name}
-          </p>
-        </div>
+      <div>
+        <h1 className="text-2xl font-bold">Review: {submission.title}</h1>
+        <p className="text-muted-foreground">
+          {submission.team?.name} • {submission.cohort?.name}
+        </p>
       </div>
 
       <div className="grid gap-8 lg:grid-cols-2">

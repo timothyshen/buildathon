@@ -578,6 +578,11 @@ export function getCohortBySlug(slug: string): Cohort | undefined {
   return mockCohorts.find(c => c.slug === slug);
 }
 
+// Helper function to get cohort by ID
+export function getCohortById(id: string): Cohort | undefined {
+  return mockCohorts.find(c => c.id === id);
+}
+
 // Helper function to get submission by ID
 export function getSubmissionById(id: string): Submission | undefined {
   return mockSubmissions.find(s => s.id === id);

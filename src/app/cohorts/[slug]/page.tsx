@@ -10,6 +10,7 @@ import {
 import { CohortHero } from "@/components/cohorts/cohort-hero";
 import { CohortTimeline } from "@/components/cohorts/cohort-timeline";
 import { CohortTracks } from "@/components/cohorts/cohort-tracks";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -78,6 +79,16 @@ export default async function CohortDetailPage({
 
   return (
     <div className="min-h-screen">
+      {/* Breadcrumb */}
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-6">
+        <Breadcrumb
+          items={[
+            { label: "Cohorts", href: "/cohorts" },
+            { label: cohort.name },
+          ]}
+        />
+      </div>
+
       {/* Hero Section */}
       <CohortHero cohort={cohort} />
 
