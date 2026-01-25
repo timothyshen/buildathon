@@ -92,7 +92,7 @@ export function Sidebar() {
       roles: ["sponsor"],
       items: [
         { href: "/sponsor/workshops", label: "My Workshops", icon: GraduationCap },
-        { href: "/sponsor/tracks", label: "My Tracks", icon: Trophy },
+        { href: "/sponsor/tracks", label: "My Sponsorships", icon: Trophy },
         {
           href: "/sponsor/reviews",
           label: "Review Queue",
