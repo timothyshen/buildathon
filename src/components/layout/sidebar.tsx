@@ -105,7 +105,7 @@ export function Sidebar() {
       title: "Admin",
       roles: ["admin"],
       items: [
-        { href: "/cohorts", label: "Cohorts", icon: Trophy },
+        { href: "/admin/cohorts", label: "Cohorts", icon: Trophy },
         {
           href: "/admin/submissions",
           label: "All Submissions",
