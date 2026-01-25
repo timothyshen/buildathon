@@ -1,0 +1,239 @@
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import { getSubmissionById, getSubmissionsByCohort, getTracksByCohort } from "@/data/mock-data";
+import { ProjectHero } from "@/components/projects/project-hero";
+import { ProjectGallery } from "@/components/projects/project-gallery";
+import { ProjectTeam } from "@/components/projects/project-team";
+import { ProjectCard } from "@/components/projects/project-card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Shield, FileCheck } from "lucide-react";
+
+interface ProjectPageProps {
+  params: Promise<{ id: string }>;
+}
+
+export default async function ProjectPage({ params }: ProjectPageProps) {
+  const { id } = await params;
+
+  const submission = getSubmissionById(id);
+
+  // Return 404 if not found or if status is draft
+  if (!submission || submission.status === "draft") {
+    notFound();
+  }
+
+  // Get the track info if projectTrack exists
+  const tracks = submission.cohortId ? getTracksByCohort(submission.cohortId) : [];
+  const projectTrack = tracks.find((t) => t.id === submission.trackId);
+
+  // Get related projects from same cohort (excluding current and drafts)
+  const cohortSubmissions = getSubmissionsByCohort(submission.cohortId);
+  const relatedProjects = cohortSubmissions
+    .filter((s) => s.id !== submission.id && s.status !== "draft")
+    .slice(0, 3);
+
+  // Format date for IP registration
+  const formatDate = (date: Date) => {
+    return new Intl.DateTimeFormat("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    }).format(date);
+  };
+
+  // Get license type label
+  const getLicenseLabel = (licenseType: string) => {
+    switch (licenseType) {
+      case "non-commercial":
+        return "Non-Commercial";
+      case "commercial-use":
+        return "Commercial Use";
+      case "commercial-remix":
+        return "Commercial Remix";
+      default:
+        return licenseType;
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Hero Section */}
+      <ProjectHero project={submission} />
+
+      {/* Main Content */}
+      <div className="max-w-6xl mx-auto px-6 lg:px-8 py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Content - 2 columns */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Gallery */}
+            <ProjectGallery
+              screenshots={submission.screenshots}
+              videoUrl={submission.videoUrl}
+            />
+
+            {/* About Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle>About</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-muted-foreground whitespace-pre-wrap">
+                  {submission.description}
+                </p>
+                {submission.builtWithStory && (
+                  <Badge className="bg-purple-500 text-white hover:bg-purple-600">
+                    <Shield className="h-3 w-3 mr-1" />
+                    Built with Story Protocol
+                  </Badge>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Tech Stack Card */}
+            {submission.techStack.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Tech Stack</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    {submission.techStack.map((tech) => (
+                      <Badge key={tech} variant="secondary">
+                        {tech}
+                      </Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Track Card */}
+            {projectTrack && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Track</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div>
+                    <h4 className="font-semibold">{projectTrack.name}</h4>
+                    <p className="text-sm text-muted-foreground">
+                      {projectTrack.description}
+                    </p>
+                  </div>
+                  {projectTrack.sponsorName && (
+                    <div className="flex items-center gap-2 pt-2 border-t">
+                      {projectTrack.sponsorLogo && (
+                        <img
+                          src={projectTrack.sponsorLogo}
+                          alt={projectTrack.sponsorName}
+                          className="h-6 w-6 rounded"
+                        />
+                      )}
+                      <span className="text-sm text-muted-foreground">
+                        Sponsored by {projectTrack.sponsorName}
+                      </span>
+                    </div>
+                  )}
+                  {projectTrack.prizePool && (
+                    <Badge variant="outline">{projectTrack.prizePool} Prize Pool</Badge>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          {/* Sidebar - 1 column */}
+          <div className="space-y-6">
+            {/* Team Card */}
+            {submission.team && <ProjectTeam team={submission.team} />}
+
+            {/* IP Registration Card */}
+            {submission.ipAssetId && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileCheck className="h-5 w-5 text-green-500" />
+                    IP Registration
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Badge className="bg-green-500 text-white hover:bg-green-600">
+                    Registered on Story Protocol
+                  </Badge>
+
+                  <div className="space-y-2">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Asset ID</p>
+                      <p className="font-mono text-sm break-all">
+                        {submission.ipAssetId}
+                      </p>
+                    </div>
+
+                    {submission.ipLicenseType && (
+                      <div>
+                        <p className="text-xs text-muted-foreground">License Type</p>
+                        <p className="text-sm">
+                          {getLicenseLabel(submission.ipLicenseType)}
+                        </p>
+                      </div>
+                    )}
+
+                    {submission.ipRegisteredAt && (
+                      <div>
+                        <p className="text-xs text-muted-foreground">
+                          Registration Date
+                        </p>
+                        <p className="text-sm">
+                          {formatDate(submission.ipRegisteredAt)}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Cohort Card */}
+            {submission.cohort && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Cohort</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Link
+                    href={`/cohorts/${submission.cohort.slug}`}
+                    className="group block"
+                  >
+                    <h4 className="font-semibold group-hover:text-primary transition-colors">
+                      {submission.cohort.name}
+                    </h4>
+                    {submission.cohort.tagline && (
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {submission.cohort.tagline}
+                      </p>
+                    )}
+                  </Link>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+
+        {/* Related Projects Section */}
+        {relatedProjects.length > 0 && (
+          <section className="mt-16">
+            <h2 className="text-2xl font-bold mb-6">
+              More from {submission.cohort?.name || "this cohort"}
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {relatedProjects.map((project) => (
+                <ProjectCard key={project.id} project={project} />
+              ))}
+            </div>
+          </section>
+        )}
+      </div>
+    </div>
+  );
+}
