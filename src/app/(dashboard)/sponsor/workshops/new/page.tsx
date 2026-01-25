@@ -50,23 +50,26 @@ export default function NewWorkshopPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    // Mock save - in real app, this would call an API
-    console.log("Creating workshop:", {
-      title,
-      description,
-      category,
-      duration,
-      videoUrl,
-      articleUrl,
-      status,
-      sponsorOrgId: sponsor.id,
-    });
+    try {
+      // Mock save - in real app, this would call an API
+      console.log("Creating workshop:", {
+        title,
+        description,
+        category,
+        duration,
+        videoUrl,
+        articleUrl,
+        status,
+        sponsorOrgId: sponsor.id,
+      });
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 500));
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
-    setIsLoading(false);
-    router.push("/sponsor/workshops");
+      router.push("/sponsor/workshops");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -212,7 +215,7 @@ export default function NewWorkshopPage() {
                     {isLoading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Saving...
+                        Creating...
                       </>
                     ) : (
                       <>

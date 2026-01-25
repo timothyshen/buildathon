@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { mockSponsorOrgs, mockCohortSponsors, mockCohorts } from "@/data/mock-data";
 import { AdminNav } from "@/components/admin/admin-nav";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +14,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PlusCircle, Search } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { PlusCircle, Search, Building2 } from "lucide-react";
 import { SponsorForm } from "@/components/admin/sponsors/sponsor-form";
 import { SponsorTable } from "@/components/admin/sponsors/sponsor-table";
 import { InviteSponsorForm } from "@/components/admin/sponsors/invite-sponsor-form";
@@ -25,6 +36,7 @@ export default function AdminSponsorsPage() {
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [editingSponsor, setEditingSponsor] = useState<SponsorOrg | undefined>();
   const [invitingSponsor, setInvitingSponsor] = useState<SponsorOrg | undefined>();
+  const [deleteTarget, setDeleteTarget] = useState<SponsorOrg | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCohort, setFilterCohort] = useState<string>("all");
 
@@ -34,8 +46,13 @@ export default function AdminSponsorsPage() {
   };
 
   const handleDelete = (sponsor: SponsorOrg) => {
-    if (confirm(`Delete sponsor "${sponsor.name}"?`)) {
-      console.log("Delete:", sponsor.id);
+    setDeleteTarget(sponsor);
+  };
+
+  const confirmDelete = () => {
+    if (deleteTarget) {
+      console.log("Delete:", deleteTarget.id);
+      setDeleteTarget(null);
     }
   };
 
@@ -99,6 +116,13 @@ export default function AdminSponsorsPage() {
   return (
     <div className="space-y-6">
       <AdminNav />
+      <Breadcrumb
+        items={[
+          { label: "Admin", href: "/dashboard" },
+          { label: "Sponsors" }
+        ]}
+        className="mb-4"
+      />
 
       <div className="flex items-center justify-between">
         <div>
@@ -177,16 +201,30 @@ export default function AdminSponsorsPage() {
         </Select>
       </div>
 
-      <Card>
-        <CardContent className="p-0">
-          <SponsorTable
-            sponsors={filteredSponsors}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onInvite={handleInvite}
-          />
-        </CardContent>
-      </Card>
+      {filteredSponsors.length === 0 ? (
+        <Card>
+          <CardContent className="py-12">
+            <div className="text-center">
+              <Building2 className="mx-auto h-12 w-12 text-muted-foreground" />
+              <h3 className="mt-4 text-lg font-semibold">No Sponsors Yet</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Add sponsors to support the buildathon.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardContent className="p-0">
+            <SponsorTable
+              sponsors={filteredSponsors}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onInvite={handleInvite}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       <SponsorForm
         open={isFormOpen}
@@ -201,6 +239,23 @@ export default function AdminSponsorsPage() {
         onSubmit={handleInviteSubmit}
         defaultSponsor={invitingSponsor}
       />
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Sponsor</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete &quot;{deleteTarget?.name}&quot;? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-white hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

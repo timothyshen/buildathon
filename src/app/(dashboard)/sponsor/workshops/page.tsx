@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { mockWorkshops, mockSponsorOrgs } from "@/data/mock-data";
 import { useAuth } from "@/contexts/auth-context";
@@ -14,6 +15,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { PlusCircle, Pencil, Trash2, Play, FileText } from "lucide-react";
 import type { Workshop } from "@/types";
 
@@ -25,13 +36,19 @@ const statusColors: Record<Workshop["status"], string> = {
 
 export default function SponsorWorkshopsPage() {
   const { user } = useAuth();
+  const [deleteTarget, setDeleteTarget] = useState<Workshop | null>(null);
 
   const sponsor = mockSponsorOrgs.find((s) => s.id === user?.sponsorOrgId);
   const sponsorWorkshops = mockWorkshops.filter((w) => w.sponsorOrgId === sponsor?.id);
 
   const handleDelete = (workshop: Workshop) => {
-    if (confirm(`Delete workshop "${workshop.title}"?`)) {
-      console.log("Delete:", workshop.id);
+    setDeleteTarget(workshop);
+  };
+
+  const confirmDelete = () => {
+    if (deleteTarget) {
+      console.log("Delete:", deleteTarget.id);
+      setDeleteTarget(null);
     }
   };
 
@@ -174,6 +191,23 @@ export default function SponsorWorkshopsPage() {
           </Table>
         </CardContent>
       </Card>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Workshop</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete &quot;{deleteTarget?.title}&quot;? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-white hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

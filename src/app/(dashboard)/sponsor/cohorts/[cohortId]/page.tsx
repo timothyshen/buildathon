@@ -17,6 +17,16 @@ import { Badge } from "@/components/ui/badge";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   ArrowLeft,
   Save,
   Loader2,
@@ -61,6 +71,7 @@ export default function SponsorCohortPage({ params }: SponsorCohortPageProps) {
   const [editingTrackId, setEditingTrackId] = useState<string | null>(null);
   const [newTrack, setNewTrack] = useState({ name: "", prizePool: "", description: "" });
   const [showNewTrackForm, setShowNewTrackForm] = useState(false);
+  const [deleteTrackTarget, setDeleteTrackTarget] = useState<{ id: string; name: string } | null>(null);
 
   if (!sponsor) {
     return (
@@ -106,22 +117,31 @@ export default function SponsorCohortPage({ params }: SponsorCohortPageProps) {
 
   const handleSaveDescription = async () => {
     setIsLoading(true);
-    console.log("Saving description:", { cohortId, description });
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    setIsLoading(false);
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleAddTrack = async () => {
     if (!newTrack.name) return;
-    console.log("Adding track:", { ...newTrack, cohortId, sponsorOrgId: sponsor.id });
     setNewTrack({ name: "", prizePool: "", description: "" });
     setShowNewTrackForm(false);
   };
 
   const handleDeleteTrack = (trackId: string) => {
     const track = sponsorTracks.find((t) => t.id === trackId);
-    if (track && confirm(`Delete track "${track.name}"?`)) {
-      console.log("Deleting track:", trackId);
+    if (track) {
+      setDeleteTrackTarget({ id: track.id, name: track.name });
+    }
+  };
+
+  const confirmDeleteTrack = () => {
+    if (deleteTrackTarget) {
+      // TODO: Implement track deletion
+      console.log("Delete track:", deleteTrackTarget.id);
+      setDeleteTrackTarget(null);
     }
   };
 
@@ -412,6 +432,23 @@ export default function SponsorCohortPage({ params }: SponsorCohortPageProps) {
           </Button>
         </div>
       </div>
+
+      <AlertDialog open={!!deleteTrackTarget} onOpenChange={(open) => !open && setDeleteTrackTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Track</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete &quot;{deleteTrackTarget?.name}&quot;? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteTrack} className="bg-destructive text-white hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

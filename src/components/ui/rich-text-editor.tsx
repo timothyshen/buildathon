@@ -90,6 +90,8 @@ export function RichTextEditor({
           variant="ghost"
           size="sm"
           onClick={() => editor.chain().focus().toggleBold().run()}
+          aria-label="Bold"
+          aria-pressed={editor.isActive("bold")}
           className={cn(
             "h-8 w-8 p-0",
             editor.isActive("bold") && "bg-muted"
@@ -103,6 +105,8 @@ export function RichTextEditor({
           variant="ghost"
           size="sm"
           onClick={() => editor.chain().focus().toggleItalic().run()}
+          aria-label="Italic"
+          aria-pressed={editor.isActive("italic")}
           className={cn(
             "h-8 w-8 p-0",
             editor.isActive("italic") && "bg-muted"
@@ -119,6 +123,8 @@ export function RichTextEditor({
           variant="ghost"
           size="sm"
           onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+          aria-label="Heading 2"
+          aria-pressed={editor.isActive("heading", { level: 2 })}
           className={cn(
             "h-8 w-8 p-0",
             editor.isActive("heading", { level: 2 }) && "bg-muted"
@@ -132,6 +138,8 @@ export function RichTextEditor({
           variant="ghost"
           size="sm"
           onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+          aria-label="Heading 3"
+          aria-pressed={editor.isActive("heading", { level: 3 })}
           className={cn(
             "h-8 w-8 p-0",
             editor.isActive("heading", { level: 3 }) && "bg-muted"
@@ -148,6 +156,8 @@ export function RichTextEditor({
           variant="ghost"
           size="sm"
           onClick={() => editor.chain().focus().toggleBulletList().run()}
+          aria-label="Bullet list"
+          aria-pressed={editor.isActive("bulletList")}
           className={cn(
             "h-8 w-8 p-0",
             editor.isActive("bulletList") && "bg-muted"
@@ -161,6 +171,8 @@ export function RichTextEditor({
           variant="ghost"
           size="sm"
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
+          aria-label="Numbered list"
+          aria-pressed={editor.isActive("orderedList")}
           className={cn(
             "h-8 w-8 p-0",
             editor.isActive("orderedList") && "bg-muted"
@@ -174,6 +186,8 @@ export function RichTextEditor({
           variant="ghost"
           size="sm"
           onClick={() => editor.chain().focus().toggleBlockquote().run()}
+          aria-label="Block quote"
+          aria-pressed={editor.isActive("blockquote")}
           className={cn(
             "h-8 w-8 p-0",
             editor.isActive("blockquote") && "bg-muted"
@@ -190,6 +204,7 @@ export function RichTextEditor({
           variant="ghost"
           size="sm"
           onClick={() => editor.chain().focus().undo().run()}
+          aria-label="Undo"
           disabled={disabled || !editor.can().undo()}
           className="h-8 w-8 p-0"
         >
@@ -200,6 +215,7 @@ export function RichTextEditor({
           variant="ghost"
           size="sm"
           onClick={() => editor.chain().focus().redo().run()}
+          aria-label="Redo"
           disabled={disabled || !editor.can().redo()}
           className="h-8 w-8 p-0"
         >

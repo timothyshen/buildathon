@@ -17,6 +17,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { ArrowLeft, Save, Loader2, Trash2 } from "lucide-react";
@@ -36,6 +46,7 @@ export default function WorkshopEditPage({ params }: WorkshopEditPageProps) {
   const workshop = mockWorkshops.find((w) => w.id === id);
 
   const [isLoading, setIsLoading] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
@@ -103,31 +114,24 @@ export default function WorkshopEditPage({ params }: WorkshopEditPageProps) {
     e.preventDefault();
     setIsLoading(true);
 
-    // Mock save - in real app, this would call an API
-    console.log("Updating workshop:", {
-      id: workshop.id,
-      title,
-      description,
-      category,
-      duration,
-      videoUrl,
-      articleUrl,
-      status,
-    });
+    try {
+      // Mock save - in real app, this would call an API
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    setIsLoading(false);
-    router.push("/sponsor/workshops");
+      router.push("/sponsor/workshops");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleDelete = async () => {
-    if (!confirm(`Are you sure you want to delete "${workshop.title}"?`)) {
-      return;
-    }
+  const handleDelete = () => {
+    setShowDeleteDialog(true);
+  };
 
-    console.log("Deleting workshop:", workshop.id);
+  const confirmDelete = async () => {
+    // TODO: Implement workshop deletion
+    setShowDeleteDialog(false);
     router.push("/sponsor/workshops");
   };
 
@@ -312,6 +316,23 @@ export default function WorkshopEditPage({ params }: WorkshopEditPageProps) {
           </div>
         </div>
       </form>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Workshop</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete &quot;{workshop.title}&quot;? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-white hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

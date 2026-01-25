@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 import { mockCohorts, mockTracks, mockSponsorOrgs } from "@/data/mock-data";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -67,19 +68,21 @@ export default function SubmitPage() {
 
     // Validate track selection if tracks exist
     if (cohortTracks.length > 0 && selectedTracks.length === 0) {
-      alert("Please select at least one track for your submission.");
+      toast.error("Please select at least one track for your submission.");
       return;
     }
 
     setIsLoading(true);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    // In real app, would save to database with selected tracks
-    console.log("Submission created with tracks:", selectedTracks);
-
-    router.push("/submissions");
+      // In real app, would save to database with selected tracks
+      router.push("/submissions");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSaveDraft = async () => {

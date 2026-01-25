@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { mockUsers, mockReviews, mockCohorts } from "@/data/mock-data";
 import { AdminNav } from "@/components/admin/admin-nav";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,7 +25,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Search, UserPlus, Star, CheckCircle, Clock } from "lucide-react";
+import { Search, UserPlus, Star, CheckCircle, Clock, Users } from "lucide-react";
 
 const judges = mockUsers.filter((u) => u.role === "judge");
 
@@ -42,6 +43,13 @@ export default function AdminJudgesPage() {
   return (
     <div className="space-y-6">
       <AdminNav />
+      <Breadcrumb
+        items={[
+          { label: "Admin", href: "/dashboard" },
+          { label: "Judges" }
+        ]}
+        className="mb-4"
+      />
 
       <div className="flex items-center justify-between">
         <div>
@@ -133,81 +141,95 @@ export default function AdminJudgesPage() {
       </div>
 
       {/* Judges Table */}
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Judge</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Assigned</TableHead>
-                <TableHead>Completed</TableHead>
-                <TableHead>Pending</TableHead>
-                <TableHead>Avg Score</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredJudges.map((judge) => {
-                const judgeReviews = mockReviews.filter(
-                  (r) => r.judgeId === judge.id
-                );
-                const completed = judgeReviews.filter(
-                  (r) => r.status === "completed"
-                );
-                const pending = judgeReviews.filter((r) => r.status === "pending");
-                const avgScore =
-                  completed.length > 0
-                    ? completed.reduce((acc, r) => acc + (r.overallScore || 0), 0) /
-                      completed.length
-                    : 0;
+      {filteredJudges.length === 0 ? (
+        <Card>
+          <CardContent className="py-12">
+            <div className="text-center">
+              <Users className="mx-auto h-12 w-12 text-muted-foreground" />
+              <h3 className="mt-4 text-lg font-semibold">No Judges Yet</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Add judges to help evaluate submissions.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Judge</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Assigned</TableHead>
+                  <TableHead>Completed</TableHead>
+                  <TableHead>Pending</TableHead>
+                  <TableHead>Avg Score</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredJudges.map((judge) => {
+                  const judgeReviews = mockReviews.filter(
+                    (r) => r.judgeId === judge.id
+                  );
+                  const completed = judgeReviews.filter(
+                    (r) => r.status === "completed"
+                  );
+                  const pending = judgeReviews.filter((r) => r.status === "pending");
+                  const avgScore =
+                    completed.length > 0
+                      ? completed.reduce((acc, r) => acc + (r.overallScore || 0), 0) /
+                        completed.length
+                      : 0;
 
-                return (
-                  <TableRow key={judge.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={judge.avatar}
-                          alt={judge.name}
-                          className="h-8 w-8 rounded-full"
-                        />
-                        <div>
-                          <p className="font-medium">{judge.name}</p>
-                          {judge.bio && (
-                            <p className="text-xs text-muted-foreground">
-                              {judge.bio}
-                            </p>
-                          )}
+                  return (
+                    <TableRow key={judge.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={judge.avatar}
+                            alt={judge.name}
+                            className="h-8 w-8 rounded-full"
+                          />
+                          <div>
+                            <p className="font-medium">{judge.name}</p>
+                            {judge.bio && (
+                              <p className="text-xs text-muted-foreground">
+                                {judge.bio}
+                              </p>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>{judge.email}</TableCell>
-                    <TableCell>{judgeReviews.length}</TableCell>
-                    <TableCell>
-                      <Badge className="bg-green-100 text-green-800">
-                        {completed.length}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className="bg-yellow-100 text-yellow-800">
-                        {pending.length}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {avgScore > 0 ? avgScore.toFixed(1) : "-"}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="outline" size="sm">
-                        Assign Reviews
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                      </TableCell>
+                      <TableCell>{judge.email}</TableCell>
+                      <TableCell>{judgeReviews.length}</TableCell>
+                      <TableCell>
+                        <Badge className="bg-green-100 text-green-800">
+                          {completed.length}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className="bg-yellow-100 text-yellow-800">
+                          {pending.length}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {avgScore > 0 ? avgScore.toFixed(1) : "-"}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="outline" size="sm">
+                          Assign Reviews
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

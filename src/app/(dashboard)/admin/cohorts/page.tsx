@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { mockCohorts } from "@/data/mock-data";
 import { AdminNav } from "@/components/admin/admin-nav";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
@@ -39,6 +40,13 @@ export default function CohortsPage() {
   return (
     <div className="space-y-6">
       <AdminNav />
+      <Breadcrumb
+        items={[
+          { label: "Admin", href: "/dashboard" },
+          { label: "Cohorts" }
+        ]}
+        className="mb-4"
+      />
 
       <div className="flex items-center justify-between">
         <div>

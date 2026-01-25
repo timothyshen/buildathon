@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { mockSubmissions, mockCohorts } from "@/data/mock-data";
 import { AdminNav } from "@/components/admin/admin-nav";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -65,6 +66,13 @@ export default function AdminSubmissionsPage() {
   return (
     <div className="space-y-6">
       <AdminNav />
+      <Breadcrumb
+        items={[
+          { label: "Admin", href: "/dashboard" },
+          { label: "Submissions" }
+        ]}
+        className="mb-4"
+      />
 
       <div>
         <h1 className="text-3xl font-bold">All Submissions</h1>
