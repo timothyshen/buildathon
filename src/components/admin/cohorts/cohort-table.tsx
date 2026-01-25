@@ -13,7 +13,7 @@ import {
 import { Pencil, Eye, Users } from "lucide-react";
 import Link from "next/link";
 import type { Cohort } from "@/types";
-import { mockSponsors } from "@/data/mock-data";
+import { mockCohortSponsors } from "@/data/mock-data";
 
 interface CohortTableProps {
   cohorts: Cohort[];
@@ -30,7 +30,7 @@ const statusColors: Record<Cohort["status"], string> = {
 
 export function CohortTable({ cohorts, onEdit }: CohortTableProps) {
   const getSponsorCount = (cohortId: string) => {
-    return mockSponsors.filter((s) => s.cohortId === cohortId).length;
+    return mockCohortSponsors.filter((cs) => cs.cohortId === cohortId).length;
   };
 
   return (

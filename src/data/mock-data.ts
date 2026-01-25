@@ -1,4 +1,4 @@
-import type { User, Cohort, Track, Team, Submission, Review, Workshop, Template, Sponsor, MediaAsset, WorkshopVersion, WorkshopRSVP } from "@/types";
+import type { User, Cohort, Track, Team, Submission, Review, Workshop, Template, SponsorOrg, CohortSponsor, Sponsor, MediaAsset, WorkshopVersion, WorkshopRSVP } from "@/types";
 
 // Mock Users
 export const mockUsers: User[] = [
@@ -43,7 +43,7 @@ export const mockUsers: User[] = [
     email: "sponsor@gamefi.com",
     name: "Sarah Sponsor",
     role: "sponsor",
-    sponsorId: "sponsor-1",
+    sponsorOrgId: "sponsor-org-1",
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=sponsor",
     createdAt: new Date("2024-02-01"),
   },
@@ -272,9 +272,11 @@ export const mockWorkshops: Workshop[] = [
     videoUrl: "https://youtube.com/watch?v=intro",
     partnerName: "Story Foundation",
     partnerLogo: "https://api.dicebear.com/7.x/shapes/svg?seed=storyfoundation",
+    sponsorOrgId: "sponsor-org-3",
     category: "Basics",
     duration: "30 min",
     status: "published",
+    isEvergreen: true, // Global - shows in learning library
     createdBy: "user-1",
     publishedAt: new Date("2024-01-15"),
     createdAt: new Date("2024-01-10"),
@@ -295,10 +297,12 @@ export const mockWorkshops: Workshop[] = [
     articleUrl: "https://docs.story.foundation/ai-agents",
     partnerName: "AI Labs",
     partnerLogo: "https://api.dicebear.com/7.x/shapes/svg?seed=ailabs",
-    sponsorId: "sponsor-2",
+    sponsorOrgId: "sponsor-org-2",
     category: "Advanced",
     duration: "45 min",
     status: "published",
+    isEvergreen: false,
+    cohortIds: ["cohort-2"], // Cohort-specific for Summer 2024
     createdBy: "user-5",
     publishedAt: new Date("2024-02-20"),
     createdAt: new Date("2024-02-15"),
@@ -318,9 +322,11 @@ export const mockWorkshops: Workshop[] = [
     articleUrl: "https://docs.story.foundation/licensing",
     partnerName: "Story Foundation",
     partnerLogo: "https://api.dicebear.com/7.x/shapes/svg?seed=storyfoundation",
+    sponsorOrgId: "sponsor-org-3",
     category: "Basics",
     duration: "20 min",
     status: "published",
+    isEvergreen: true, // Global
     createdBy: "user-1",
     publishedAt: new Date("2024-03-01"),
     createdAt: new Date("2024-02-25"),
@@ -341,6 +347,7 @@ export const mockWorkshops: Workshop[] = [
     category: "Business",
     duration: "60 min",
     status: "published",
+    isEvergreen: true, // Global
     createdBy: "user-1",
     publishedAt: new Date("2024-04-05"),
     createdAt: new Date("2024-04-05"),
@@ -363,6 +370,7 @@ export const mockWorkshops: Workshop[] = [
     category: "Advanced",
     duration: "45 min",
     status: "published",
+    isEvergreen: true, // Global
     createdBy: "user-1",
     publishedAt: new Date("2024-04-15"),
     createdAt: new Date("2024-04-10"),
@@ -384,6 +392,7 @@ export const mockWorkshops: Workshop[] = [
     category: "Creator Tools",
     duration: "35 min",
     status: "published",
+    isEvergreen: true, // Global
     createdBy: "user-1",
     publishedAt: new Date("2024-05-01"),
     createdAt: new Date("2024-04-25"),
@@ -394,6 +403,31 @@ export const mockWorkshops: Workshop[] = [
     isLive: true,
     location: "Online",
     maxAttendees: 75,
+  },
+  {
+    id: "workshop-7",
+    title: "GameFi IP Integration Workshop",
+    description: "Learn how to integrate Story Protocol IP into your gaming projects.",
+    videoUrl: "https://youtube.com/watch?v=gamefi-ip",
+    partnerName: "GameFi Labs",
+    partnerLogo: "https://api.dicebear.com/7.x/shapes/svg?seed=gamefi",
+    sponsorOrgId: "sponsor-org-1",
+    category: "Advanced",
+    duration: "50 min",
+    status: "published",
+    isEvergreen: false,
+    cohortIds: ["cohort-1", "cohort-2"], // Reused across multiple cohorts
+    createdBy: "user-5",
+    publishedAt: new Date("2024-03-10"),
+    createdAt: new Date("2024-03-05"),
+    updatedAt: new Date("2024-03-10"),
+    scheduledAt: new Date("2026-02-12T14:00:00"),
+    endTime: new Date("2026-02-12T14:50:00"),
+    timezone: "America/Los_Angeles",
+    isLive: true,
+    location: "Online",
+    maxAttendees: 60,
+    meetingUrl: "https://meet.story.foundation/workshop-7",
   },
 ];
 
@@ -436,39 +470,89 @@ export function getTracksByCohort(cohortId: string): Track[] {
   return mockTracks.filter(t => t.cohortId === cohortId);
 }
 
-// Mock Sponsors
-export const mockSponsors: Sponsor[] = [
+// Mock Sponsor Organizations (persistent across cohorts)
+export const mockSponsorOrgs: SponsorOrg[] = [
   {
-    id: "sponsor-1",
-    cohortId: "cohort-2",
+    id: "sponsor-org-1",
     name: "GameFi Labs",
     logo: "https://api.dicebear.com/7.x/shapes/svg?seed=gamefi",
     website: "https://gamefi.example.com",
     description: "Leading gaming infrastructure provider for Web3",
-    tier: "gold",
-    prizePoolContribution: 5000,
-    hasDedicatedTrack: true,
     contactName: "Sarah Sponsor",
     contactEmail: "sponsor@gamefi.com",
     createdAt: new Date("2024-05-15"),
     updatedAt: new Date("2024-05-15"),
   },
   {
-    id: "sponsor-2",
-    cohortId: "cohort-2",
+    id: "sponsor-org-2",
     name: "AI Labs",
     logo: "https://api.dicebear.com/7.x/shapes/svg?seed=ailabs",
     website: "https://ailabs.example.com",
     description: "Pioneering AI research and applications",
-    tier: "platinum",
-    prizePoolContribution: 10000,
-    hasDedicatedTrack: false,
     contactName: "Alex AI",
     contactEmail: "alex@ailabs.example.com",
     createdAt: new Date("2024-05-10"),
     updatedAt: new Date("2024-05-10"),
   },
+  {
+    id: "sponsor-org-3",
+    name: "Story Foundation",
+    logo: "https://api.dicebear.com/7.x/shapes/svg?seed=storyfoundation",
+    website: "https://story.foundation",
+    description: "Building the future of programmable IP",
+    contactName: "Story Team",
+    contactEmail: "hello@story.foundation",
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-01-01"),
+  },
 ];
+
+// Mock Cohort Sponsors (junction: sponsor participation per cohort)
+export const mockCohortSponsors: CohortSponsor[] = [
+  {
+    id: "cs-1",
+    cohortId: "cohort-2",
+    sponsorOrgId: "sponsor-org-1",
+    tier: "gold",
+    prizePoolContribution: 5000,
+    hasDedicatedTrack: true,
+  },
+  {
+    id: "cs-2",
+    cohortId: "cohort-2",
+    sponsorOrgId: "sponsor-org-2",
+    tier: "platinum",
+    prizePoolContribution: 10000,
+    hasDedicatedTrack: false,
+  },
+  {
+    id: "cs-3",
+    cohortId: "cohort-1",
+    sponsorOrgId: "sponsor-org-1",
+    tier: "silver",
+    prizePoolContribution: 2500,
+    hasDedicatedTrack: false,
+  },
+  {
+    id: "cs-4",
+    cohortId: "cohort-1",
+    sponsorOrgId: "sponsor-org-3",
+    tier: "platinum",
+    prizePoolContribution: 15000,
+    hasDedicatedTrack: false,
+  },
+  {
+    id: "cs-5",
+    cohortId: "cohort-2",
+    sponsorOrgId: "sponsor-org-3",
+    tier: "platinum",
+    prizePoolContribution: 20000,
+    hasDedicatedTrack: false,
+  },
+];
+
+// Legacy alias for backwards compatibility
+export const mockSponsors: Sponsor[] = mockSponsorOrgs;
 
 // Mock Media Assets
 export const mockMediaAssets: MediaAsset[] = [
@@ -533,21 +617,48 @@ export const mockWorkshopRSVPs: WorkshopRSVP[] = [
   },
 ];
 
-// Helper function to get sponsors by cohort
-export function getSponsorsByCohort(cohortId: string): Sponsor[] {
-  return mockSponsors.filter(s => s.cohortId === cohortId);
+// Helper function to get sponsor organizations by cohort (via junction table)
+export function getSponsorsByCohort(cohortId: string): (SponsorOrg & { tier: CohortSponsor["tier"]; prizePoolContribution: number; hasDedicatedTrack: boolean })[] {
+  const cohortSponsors = mockCohortSponsors.filter(cs => cs.cohortId === cohortId);
+  return cohortSponsors.map(cs => {
+    const org = mockSponsorOrgs.find(s => s.id === cs.sponsorOrgId);
+    if (!org) return null;
+    return {
+      ...org,
+      tier: cs.tier,
+      prizePoolContribution: cs.prizePoolContribution,
+      hasDedicatedTrack: cs.hasDedicatedTrack,
+    };
+  }).filter((s): s is NonNullable<typeof s> => s !== null);
 }
 
-// Helper function to get workshops by sponsor
-export function getWorkshopsBySponsor(sponsorId: string): Workshop[] {
-  return mockWorkshops.filter(w => w.sponsorId === sponsorId);
+// Helper function to get workshops by sponsor org
+export function getWorkshopsBySponsor(sponsorOrgId: string): Workshop[] {
+  return mockWorkshops.filter(w => w.sponsorOrgId === sponsorOrgId);
 }
 
-// Helper function to get sponsor by user
-export function getSponsorByUser(userId: string): Sponsor | undefined {
+// Helper function to get workshops by cohort (evergreen + cohort-specific)
+export function getWorkshopsByCohort(cohortId: string): Workshop[] {
+  return mockWorkshops.filter(w =>
+    w.isEvergreen || (w.cohortIds && w.cohortIds.includes(cohortId))
+  );
+}
+
+// Helper function to get sponsor org by user
+export function getSponsorByUser(userId: string): SponsorOrg | undefined {
   const user = mockUsers.find(u => u.id === userId);
-  if (!user?.sponsorId) return undefined;
-  return mockSponsors.find(s => s.id === user.sponsorId);
+  if (!user?.sponsorOrgId) return undefined;
+  return mockSponsorOrgs.find(s => s.id === user.sponsorOrgId);
+}
+
+// Helper function to get sponsor org by ID
+export function getSponsorOrgById(id: string): SponsorOrg | undefined {
+  return mockSponsorOrgs.find(s => s.id === id);
+}
+
+// Helper function to get cohort sponsor relationship
+export function getCohortSponsor(cohortId: string, sponsorOrgId: string): CohortSponsor | undefined {
+  return mockCohortSponsors.find(cs => cs.cohortId === cohortId && cs.sponsorOrgId === sponsorOrgId);
 }
 
 // Helper function to get workshops by date range

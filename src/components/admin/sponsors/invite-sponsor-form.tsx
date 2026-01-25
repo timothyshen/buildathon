@@ -20,14 +20,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { mockSponsors } from "@/data/mock-data";
-import type { Sponsor } from "@/types";
+import { mockSponsorOrgs } from "@/data/mock-data";
+import type { SponsorOrg } from "@/types";
 
 interface InviteSponsorFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: InviteSponsorFormData) => void;
-  defaultSponsor?: Sponsor;
+  defaultSponsor?: SponsorOrg;
 }
 
 export function InviteSponsorForm({
@@ -79,7 +79,7 @@ export function InviteSponsorForm({
                 <SelectValue placeholder="Select organization" />
               </SelectTrigger>
               <SelectContent>
-                {mockSponsors.map((sponsor) => (
+                {mockSponsorOrgs.map((sponsor) => (
                   <SelectItem key={sponsor.id} value={sponsor.id}>
                     {sponsor.name}
                   </SelectItem>

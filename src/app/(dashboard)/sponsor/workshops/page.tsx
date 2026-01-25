@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { mockWorkshops, mockSponsors } from "@/data/mock-data";
+import { mockWorkshops, mockSponsorOrgs } from "@/data/mock-data";
 import { useAuth } from "@/contexts/auth-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,8 +30,8 @@ export default function SponsorWorkshopsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingWorkshop, setEditingWorkshop] = useState<Workshop | undefined>();
 
-  const sponsor = mockSponsors.find((s) => s.id === user?.sponsorId);
-  const sponsorWorkshops = mockWorkshops.filter((w) => w.sponsorId === sponsor?.id);
+  const sponsor = mockSponsorOrgs.find((s) => s.id === user?.sponsorOrgId);
+  const sponsorWorkshops = mockWorkshops.filter((w) => w.sponsorOrgId === sponsor?.id);
 
   const handleEdit = (workshop: Workshop) => {
     setEditingWorkshop(workshop);

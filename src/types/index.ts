@@ -6,7 +6,7 @@ export interface User {
   name: string;
   avatar?: string;
   role: UserRole;
-  sponsorId?: string;
+  sponsorOrgId?: string;
   walletAddress?: string;
   bio?: string;
   twitter?: string;
@@ -41,7 +41,7 @@ export interface Prize {
 export interface Track {
   id: string;
   cohortId: string;
-  sponsorId?: string;
+  sponsorOrgId?: string;
   name: string;
   description: string;
   prizePool?: string;
@@ -138,12 +138,16 @@ export interface Workshop {
   articleUrl?: string;
   partnerName?: string;
   partnerLogo?: string;
-  sponsorId?: string;
+  sponsorOrgId?: string;
   createdBy?: string;
   category: string;
   duration?: string;
   status: WorkshopStatus;
   publishedAt?: Date;
+
+  // Cohort association
+  isEvergreen: boolean;        // true = global (learning library), false = cohort-specific
+  cohortIds?: string[];        // if not evergreen, which cohorts to show in
 
   // Scheduling fields
   scheduledAt?: Date;
@@ -174,21 +178,36 @@ export interface Template {
 
 export type SponsorTier = "platinum" | "gold" | "silver" | "bronze" | "community";
 
-export interface Sponsor {
+// Persistent sponsor organization (can participate in multiple cohorts)
+export interface SponsorOrg {
   id: string;
-  cohortId: string;
   name: string;
   logo: string;
   website: string;
   description: string;
-  tier: SponsorTier;
-  prizePoolContribution: number;
-  hasDedicatedTrack: boolean;
   contactName: string;
   contactEmail: string;
   createdAt: Date;
   updatedAt: Date;
 }
+
+// Junction: sponsor participation in a specific cohort
+export interface CohortSponsor {
+  id: string;
+  cohortId: string;
+  sponsorOrgId: string;
+  tier: SponsorTier;
+  prizePoolContribution: number;
+  hasDedicatedTrack: boolean;
+}
+
+// Legacy alias for backwards compatibility during migration
+export type Sponsor = SponsorOrg & {
+  cohortId?: string;
+  tier?: SponsorTier;
+  prizePoolContribution?: number;
+  hasDedicatedTrack?: boolean;
+};
 
 export interface MediaAsset {
   id: string;

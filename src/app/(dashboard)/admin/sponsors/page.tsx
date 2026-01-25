@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { mockSponsors, mockCohorts } from "@/data/mock-data";
+import { useState, useMemo } from "react";
+import { mockSponsorOrgs, mockCohortSponsors, mockCohorts } from "@/data/mock-data";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,29 +17,29 @@ import { PlusCircle, Search } from "lucide-react";
 import { SponsorForm } from "@/components/admin/sponsors/sponsor-form";
 import { SponsorTable } from "@/components/admin/sponsors/sponsor-table";
 import { InviteSponsorForm } from "@/components/admin/sponsors/invite-sponsor-form";
-import type { Sponsor } from "@/types";
+import type { SponsorOrg } from "@/types";
 import type { SponsorFormData, InviteSponsorFormData } from "@/lib/schemas";
 
 export default function AdminSponsorsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
-  const [editingSponsor, setEditingSponsor] = useState<Sponsor | undefined>();
-  const [invitingSponsor, setInvitingSponsor] = useState<Sponsor | undefined>();
+  const [editingSponsor, setEditingSponsor] = useState<SponsorOrg | undefined>();
+  const [invitingSponsor, setInvitingSponsor] = useState<SponsorOrg | undefined>();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCohort, setFilterCohort] = useState<string>("all");
 
-  const handleEdit = (sponsor: Sponsor) => {
+  const handleEdit = (sponsor: SponsorOrg) => {
     setEditingSponsor(sponsor);
     setIsFormOpen(true);
   };
 
-  const handleDelete = (sponsor: Sponsor) => {
+  const handleDelete = (sponsor: SponsorOrg) => {
     if (confirm(`Delete sponsor "${sponsor.name}"?`)) {
       console.log("Delete:", sponsor.id);
     }
   };
 
-  const handleInvite = (sponsor: Sponsor) => {
+  const handleInvite = (sponsor: SponsorOrg) => {
     setInvitingSponsor(sponsor);
     setIsInviteOpen(true);
   };
@@ -64,16 +64,35 @@ export default function AdminSponsorsPage() {
     if (!open) setInvitingSponsor(undefined);
   };
 
-  const filteredSponsors = mockSponsors.filter((sponsor) => {
+  // Get sponsor orgs with their cohort participation info
+  const sponsorsWithCohorts = useMemo(() => {
+    return mockSponsorOrgs.map(org => {
+      const cohortLinks = mockCohortSponsors.filter(cs => cs.sponsorOrgId === org.id);
+      return {
+        ...org,
+        cohortIds: cohortLinks.map(cs => cs.cohortId),
+        totalContribution: cohortLinks.reduce((sum, cs) => sum + cs.prizePoolContribution, 0),
+        hasDedicatedTrack: cohortLinks.some(cs => cs.hasDedicatedTrack),
+        highestTier: cohortLinks.length > 0
+          ? cohortLinks.sort((a, b) => {
+              const tierOrder = { platinum: 0, gold: 1, silver: 2, bronze: 3, community: 4 };
+              return tierOrder[a.tier] - tierOrder[b.tier];
+            })[0].tier
+          : null,
+      };
+    });
+  }, []);
+
+  const filteredSponsors = sponsorsWithCohorts.filter((sponsor) => {
     const matchesSearch =
       sponsor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       sponsor.contactEmail.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCohort = filterCohort === "all" || sponsor.cohortId === filterCohort;
+    const matchesCohort = filterCohort === "all" || sponsor.cohortIds.includes(filterCohort);
     return matchesSearch && matchesCohort;
   });
 
-  const totalContribution = mockSponsors.reduce(
-    (sum, s) => sum + s.prizePoolContribution,
+  const totalContribution = mockCohortSponsors.reduce(
+    (sum, cs) => sum + cs.prizePoolContribution,
     0
   );
 
@@ -100,7 +119,7 @@ export default function AdminSponsorsPage() {
             <CardTitle className="text-sm font-medium">Total Sponsors</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockSponsors.length}</div>
+            <div className="text-2xl font-bold">{mockSponsorOrgs.length}</div>
           </CardContent>
         </Card>
         <Card>
@@ -117,7 +136,7 @@ export default function AdminSponsorsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {mockSponsors.filter((s) => s.hasDedicatedTrack).length}
+              {sponsorsWithCohorts.filter((s) => s.hasDedicatedTrack).length}
             </div>
           </CardContent>
         </Card>
@@ -127,7 +146,7 @@ export default function AdminSponsorsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {mockSponsors.filter((s) => ["platinum", "gold"].includes(s.tier)).length}
+              {sponsorsWithCohorts.filter((s) => s.highestTier && ["platinum", "gold"].includes(s.highestTier)).length}
             </div>
           </CardContent>
         </Card>

@@ -22,13 +22,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import type { Sponsor } from "@/types";
+import type { SponsorOrg } from "@/types";
 import { mockCohorts } from "@/data/mock-data";
 
 interface SponsorFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  sponsor?: Sponsor;
+  sponsor?: SponsorOrg;
   onSubmit: (data: SponsorFormData) => void;
   defaultCohortId?: string;
 }
@@ -55,15 +55,15 @@ export function SponsorForm({
           logo: sponsor.logo,
           website: sponsor.website,
           description: sponsor.description,
-          tier: sponsor.tier,
-          prizePoolContribution: sponsor.prizePoolContribution,
-          hasDedicatedTrack: sponsor.hasDedicatedTrack,
+          tier: "silver" as const,
+          prizePoolContribution: 0,
+          hasDedicatedTrack: false,
           contactName: sponsor.contactName,
           contactEmail: sponsor.contactEmail,
-          cohortId: sponsor.cohortId,
+          cohortId: defaultCohortId || "",
         }
       : {
-          tier: "silver",
+          tier: "silver" as const,
           prizePoolContribution: 0,
           hasDedicatedTrack: false,
           cohortId: defaultCohortId || "",

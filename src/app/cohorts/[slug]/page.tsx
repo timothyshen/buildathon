@@ -16,7 +16,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Trophy, ExternalLink } from "lucide-react";
-import type { Sponsor, SponsorTier } from "@/types";
+import type { SponsorOrg, SponsorTier } from "@/types";
+
+// Type for sponsor with cohort-specific data
+type CohortSponsor = SponsorOrg & {
+  tier: SponsorTier;
+  prizePoolContribution: number;
+  hasDedicatedTrack: boolean;
+};
 
 interface CohortDetailPageProps {
   params: Promise<{ slug: string }>;
@@ -39,9 +46,9 @@ const tierLabels: Record<SponsorTier, string> = {
 };
 
 function groupSponsorsByTier(
-  sponsors: Sponsor[]
-): Record<SponsorTier, Sponsor[]> {
-  const grouped: Record<SponsorTier, Sponsor[]> = {
+  sponsors: CohortSponsor[]
+): Record<SponsorTier, CohortSponsor[]> {
+  const grouped: Record<SponsorTier, CohortSponsor[]> = {
     platinum: [],
     gold: [],
     silver: [],

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { mockCohorts, mockTracks, mockSponsors } from "@/data/mock-data";
+import { mockCohorts, mockTracks, mockSponsorOrgs } from "@/data/mock-data";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,8 +45,8 @@ export default function SubmitPage() {
   };
 
   const getSponsorForTrack = (track: typeof mockTracks[0]) => {
-    if (track.sponsorId) {
-      return mockSponsors.find((s) => s.id === track.sponsorId);
+    if (track.sponsorOrgId) {
+      return mockSponsorOrgs.find((s) => s.id === track.sponsorOrgId);
     }
     return null;
   };

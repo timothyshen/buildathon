@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { mockTracks, mockCohorts, mockSponsors } from "@/data/mock-data";
+import { mockTracks, mockCohorts, mockSponsorOrgs, mockCohortSponsors } from "@/data/mock-data";
 import { useAuth } from "@/contexts/auth-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,11 +24,11 @@ export default function SponsorTracksPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTrack, setEditingTrack] = useState<Track | undefined>();
 
-  const sponsor = mockSponsors.find((s) => s.id === user?.sponsorId);
-  const sponsorTracks = mockTracks.filter((t) => t.sponsorId === sponsor?.id);
-  const sponsorCohortIds = mockSponsors
-    .filter((s) => s.id === sponsor?.id)
-    .map((s) => s.cohortId);
+  const sponsor = mockSponsorOrgs.find((s) => s.id === user?.sponsorOrgId);
+  const sponsorTracks = mockTracks.filter((t) => t.sponsorOrgId === sponsor?.id);
+  const sponsorCohortIds = mockCohortSponsors
+    .filter((cs) => cs.sponsorOrgId === sponsor?.id)
+    .map((cs) => cs.cohortId);
 
   const handleEdit = (track: Track) => {
     setEditingTrack(track);

@@ -11,16 +11,24 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Pencil, Trash2, Mail } from "lucide-react";
-import type { Sponsor } from "@/types";
+import type { SponsorOrg, SponsorTier } from "@/types";
 
-interface SponsorTableProps {
-  sponsors: Sponsor[];
-  onEdit: (sponsor: Sponsor) => void;
-  onDelete: (sponsor: Sponsor) => void;
-  onInvite: (sponsor: Sponsor) => void;
+// Extended sponsor type with computed cohort participation data
+export interface SponsorWithCohorts extends SponsorOrg {
+  cohortIds: string[];
+  totalContribution: number;
+  hasDedicatedTrack: boolean;
+  highestTier: SponsorTier | null;
 }
 
-const tierColors: Record<Sponsor["tier"], string> = {
+interface SponsorTableProps {
+  sponsors: SponsorWithCohorts[];
+  onEdit: (sponsor: SponsorOrg) => void;
+  onDelete: (sponsor: SponsorOrg) => void;
+  onInvite: (sponsor: SponsorOrg) => void;
+}
+
+const tierColors: Record<SponsorTier, string> = {
   platinum: "bg-slate-200 text-slate-800",
   gold: "bg-amber-100 text-amber-800",
   silver: "bg-slate-100 text-slate-600",
@@ -30,8 +38,10 @@ const tierColors: Record<Sponsor["tier"], string> = {
 
 export function SponsorTable({ sponsors, onEdit, onDelete, onInvite }: SponsorTableProps) {
   const sortedSponsors = [...sponsors].sort((a, b) => {
-    const tierOrder = ["platinum", "gold", "silver", "bronze", "community"];
-    return tierOrder.indexOf(a.tier) - tierOrder.indexOf(b.tier);
+    const tierOrder = ["platinum", "gold", "silver", "bronze", "community", null];
+    const aIndex = a.highestTier ? tierOrder.indexOf(a.highestTier) : tierOrder.length - 1;
+    const bIndex = b.highestTier ? tierOrder.indexOf(b.highestTier) : tierOrder.length - 1;
+    return aIndex - bIndex;
   });
 
   return (
@@ -76,9 +86,17 @@ export function SponsorTable({ sponsors, onEdit, onDelete, onInvite }: SponsorTa
               </div>
             </TableCell>
             <TableCell>
-              <Badge className={tierColors[sponsor.tier]}>{sponsor.tier}</Badge>
+              {sponsor.highestTier ? (
+                <Badge className={tierColors[sponsor.highestTier]}>{sponsor.highestTier}</Badge>
+              ) : (
+                <span className="text-muted-foreground text-sm">—</span>
+              )}
             </TableCell>
-            <TableCell>${sponsor.prizePoolContribution.toLocaleString()}</TableCell>
+            <TableCell>
+              {sponsor.totalContribution > 0
+                ? `$${sponsor.totalContribution.toLocaleString()}`
+                : "—"}
+            </TableCell>
             <TableCell>
               <Badge variant={sponsor.hasDedicatedTrack ? "default" : "outline"}>
                 {sponsor.hasDedicatedTrack ? "Yes" : "No"}
