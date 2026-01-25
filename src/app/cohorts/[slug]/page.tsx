@@ -78,9 +78,9 @@ export default async function CohortDetailPage({
   const sponsorsByTier = groupSponsorsByTier(sponsors);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       {/* Breadcrumb */}
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-6">
+      <div className="mx-auto max-w-6xl px-4 pt-6">
         <Breadcrumb
           items={[
             { label: "Cohorts", href: "/cohorts" },
@@ -90,10 +90,17 @@ export default async function CohortDetailPage({
       </div>
 
       {/* Hero Section */}
-      <CohortHero cohort={cohort} />
+      <div className="px-4">
+        <CohortHero
+          cohort={cohort}
+          tracks={tracks}
+          sponsors={sponsors}
+          submissions={publishedSubmissions}
+        />
+      </div>
 
       {/* Main Content */}
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mx-auto max-w-6xl px-4 py-8">
         {/* Submit Button for Active Cohorts */}
         {cohort.status === "active" && (
           <div className="flex justify-end mb-6">

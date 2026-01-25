@@ -1,118 +1,131 @@
-import { Cohort } from "@/types";
+import { Cohort, Sponsor, Track, Submission } from "@/types";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Users, Clock } from "lucide-react";
+import { Clock, Trophy } from "lucide-react";
 
 interface CohortHeroProps {
   cohort: Cohort;
+  tracks?: Track[];
+  sponsors?: Sponsor[];
+  submissions?: Submission[];
 }
 
-function formatDate(date: Date): string {
-  return new Date(date).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+function getCountdown(deadline: Date) {
+  const now = new Date();
+  const diff = new Date(deadline).getTime() - now.getTime();
+  if (diff <= 0) return null;
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  return { days, hours };
 }
 
-function formatDateRange(startDate: Date, endDate: Date): string {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-
-  const startMonth = start.toLocaleDateString("en-US", { month: "short" });
-  const startDay = start.getDate();
-  const endMonth = end.toLocaleDateString("en-US", { month: "short" });
-  const endDay = end.getDate();
-  const year = end.getFullYear();
-
-  if (startMonth === endMonth) {
-    return `${startMonth} ${startDay} - ${endDay}, ${year}`;
-  }
-  return `${startMonth} ${startDay} - ${endMonth} ${endDay}, ${year}`;
-}
-
-function getStatusBadgeClasses(status: Cohort["status"]): string {
+function getStatusBadge(status: Cohort["status"], countdown: { days: number; hours: number } | null) {
   switch (status) {
     case "active":
-      return "bg-green-100 text-green-800 border-green-200";
+      return (
+        <div className="flex items-center gap-3">
+          <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+            <span className="mr-1.5 h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+            Live Now
+          </Badge>
+          {countdown && (
+            <Badge variant="outline" className="text-slate-300 border-slate-700">
+              <Clock className="h-3 w-3 mr-1" />
+              {countdown.days}d {countdown.hours}h left
+            </Badge>
+          )}
+        </div>
+      );
     case "upcoming":
-      return "bg-blue-100 text-blue-800 border-blue-200";
+      return (
+        <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
+          Coming Soon
+        </Badge>
+      );
     case "judging":
-      return "bg-purple-100 text-purple-800 border-purple-200";
+      return (
+        <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">
+          Judging
+        </Badge>
+      );
     case "completed":
-      return "bg-gray-100 text-gray-800 border-gray-200";
+      return (
+        <Badge className="bg-slate-500/20 text-slate-400 border-slate-500/30">
+          <Trophy className="h-3 w-3 mr-1" />
+          Completed
+        </Badge>
+      );
     default:
-      return "bg-gray-100 text-gray-800 border-gray-200";
+      return null;
   }
 }
 
-export function CohortHero({ cohort }: CohortHeroProps) {
-  const dateRange = formatDateRange(cohort.startDate, cohort.endDate);
-  const submissionDeadline = formatDate(cohort.submissionDeadline);
+export function CohortHero({ cohort, tracks = [], sponsors = [], submissions = [] }: CohortHeroProps) {
+  const countdown = getCountdown(cohort.submissionDeadline);
+  const totalPrize = cohort.prizes?.reduce((sum, p) => sum + parseInt(p.amount.replace(/[^0-9]/g, "") || "0"), 0) || 0;
 
   return (
-    <div className="relative">
-      {/* Hero Background */}
+    <div className="relative overflow-hidden rounded-3xl bg-slate-900 mx-auto max-w-6xl mt-4">
+      {/* Subtle pattern overlay */}
       <div
-        className="h-64 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"
-        style={
-          cohort.bannerImage
-            ? {
-                backgroundImage: `url(${cohort.bannerImage})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-              }
-            : undefined
-        }
-      >
-        {/* Overlay for better text readability */}
-        <div className="absolute inset-0 h-64 bg-black/30" />
-      </div>
+        className="absolute inset-0 opacity-5"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+        }}
+      />
 
-      {/* Content */}
-      <div className="absolute inset-0 h-64 flex flex-col justify-center px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto w-full">
-          {/* Status Badge */}
-          <Badge className={`mb-4 ${getStatusBadgeClasses(cohort.status)}`}>
-            {cohort.status.charAt(0).toUpperCase() + cohort.status.slice(1)}
-          </Badge>
+      <div className="relative p-8 lg:p-12">
+        {/* Status Badge */}
+        <div className="mb-4">
+          {getStatusBadge(cohort.status, countdown)}
+        </div>
 
-          {/* Name */}
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-2">
-            {cohort.name}
-          </h1>
+        {/* Name */}
+        <h1 className="text-4xl lg:text-5xl font-bold text-white leading-tight">
+          {cohort.name}
+        </h1>
 
-          {/* Tagline */}
-          {cohort.tagline && (
-            <p className="text-lg md:text-xl text-white/90 mb-6">
-              {cohort.tagline}
-            </p>
+        {/* Tagline */}
+        {cohort.tagline && (
+          <p className="mt-4 text-xl text-slate-400">{cohort.tagline}</p>
+        )}
+
+        {/* Stats */}
+        <div className="mt-8 flex gap-8">
+          <div>
+            <div className="text-4xl font-bold text-white">{tracks.length}</div>
+            <div className="text-slate-500">Tracks</div>
+          </div>
+          <div>
+            <div className="text-4xl font-bold text-white">{submissions.length}</div>
+            <div className="text-slate-500">Builders</div>
+          </div>
+          {totalPrize > 0 && (
+            <div>
+              <div className="text-4xl font-bold text-white">${(totalPrize / 1000).toFixed(0)}k</div>
+              <div className="text-slate-500">In Prizes</div>
+            </div>
           )}
         </div>
-      </div>
 
-      {/* Info Bar */}
-      <div className="bg-card border-b">
-        <div className="max-w-4xl mx-auto px-6 lg:px-8 py-4">
-          <div className="flex flex-wrap items-center gap-6 text-sm">
-            {/* Date Range */}
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Calendar className="h-4 w-4" />
-              <span>{dateRange}</span>
-            </div>
-
-            {/* Submission Deadline */}
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Clock className="h-4 w-4" />
-              <span>Submissions due {submissionDeadline}</span>
-            </div>
-
-            {/* Max Team Size */}
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Users className="h-4 w-4" />
-              <span>Max {cohort.maxTeamSize} members per team</span>
+        {/* Sponsors */}
+        {sponsors.length > 0 && (
+          <div className="mt-8">
+            <div className="text-sm text-slate-500 mb-3">Presented by</div>
+            <div className="flex items-center gap-4">
+              {sponsors.slice(0, 4).map((sponsor) => (
+                <div
+                  key={sponsor.id}
+                  className="h-12 w-12 rounded-xl bg-slate-800 p-2 flex items-center justify-center"
+                >
+                  <img src={sponsor.logo} alt={sponsor.name} className="h-full w-full object-contain" />
+                </div>
+              ))}
+              {sponsors.length > 4 && (
+                <div className="text-sm text-slate-500">+{sponsors.length - 4} more</div>
+              )}
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
