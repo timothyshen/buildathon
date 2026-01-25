@@ -19,9 +19,10 @@ import {
 
 const navLinks = [
   { href: "/", label: "Home" },
+  { href: "/cohorts", label: "Cohorts" },
   { href: "/about", label: "About" },
   { href: "/explore", label: "Explore" },
-  { href: "/workshop", label: "Workshop" },
+  { href: "/workshops", label: "Workshops" },
 ];
 
 export function Header() {

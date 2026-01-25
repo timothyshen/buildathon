@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { mockWorkshops } from "@/data/mock-data";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,9 +14,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Play, FileText, Clock, Users } from "lucide-react";
+import { Search, Play, FileText, Clock, Users, ArrowLeft } from "lucide-react";
 
-export default function WorkshopPage() {
+export default function WorkshopResourcesPage() {
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
@@ -36,12 +37,20 @@ export default function WorkshopPage() {
   return (
     <div className="py-12">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        {/* Back link */}
+        <Link
+          href="/workshops"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Workshop Calendar
+        </Link>
+
         {/* Header */}
         <div className="text-center">
-          <h1 className="text-4xl font-bold tracking-tight">Workshop</h1>
+          <h1 className="text-4xl font-bold tracking-tight">Learning Resources</h1>
           <p className="mt-4 text-lg text-muted-foreground">
-            Learn how to build on Story Protocol with tutorials and guides from
-            our partners.
+            Tutorials, guides, and educational content from our partners to help you build on Story Protocol.
           </p>
         </div>
 
@@ -50,7 +59,7 @@ export default function WorkshopPage() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search workshops..."
+              placeholder="Search resources..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-10"
@@ -155,7 +164,7 @@ export default function WorkshopPage() {
         {filteredWorkshops.length === 0 && (
           <div className="mt-12 text-center">
             <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-semibold">No workshops found</h3>
+            <h3 className="mt-4 text-lg font-semibold">No resources found</h3>
             <p className="mt-2 text-sm text-muted-foreground">
               Try adjusting your search or filters
             </p>

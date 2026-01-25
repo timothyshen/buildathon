@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { generateGoogleCalendarUrl, downloadICSFile } from "@/lib/calendar-utils";
-import { Calendar, List, LogIn } from "lucide-react";
+import { Calendar, List, LogIn, BookOpen } from "lucide-react";
 
 function isSameDay(date1: Date, date2: Date): boolean {
   return (
@@ -135,10 +135,19 @@ export default function WorkshopsPage() {
     <div className="min-h-screen">
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-teal-600 to-cyan-600 py-16">
-        <div className="container mx-auto px-4">
-          <h1 className="text-4xl font-bold text-white text-center">
+        <div className="container mx-auto px-4 text-center">
+          <h1 className="text-4xl font-bold text-white">
             Workshops & Learning Sessions
           </h1>
+          <p className="mt-4 text-lg text-teal-100 max-w-2xl mx-auto">
+            Join live sessions, RSVP for upcoming workshops, and learn from Story Protocol experts.
+          </p>
+          <Button asChild variant="secondary" className="mt-6">
+            <Link href="/workshops/resources">
+              <BookOpen className="h-4 w-4 mr-2" />
+              Browse Learning Resources
+            </Link>
+          </Button>
         </div>
       </section>
 
