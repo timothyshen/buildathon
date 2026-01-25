@@ -45,6 +45,7 @@ export function RichTextEditor({
     ],
     content: value,
     editable: !disabled,
+    immediatelyRender: false, // Prevent SSR hydration mismatch
     onUpdate: ({ editor }) => {
       onChange?.(editor.getHTML());
     },
@@ -57,7 +58,21 @@ export function RichTextEditor({
   });
 
   if (!editor) {
-    return null;
+    // Show loading placeholder while editor initializes
+    return (
+      <div
+        className={cn(
+          "rounded-md border border-input bg-background min-h-[280px] animate-pulse",
+          className
+        )}
+      >
+        <div className="h-12 border-b bg-muted/30" />
+        <div className="p-4">
+          <div className="h-4 bg-muted/30 rounded w-3/4 mb-2" />
+          <div className="h-4 bg-muted/30 rounded w-1/2" />
+        </div>
+      </div>
+    );
   }
 
   return (
