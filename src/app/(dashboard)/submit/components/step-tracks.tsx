@@ -95,9 +95,19 @@ export function StepTracks({ data, onChange, errors }: StepTracksProps) {
                 return (
                   <div
                     key={track.id}
+                    role="checkbox"
+                    aria-checked={isSelected}
+                    aria-label={`${track.name}${track.prizePool ? ` - ${track.prizePool}` : ""}`}
+                    tabIndex={0}
                     onClick={() => toggleTrack(track.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        toggleTrack(track.id);
+                      }
+                    }}
                     className={cn(
-                      "relative cursor-pointer rounded-lg border-2 p-4 transition-all hover:border-violet-300",
+                      "relative cursor-pointer rounded-lg border-2 p-4 transition-all hover:border-violet-300 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2",
                       isSelected
                         ? "border-violet-600 bg-violet-50 dark:bg-violet-950/20"
                         : "border-slate-200 dark:border-slate-800"
