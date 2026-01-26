@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { Sidebar } from "@/components/layout/sidebar";
 import { MobileHeader } from "@/components/layout/mobile-header";
@@ -13,6 +13,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const { user, isLoading } = useAuth();
 
   useEffect(() => {
@@ -20,6 +21,13 @@ export default function DashboardLayout({
       router.push("/login");
     }
   }, [user, isLoading, router]);
+
+  // Redirect to onboarding if not completed (except when already on onboarding page)
+  useEffect(() => {
+    if (!isLoading && user && !user.hasCompletedOnboarding && pathname !== "/onboarding") {
+      router.push("/onboarding");
+    }
+  }, [user, isLoading, pathname, router]);
 
   if (isLoading) {
     return (
