@@ -4,11 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
+**Always use pnpm** (not npm or yarn).
+
 ```bash
-npm run dev      # Start development server at http://localhost:3000
-npm run build    # Production build (also runs TypeScript checks)
-npm run lint     # Run ESLint
-npm run start    # Start production server
+pnpm dev         # Start development server at http://localhost:3000
+pnpm build       # Production build (also runs TypeScript checks)
+pnpm lint        # Run ESLint
+pnpm start       # Start production server
 ```
 
 ## Architecture
