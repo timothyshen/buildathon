@@ -1,24 +1,52 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
-import { mockCohorts, mockSubmissions, mockTeams } from "@/data/mock-data";
+import { cohortsService, submissionsService } from "@/services";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle, FileText, Trophy, Clock } from "lucide-react";
+import { PlusCircle, FileText, Trophy, Clock, Loader2 } from "lucide-react";
+import type { Cohort, Submission } from "@/types";
 
 export function ParticipantDashboard() {
   const { user } = useAuth();
+  const [cohorts, setCohorts] = useState<Cohort[]>([]);
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadData() {
+      if (!user?.id) return;
+
+      const [cohortsResult, submissionsResult] = await Promise.all([
+        cohortsService.list(),
+        submissionsService.getByUser(user.id),
+      ]);
+
+      if (cohortsResult.success) setCohorts(cohortsResult.data);
+      if (submissionsResult.success) setSubmissions(submissionsResult.data);
+
+      setIsLoading(false);
+    }
+    loadData();
+  }, [user?.id]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   // Get user's submissions
-  const userSubmissions = mockSubmissions.filter((s) =>
-    s.team?.members.some((m) => m.userId === user?.id)
-  );
+  const userSubmissions = submissions;
 
   // Get active cohorts
-  const activeCohorts = mockCohorts.filter((c) => c.status === "active" && c.isPublic);
-  const upcomingCohorts = mockCohorts.filter((c) => c.status === "upcoming" && c.isPublic);
+  const activeCohorts = cohorts.filter((c) => c.status === "active" && c.isPublic);
+  const upcomingCohorts = cohorts.filter((c) => c.status === "upcoming" && c.isPublic);
 
   const getStatusColor = (status: string) => {
     switch (status) {

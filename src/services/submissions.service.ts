@@ -23,6 +23,7 @@ export interface SubmissionsService {
   delete(id: string): Promise<ServiceResponse<void>>;
 
   // Queries
+  list(options?: QueryOptions & { status?: Submission["status"] }): Promise<PaginatedResponse<Submission>>;
   getByUser(userId: string): Promise<ServiceResponse<Submission[]>>;
   getByCohort(cohortId: string, options?: QueryOptions & { status?: Submission["status"] }): Promise<PaginatedResponse<Submission>>;
   getByTeam(teamId: string): Promise<ServiceResponse<Submission[]>>;
@@ -93,6 +94,42 @@ async function deleteSubmission(id: string): Promise<ServiceResponse<void>> {
 }
 
 // Queries
+
+async function list(
+  options?: QueryOptions & { status?: Submission["status"] }
+): Promise<PaginatedResponse<Submission>> {
+  await delay();
+
+  let submissions = [...mockSubmissions];
+
+  // Filter by status
+  if (options?.status) {
+    submissions = submissions.filter((s) => s.status === options.status);
+  }
+
+  // Sort
+  if (options?.sortBy) {
+    submissions.sort((a, b) => {
+      const aVal = a[options.sortBy as keyof Submission];
+      const bVal = b[options.sortBy as keyof Submission];
+      if (aVal instanceof Date && bVal instanceof Date) {
+        return options.sortOrder === "asc"
+          ? aVal.getTime() - bVal.getTime()
+          : bVal.getTime() - aVal.getTime();
+      }
+      const comparison = String(aVal || "").localeCompare(String(bVal || ""));
+      return options.sortOrder === "desc" ? -comparison : comparison;
+    });
+  }
+
+  // Paginate
+  const page = options?.page || 1;
+  const pageSize = options?.pageSize || 20;
+  const start = (page - 1) * pageSize;
+  const paginatedSubmissions = submissions.slice(start, start + pageSize);
+
+  return paginated(paginatedSubmissions, submissions.length, page, pageSize);
+}
 
 async function getByUser(userId: string): Promise<ServiceResponse<Submission[]>> {
   await delay();
@@ -235,6 +272,7 @@ export const submissionsService: SubmissionsService = {
   create,
   update,
   delete: deleteSubmission,
+  list,
   getByUser,
   getByCohort,
   getByTeam,

@@ -1,15 +1,15 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
 import {
-  mockSubmissions,
-  mockTracks,
-  mockWorkshops,
-  mockCohortSponsors,
-  mockCohorts,
-  getSponsorByUser,
-} from "@/data/mock-data";
+  sponsorsService,
+  cohortsService,
+  tracksService,
+  submissionsService,
+  workshopsService,
+} from "@/services";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,11 +23,68 @@ import {
   Eye,
   Building2,
   TrendingUp,
+  Loader2,
 } from "lucide-react";
+import type { SponsorOrg, CohortSponsor, Cohort, Track, Submission, Workshop } from "@/types";
 
 export function SponsorDashboard() {
   const { user } = useAuth();
-  const sponsor = getSponsorByUser(user?.id || "");
+  const [sponsor, setSponsor] = useState<SponsorOrg | null>(null);
+  const [sponsorCohorts, setSponsorCohorts] = useState<CohortSponsor[]>([]);
+  const [cohorts, setCohorts] = useState<Cohort[]>([]);
+  const [tracks, setTracks] = useState<Track[]>([]);
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [workshops, setWorkshops] = useState<Workshop[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadData() {
+      if (!user?.id) return;
+
+      // First, get the sponsor org for this user
+      const sponsorResult = await sponsorsService.getOrgByUser(user.id);
+
+      if (!sponsorResult.success || !sponsorResult.data) {
+        setIsLoading(false);
+        return;
+      }
+
+      const sponsorOrg = sponsorResult.data;
+      setSponsor(sponsorOrg);
+
+      // Load all related data in parallel
+      const [
+        cohortSponsorsResult,
+        cohortsResult,
+        tracksResult,
+        submissionsResult,
+        workshopsResult,
+      ] = await Promise.all([
+        sponsorsService.getSponsorCohorts(sponsorOrg.id),
+        cohortsService.list(),
+        tracksService.getBySponsor(sponsorOrg.id),
+        submissionsService.list(),
+        workshopsService.getBySponsor(sponsorOrg.id),
+      ]);
+
+      if (cohortSponsorsResult.success) setSponsorCohorts(cohortSponsorsResult.data);
+      if (cohortsResult.success) setCohorts(cohortsResult.data);
+      if (tracksResult.success) setTracks(tracksResult.data);
+      if (submissionsResult.success) setSubmissions(submissionsResult.data);
+      if (workshopsResult.success) setWorkshops(workshopsResult.data);
+
+      setIsLoading(false);
+    }
+    loadData();
+  }, [user?.id]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   if (!sponsor) {
     return (
@@ -44,18 +101,17 @@ export function SponsorDashboard() {
   }
 
   // Get sponsor's cohort participation
-  const sponsorCohorts = mockCohortSponsors.filter((cs) => cs.sponsorOrgId === sponsor.id);
   const activeCohortIds = sponsorCohorts.map((sc) => sc.cohortId);
-  const activeCohorts = mockCohorts.filter(
+  const activeCohorts = cohorts.filter(
     (c) => activeCohortIds.includes(c.id) && (c.status === "active" || c.status === "judging")
   );
 
   // Get sponsor's tracks
-  const sponsorTracks = mockTracks.filter((t) => t.sponsorOrgId === sponsor.id);
+  const sponsorTracks = tracks;
   const sponsorTrackIds = sponsorTracks.map((t) => t.id);
 
   // Get submissions to sponsor tracks (review queue)
-  const trackSubmissions = mockSubmissions.filter(
+  const trackSubmissions = submissions.filter(
     (s) =>
       (s.trackId && sponsorTrackIds.includes(s.trackId)) ||
       (s.trackIds && s.trackIds.some((id) => sponsorTrackIds.includes(id)))
@@ -64,7 +120,7 @@ export function SponsorDashboard() {
   const reviewedSubmissions = trackSubmissions.filter((s) => s.status === "accepted" || s.status === "winner");
 
   // Get sponsor's workshops
-  const sponsorWorkshops = mockWorkshops.filter((w) => w.sponsorOrgId === sponsor.id);
+  const sponsorWorkshops = workshops;
   const publishedWorkshops = sponsorWorkshops.filter((w) => w.status === "published");
   const draftWorkshops = sponsorWorkshops.filter((w) => w.status === "draft");
 
@@ -175,7 +231,7 @@ export function SponsorDashboard() {
           ) : (
             <div className="space-y-4">
               {pendingSubmissions.slice(0, 5).map((submission) => {
-                const track = mockTracks.find((t) => t.id === submission.trackId);
+                const track = tracks.find((t) => t.id === submission.trackId);
                 return (
                   <div
                     key={submission.id}
@@ -236,7 +292,7 @@ export function SponsorDashboard() {
             ) : (
               <div className="space-y-3">
                 {sponsorTracks.slice(0, 4).map((track) => {
-                  const cohort = mockCohorts.find((c) => c.id === track.cohortId);
+                  const cohort = cohorts.find((c) => c.id === track.cohortId);
                   const submissionCount = trackSubmissions.filter(
                     (s) => s.trackId === track.id || s.trackIds?.includes(track.id)
                   ).length;

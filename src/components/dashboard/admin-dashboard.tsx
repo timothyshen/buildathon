@@ -1,7 +1,8 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { mockCohorts, mockSubmissions, mockReviews, mockUsers } from "@/data/mock-data";
+import { cohortsService, submissionsService, reviewsService, usersService } from "@/services";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,13 +13,48 @@ import {
   Star,
   PlusCircle,
   ArrowRight,
+  Loader2,
 } from "lucide-react";
+import type { Cohort, Submission, Review, User } from "@/types";
 
 export function AdminDashboard() {
-  const activeCohorts = mockCohorts.filter((c) => c.status === "active");
-  const totalSubmissions = mockSubmissions.length;
-  const pendingReviews = mockReviews.filter((r) => r.status === "pending").length;
-  const totalJudges = mockUsers.filter((u) => u.role === "judge").length;
+  const [cohorts, setCohorts] = useState<Cohort[]>([]);
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [judges, setJudges] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadData() {
+      const [cohortsResult, submissionsResult, reviewsResult, usersResult] = await Promise.all([
+        cohortsService.list(),
+        submissionsService.list(),
+        reviewsService.list(),
+        usersService.list(),
+      ]);
+
+      if (cohortsResult.success) setCohorts(cohortsResult.data);
+      if (submissionsResult.success) setSubmissions(submissionsResult.data);
+      if (reviewsResult.success) setReviews(reviewsResult.data);
+      if (usersResult.success) setJudges(usersResult.data.filter((u) => u.role === "judge"));
+
+      setIsLoading(false);
+    }
+    loadData();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  const activeCohorts = cohorts.filter((c) => c.status === "active");
+  const totalSubmissions = submissions.length;
+  const pendingReviews = reviews.filter((r) => r.status === "pending").length;
+  const totalJudges = judges.length;
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -63,7 +99,7 @@ export function AdminDashboard() {
           <CardContent>
             <div className="text-2xl font-bold">{activeCohorts.length}</div>
             <p className="text-xs text-muted-foreground">
-              {mockCohorts.length} total cohorts
+              {cohorts.length} total cohorts
             </p>
           </CardContent>
         </Card>
@@ -121,8 +157,8 @@ export function AdminDashboard() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {mockCohorts.map((cohort) => {
-              const cohortSubmissions = mockSubmissions.filter(
+            {cohorts.map((cohort) => {
+              const cohortSubmissions = submissions.filter(
                 (s) => s.cohortId === cohort.id
               );
               return (
@@ -171,7 +207,7 @@ export function AdminDashboard() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {mockSubmissions.slice(0, 5).map((submission) => (
+            {submissions.slice(0, 5).map((submission) => (
               <div
                 key={submission.id}
                 className="flex items-center justify-between rounded-lg border p-4"

@@ -1,23 +1,53 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
-import { mockReviews, mockCohorts } from "@/data/mock-data";
+import { reviewsService, cohortsService } from "@/services";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Star, CheckCircle, Clock, FileText } from "lucide-react";
+import { Star, CheckCircle, Clock, FileText, Loader2 } from "lucide-react";
+import type { Review, Cohort } from "@/types";
 
 export function JudgeDashboard() {
   const { user } = useAuth();
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [cohorts, setCohorts] = useState<Cohort[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadData() {
+      if (!user?.id) return;
+
+      const [reviewsResult, cohortsResult] = await Promise.all([
+        reviewsService.getByJudge(user.id),
+        cohortsService.list(),
+      ]);
+
+      if (reviewsResult.success) setReviews(reviewsResult.data);
+      if (cohortsResult.success) setCohorts(cohortsResult.data);
+
+      setIsLoading(false);
+    }
+    loadData();
+  }, [user?.id]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   // Get judge's reviews
-  const judgeReviews = mockReviews.filter((r) => r.judgeId === user?.id);
+  const judgeReviews = reviews;
   const pendingReviews = judgeReviews.filter((r) => r.status === "pending");
   const completedReviews = judgeReviews.filter((r) => r.status === "completed");
 
   // Get active judging cohorts
-  const judgingCohorts = mockCohorts.filter((c) => c.status === "judging" || c.status === "active");
+  const judgingCohorts = cohorts.filter((c) => c.status === "judging" || c.status === "active");
 
   return (
     <div className="space-y-8">
