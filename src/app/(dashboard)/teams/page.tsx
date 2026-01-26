@@ -1,55 +1,77 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
-import { getUserTeams, getPendingInvitesForUser, mockTeamInvites, mockTeams } from "@/data/mock-data";
+import { teamsService } from "@/services";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { PlusCircle, Users } from "lucide-react";
+import { PlusCircle, Users, Loader2 } from "lucide-react";
 import { TeamCard, PendingInvites } from "@/components/teams";
 import { toast } from "sonner";
-import { useState } from "react";
+import type { Team, TeamInvite } from "@/types";
 
 export default function TeamsPage() {
   const { user } = useAuth();
-  const [refreshKey, setRefreshKey] = useState(0);
+  const [userTeams, setUserTeams] = useState<Team[]>([]);
+  const [pendingInvites, setPendingInvites] = useState<TeamInvite[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadData() {
+      if (!user) return;
+
+      const [teamsResult, invitesResult] = await Promise.all([
+        teamsService.getByUser(user.id),
+        teamsService.getPendingInvitesForUser(user.email),
+      ]);
+
+      if (teamsResult.success) {
+        setUserTeams(teamsResult.data);
+      }
+      if (invitesResult.success) {
+        setPendingInvites(invitesResult.data);
+      }
+      setIsLoading(false);
+    }
+    loadData();
+  }, [user]);
 
   if (!user) return null;
 
-  const userTeams = getUserTeams(user.id);
-  const pendingInvites = getPendingInvitesForUser(user.email);
-
-  const handleAcceptInvite = (inviteId: string) => {
-    // Mock: Find the invite and update it
-    const invite = mockTeamInvites.find((i) => i.id === inviteId);
-    if (invite) {
-      invite.status = "accepted";
-      // Add user to team
-      const team = mockTeams.find((t) => t.id === invite.teamId);
-      if (team) {
-        team.members.push({
-          userId: user.id,
-          user: user,
-          role: "member",
-          joinedAt: new Date(),
-        });
-      }
+  const handleAcceptInvite = async (inviteId: string) => {
+    const { success } = await teamsService.acceptInvite(inviteId, user.id);
+    if (success) {
+      toast.success("You have joined the team!");
+      // Reload data
+      const [teamsResult, invitesResult] = await Promise.all([
+        teamsService.getByUser(user.id),
+        teamsService.getPendingInvitesForUser(user.email),
+      ]);
+      if (teamsResult.success) setUserTeams(teamsResult.data);
+      if (invitesResult.success) setPendingInvites(invitesResult.data);
     }
-    toast.success("You have joined the team!");
-    setRefreshKey((k) => k + 1);
   };
 
-  const handleDeclineInvite = (inviteId: string) => {
-    const invite = mockTeamInvites.find((i) => i.id === inviteId);
-    if (invite) {
-      invite.status = "declined";
+  const handleDeclineInvite = async (inviteId: string) => {
+    const { success } = await teamsService.declineInvite(inviteId);
+    if (success) {
+      toast.success("Invitation declined");
+      const { data } = await teamsService.getPendingInvitesForUser(user.email);
+      setPendingInvites(data);
     }
-    toast.success("Invitation declined");
-    setRefreshKey((k) => k + 1);
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-8" key={refreshKey}>
+    <div className="space-y-8">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold">My Teams</h1>

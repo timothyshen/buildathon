@@ -1,16 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
-import {
-  mockTeams,
-  mockCohorts,
-  mockTeamInvites,
-  getTeamInvites,
-  isTeamLead,
-} from "@/data/mock-data";
+import { teamsService, cohortsService } from "@/services";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,18 +19,61 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Users, Trophy, LogOut, Trash2, Clock } from "lucide-react";
+import { ArrowLeft, Users, LogOut, Trash2, Clock, Loader2 } from "lucide-react";
 import { TeamMemberList, InviteForm } from "@/components/teams";
 import { toast } from "sonner";
+import type { Team, Cohort, TeamInvite } from "@/types";
 
 export default function TeamDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
-  const [refreshKey, setRefreshKey] = useState(0);
 
   const teamId = params.id as string;
-  const team = mockTeams.find((t) => t.id === teamId);
+
+  const [team, setTeam] = useState<Team | null>(null);
+  const [cohort, setCohort] = useState<Cohort | null>(null);
+  const [pendingInvites, setPendingInvites] = useState<TeamInvite[]>([]);
+  const [isLead, setIsLead] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadData() {
+      if (!user) return;
+
+      const [teamResult, isLeadResult] = await Promise.all([
+        teamsService.getById(teamId),
+        teamsService.isLead(user.id, teamId),
+      ]);
+
+      if (teamResult.success && teamResult.data) {
+        setTeam(teamResult.data);
+
+        // Load cohort
+        const { data: cohortData } = await cohortsService.getById(teamResult.data.cohortId);
+        setCohort(cohortData);
+
+        // Load pending invites
+        const { data: invites } = await teamsService.getInvites(teamId);
+        setPendingInvites(invites.filter((i) => i.status === "pending"));
+      }
+
+      if (isLeadResult.success) {
+        setIsLead(isLeadResult.data);
+      }
+
+      setIsLoading(false);
+    }
+    loadData();
+  }, [teamId, user]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   if (!user || !team) {
     return (
@@ -49,73 +86,7 @@ export default function TeamDetailPage() {
     );
   }
 
-  const cohort = mockCohorts.find((c) => c.id === team.cohortId);
-  const isLead = isTeamLead(user.id, teamId);
   const isMember = team.members.some((m) => m.userId === user.id);
-  const pendingInvites = getTeamInvites(teamId).filter(
-    (i) => i.status === "pending"
-  );
-
-  const existingEmails = [
-    ...team.members.map((m) => m.user.email.toLowerCase()),
-    ...pendingInvites.map((i) => i.email.toLowerCase()),
-  ];
-
-  const handleInvite = async (email: string) => {
-    // Mock: Create new invite
-    const newInvite = {
-      id: `invite-${Date.now()}`,
-      teamId,
-      team,
-      email: email.toLowerCase(),
-      invitedBy: user.id,
-      inviter: user,
-      status: "pending" as const,
-      createdAt: new Date(),
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-    };
-    mockTeamInvites.push(newInvite);
-    setRefreshKey((k) => k + 1);
-  };
-
-  const handleRemoveMember = (userId: string) => {
-    const memberIndex = team.members.findIndex((m) => m.userId === userId);
-    if (memberIndex > -1) {
-      team.members.splice(memberIndex, 1);
-      toast.success("Member removed");
-      setRefreshKey((k) => k + 1);
-    }
-  };
-
-  const handleLeaveTeam = () => {
-    const memberIndex = team.members.findIndex((m) => m.userId === user.id);
-    if (memberIndex > -1) {
-      if (isLead && team.members.length > 1) {
-        // Transfer lead to next member
-        const nextMember = team.members.find((m) => m.userId !== user.id);
-        if (nextMember) nextMember.role = "lead";
-      }
-      team.members.splice(memberIndex, 1);
-
-      // Delete team if no members left
-      if (team.members.length === 0) {
-        const teamIndex = mockTeams.findIndex((t) => t.id === teamId);
-        if (teamIndex > -1) mockTeams.splice(teamIndex, 1);
-      }
-
-      toast.success("You have left the team");
-      router.push("/teams");
-    }
-  };
-
-  const handleDeleteTeam = () => {
-    const teamIndex = mockTeams.findIndex((t) => t.id === teamId);
-    if (teamIndex > -1) {
-      mockTeams.splice(teamIndex, 1);
-      toast.error("Team has been deleted");
-      router.push("/teams");
-    }
-  };
 
   if (!isMember) {
     return (
@@ -128,8 +99,67 @@ export default function TeamDetailPage() {
     );
   }
 
+  const existingEmails = [
+    ...team.members.map((m) => m.user.email.toLowerCase()),
+    ...pendingInvites.map((i) => i.email.toLowerCase()),
+  ];
+
+  const handleInvite = async (email: string) => {
+    const { success, error } = await teamsService.createInvite({
+      teamId,
+      email,
+      invitedBy: user.id,
+    });
+
+    if (success) {
+      // Reload invites
+      const { data: invites } = await teamsService.getInvites(teamId);
+      setPendingInvites(invites.filter((i) => i.status === "pending"));
+    } else {
+      toast.error(error || "Failed to send invite");
+    }
+  };
+
+  const handleRemoveMember = async (userId: string) => {
+    const { success, data: updatedTeam } = await teamsService.removeMember(teamId, userId);
+    if (success && updatedTeam) {
+      setTeam(updatedTeam);
+      toast.success("Member removed");
+    }
+  };
+
+  const handleLeaveTeam = async () => {
+    // If lead and more than one member, transfer lead first
+    if (isLead && team.members.length > 1) {
+      const nextMember = team.members.find((m) => m.userId !== user.id);
+      if (nextMember) {
+        await teamsService.transferLead(teamId, nextMember.userId);
+      }
+    }
+
+    // Remove self from team
+    const { success } = await teamsService.removeMember(teamId, user.id);
+
+    if (success) {
+      // If was last member, delete team
+      if (team.members.length === 1) {
+        await teamsService.delete(teamId);
+      }
+      toast.success("You have left the team");
+      router.push("/teams");
+    }
+  };
+
+  const handleDeleteTeam = async () => {
+    const { success } = await teamsService.delete(teamId);
+    if (success) {
+      toast.error("Team has been deleted");
+      router.push("/teams");
+    }
+  };
+
   return (
-    <div className="mx-auto max-w-3xl space-y-8" key={refreshKey}>
+    <div className="mx-auto max-w-3xl space-y-8">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" asChild>
           <Link href="/teams" aria-label="Back to teams">
