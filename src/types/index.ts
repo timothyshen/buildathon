@@ -11,6 +11,7 @@ export interface User {
   bio?: string;
   twitter?: string;
   github?: string;
+  hasCompletedOnboarding?: boolean;
   createdAt: Date;
 }
 
