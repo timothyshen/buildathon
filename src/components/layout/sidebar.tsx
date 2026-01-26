@@ -9,6 +9,7 @@ import {
   Trophy,
   Star,
   Users,
+  Users2,
   FolderKanban,
   GraduationCap,
   LogOut,
@@ -75,6 +76,7 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
           badge: draftCount > 0 ? `${draftCount} draft` : undefined,
         },
         { href: "/submit", label: "New Submission", icon: PlusCircle },
+        { href: "/teams", label: "My Teams", icon: Users2 },
       ],
     },
     {
