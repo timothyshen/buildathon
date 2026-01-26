@@ -1,98 +1,218 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { mockCohorts, mockTracks, mockSponsorOrgs } from "@/data/mock-data";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
-import { Loader2, X, Plus, Trophy, CheckCircle2 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Loader2, ArrowLeft, ArrowRight, Save } from "lucide-react";
+import { StepIndicator } from "./components/step-indicator";
+import { StepDetails } from "./components/step-details";
+import { StepLinksTech } from "./components/step-links-tech";
+import { StepTracks } from "./components/step-tracks";
+import { StepReview } from "./components/step-review";
+import { mockTracks } from "@/data/mock-data";
+
+const STORAGE_KEY = "submission-draft";
+
+const STEPS = [
+  { id: 1, label: "Details" },
+  { id: 2, label: "Links & Tech" },
+  { id: 3, label: "Tracks" },
+  { id: 4, label: "Review" },
+];
+
+interface SubmissionDraft {
+  title: string;
+  tagline: string;
+  description: string;
+  demoUrl: string;
+  repoUrl: string;
+  videoUrl: string;
+  presentationUrl: string;
+  techStack: string[];
+  builtWithStory: boolean;
+  cohortId: string;
+  trackIds: string[];
+  licenseType: string;
+  currentStep: number;
+}
+
+const initialData: SubmissionDraft = {
+  title: "",
+  tagline: "",
+  description: "",
+  demoUrl: "",
+  repoUrl: "",
+  videoUrl: "",
+  presentationUrl: "",
+  techStack: [],
+  builtWithStory: false,
+  cohortId: "",
+  trackIds: [],
+  licenseType: "",
+  currentStep: 1,
+};
 
 export default function SubmitPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const preselectedCohort = searchParams.get("cohort");
 
+  const [data, setData] = useState<SubmissionDraft>(initialData);
+  const [currentStep, setCurrentStep] = useState(1);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedCohort, setSelectedCohort] = useState(preselectedCohort || "");
-  const [selectedTracks, setSelectedTracks] = useState<string[]>([]);
-  const [techStack, setTechStack] = useState<string[]>([]);
-  const [newTech, setNewTech] = useState("");
+  const [showDraftBanner, setShowDraftBanner] = useState(false);
 
-  const activeCohorts = mockCohorts.filter(
-    (c) => c.status === "active" && c.isPublic
-  );
-  const cohortTracks = mockTracks.filter((t) => t.cohortId === selectedCohort);
-
-  const toggleTrack = (trackId: string) => {
-    setSelectedTracks((prev) =>
-      prev.includes(trackId)
-        ? prev.filter((id) => id !== trackId)
-        : [...prev, trackId]
-    );
-  };
-
-  const getSponsorForTrack = (track: typeof mockTracks[0]) => {
-    if (track.sponsorOrgId) {
-      return mockSponsorOrgs.find((s) => s.id === track.sponsorOrgId);
+  // Check for existing draft on mount
+  useEffect(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (parsed.title || parsed.description || parsed.cohortId) {
+          setShowDraftBanner(true);
+        }
+      } catch {
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    } else if (preselectedCohort) {
+      setData((prev) => ({ ...prev, cohortId: preselectedCohort }));
     }
-    return null;
+  }, [preselectedCohort]);
+
+  // Auto-save on data change (debounced)
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...data, currentStep }));
+    }, 500);
+    return () => clearTimeout(timeout);
+  }, [data, currentStep]);
+
+  const loadDraft = () => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      setData(parsed);
+      setCurrentStep(parsed.currentStep || 1);
+    }
+    setShowDraftBanner(false);
   };
 
-  const addTech = () => {
-    if (newTech.trim() && !techStack.includes(newTech.trim())) {
-      setTechStack([...techStack, newTech.trim()]);
-      setNewTech("");
+  const startFresh = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    setData(preselectedCohort ? { ...initialData, cohortId: preselectedCohort } : initialData);
+    setCurrentStep(1);
+    setShowDraftBanner(false);
+  };
+
+  const handleChange = useCallback((field: string, value: string | string[] | boolean) => {
+    setData((prev) => ({ ...prev, [field]: value }));
+    setErrors((prev) => ({ ...prev, [field]: "" }));
+  }, []);
+
+  const validateStep = (step: number): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    if (step === 1) {
+      if (!data.title || data.title.length < 3) {
+        newErrors.title = "Title must be at least 3 characters";
+      }
+      if (!data.description || data.description.replace(/<[^>]*>/g, "").length < 50) {
+        newErrors.description = "Description must be at least 50 characters";
+      }
+    }
+
+    if (step === 2) {
+      const urlPattern = /^(https?:\/\/)?[\w.-]+\.[a-z]{2,}(\/.*)?$/i;
+      if (data.demoUrl && !urlPattern.test(data.demoUrl)) {
+        newErrors.demoUrl = "Please enter a valid URL";
+      }
+      if (data.repoUrl && !urlPattern.test(data.repoUrl)) {
+        newErrors.repoUrl = "Please enter a valid URL";
+      }
+      if (data.videoUrl && !urlPattern.test(data.videoUrl)) {
+        newErrors.videoUrl = "Please enter a valid URL";
+      }
+      if (data.presentationUrl && !urlPattern.test(data.presentationUrl)) {
+        newErrors.presentationUrl = "Please enter a valid URL";
+      }
+    }
+
+    if (step === 3) {
+      if (!data.cohortId) {
+        newErrors.cohortId = "Please select a cohort";
+      }
+      const cohortTracks = mockTracks.filter((t) => t.cohortId === data.cohortId);
+      if (cohortTracks.length > 0 && data.trackIds.length === 0) {
+        newErrors.trackIds = "Please select at least one track";
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleNext = () => {
+    if (validateStep(currentStep)) {
+      setCurrentStep((prev) => Math.min(prev + 1, STEPS.length));
+    } else {
+      toast.error("Please fix the errors before continuing");
     }
   };
 
-  const removeTech = (tech: string) => {
-    setTechStack(techStack.filter((t) => t !== tech));
+  const handleBack = () => {
+    setCurrentStep((prev) => Math.max(prev - 1, 1));
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const handleEdit = (step: number) => {
+    setCurrentStep(step);
+  };
 
-    // Validate track selection if tracks exist
-    if (cohortTracks.length > 0 && selectedTracks.length === 0) {
-      toast.error("Please select at least one track for your submission.");
+  const handleSaveAndExit = () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...data, currentStep }));
+    toast.success("Draft saved");
+    router.push("/submissions");
+  };
+
+  const handleSubmit = async () => {
+    if (!validateStep(3)) {
+      toast.error("Please complete all required fields");
       return;
     }
 
     setIsLoading(true);
-
     try {
-      // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      // In real app, would save to database with selected tracks
+      localStorage.removeItem(STORAGE_KEY);
+      toast.success("Project submitted successfully!");
       router.push("/submissions");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSaveDraft = async () => {
-    setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    router.push("/submissions");
-  };
-
   return (
     <div className="mx-auto max-w-3xl space-y-8">
+      {/* Draft Recovery Banner */}
+      {showDraftBanner && (
+        <div className="rounded-lg border border-violet-200 bg-violet-50 p-4 dark:border-violet-800 dark:bg-violet-950/20">
+          <p className="font-medium">Resume your draft?</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            You have an unsaved submission draft.
+          </p>
+          <div className="flex gap-2 mt-3">
+            <Button size="sm" onClick={loadDraft}>
+              Continue Draft
+            </Button>
+            <Button size="sm" variant="outline" onClick={startFresh}>
+              Start Fresh
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">Submit Project</h1>
         <p className="mt-2 text-muted-foreground">
@@ -100,325 +220,66 @@ export default function SubmitPage() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Cohort & Track Selection */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Buildathon</CardTitle>
-            <CardDescription>Select the cohort and track</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="cohort">Cohort *</Label>
-              <Select
-                value={selectedCohort}
-                onValueChange={(value) => {
-                  setSelectedCohort(value);
-                  setSelectedTracks([]); // Reset tracks when cohort changes
-                }}
-                required
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a cohort" />
-                </SelectTrigger>
-                <SelectContent>
-                  {activeCohorts.map((cohort) => (
-                    <SelectItem key={cohort.id} value={cohort.id}>
-                      {cohort.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+      {/* Step Indicator */}
+      <StepIndicator steps={STEPS} currentStep={currentStep} />
 
-            {selectedCohort && cohortTracks.length > 0 && (
-              <div className="space-y-3">
-                <div>
-                  <Label>
-                    Track(s) *{" "}
-                    <span className="text-muted-foreground font-normal">
-                      (select at least one)
-                    </span>
-                  </Label>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Choose the track(s) your project is competing in. You can select multiple tracks.
-                  </p>
-                </div>
-                <div className="grid gap-3">
-                  {cohortTracks.map((track) => {
-                    const sponsor = getSponsorForTrack(track);
-                    const isSelected = selectedTracks.includes(track.id);
-                    return (
-                      <div
-                        key={track.id}
-                        onClick={() => toggleTrack(track.id)}
-                        className={cn(
-                          "relative cursor-pointer rounded-lg border-2 p-4 transition-all hover:border-violet-300",
-                          isSelected
-                            ? "border-violet-600 bg-violet-50 dark:bg-violet-950/20"
-                            : "border-slate-200 dark:border-slate-800"
-                        )}
-                      >
-                        {isSelected && (
-                          <CheckCircle2 className="absolute top-3 right-3 h-5 w-5 text-violet-600" />
-                        )}
-                        <div className="flex items-start gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800">
-                            <Trophy className="h-5 w-5 text-amber-500" />
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <h4 className="font-semibold">{track.name}</h4>
-                              {track.prizePool && (
-                                <Badge variant="secondary" className="text-xs">
-                                  {track.prizePool}
-                                </Badge>
-                              )}
-                            </div>
-                            <p className="text-sm text-muted-foreground mt-1">
-                              {track.description}
-                            </p>
-                            {sponsor && (
-                              <div className="flex items-center gap-2 mt-2">
-                                {sponsor.logo && (
-                                  <img
-                                    src={sponsor.logo}
-                                    alt={sponsor.name}
-                                    className="h-5 w-5 rounded object-contain"
-                                  />
-                                )}
-                                <span className="text-xs text-muted-foreground">
-                                  Sponsored by {sponsor.name}
-                                </span>
-                              </div>
-                            )}
-                            {track.requirements && track.requirements.length > 0 && (
-                              <div className="mt-2">
-                                <p className="text-xs font-medium text-muted-foreground mb-1">
-                                  Requirements:
-                                </p>
-                                <ul className="text-xs text-muted-foreground space-y-0.5">
-                                  {track.requirements.map((req, idx) => (
-                                    <li key={idx} className="flex items-center gap-1">
-                                      <span className="text-violet-500">•</span> {req}
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                {selectedTracks.length === 0 && (
-                  <p className="text-sm text-amber-600">
-                    Please select at least one track for your submission.
-                  </p>
-                )}
-              </div>
-            )}
+      {/* Step Content */}
+      <div className="min-h-[400px]">
+        {currentStep === 1 && (
+          <StepDetails
+            data={{ title: data.title, tagline: data.tagline, description: data.description }}
+            onChange={handleChange}
+            errors={errors}
+          />
+        )}
+        {currentStep === 2 && (
+          <StepLinksTech
+            data={{
+              demoUrl: data.demoUrl,
+              repoUrl: data.repoUrl,
+              videoUrl: data.videoUrl,
+              presentationUrl: data.presentationUrl,
+              techStack: data.techStack,
+              builtWithStory: data.builtWithStory,
+            }}
+            onChange={handleChange}
+            errors={errors}
+          />
+        )}
+        {currentStep === 3 && (
+          <StepTracks
+            data={{ cohortId: data.cohortId, trackIds: data.trackIds }}
+            onChange={handleChange}
+            errors={errors}
+          />
+        )}
+        {currentStep === 4 && (
+          <StepReview data={data} onEdit={handleEdit} />
+        )}
+      </div>
 
-            {selectedCohort && cohortTracks.length === 0 && (
-              <div className="rounded-lg bg-muted p-4">
-                <p className="text-sm text-muted-foreground">
-                  No tracks available for this cohort. Your submission will be entered into the general pool.
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Project Details */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Project Details</CardTitle>
-            <CardDescription>Tell us about your project</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Project Title *</Label>
-              <Input
-                id="title"
-                placeholder="My Awesome Project"
-                required
-                disabled={isLoading}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="tagline">Tagline</Label>
-              <Input
-                id="tagline"
-                placeholder="A short description of your project"
-                maxLength={100}
-                disabled={isLoading}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">Description *</Label>
-              <Textarea
-                id="description"
-                placeholder="Describe what your project does, the problem it solves, and how it works..."
-                rows={6}
-                required
-                disabled={isLoading}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Links */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Links</CardTitle>
-            <CardDescription>Share your project resources</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="demoUrl">Demo URL</Label>
-              <Input
-                id="demoUrl"
-                type="url"
-                placeholder="https://your-demo.com"
-                disabled={isLoading}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="repoUrl">Repository URL</Label>
-              <Input
-                id="repoUrl"
-                type="url"
-                placeholder="https://github.com/username/repo"
-                disabled={isLoading}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="videoUrl">Demo Video URL</Label>
-              <Input
-                id="videoUrl"
-                type="url"
-                placeholder="https://youtube.com/watch?v=..."
-                disabled={isLoading}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="presentationUrl">Presentation URL</Label>
-              <Input
-                id="presentationUrl"
-                type="url"
-                placeholder="https://docs.google.com/presentation/..."
-                disabled={isLoading}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Tech Stack */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Tech Stack</CardTitle>
-            <CardDescription>What technologies did you use?</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex gap-2">
-              <Input
-                value={newTech}
-                onChange={(e) => setNewTech(e.target.value)}
-                placeholder="Add technology (e.g., React, Python)"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    addTech();
-                  }
-                }}
-                disabled={isLoading}
-              />
-              <Button type="button" variant="outline" onClick={addTech}>
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-
-            {techStack.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {techStack.map((tech) => (
-                  <Badge key={tech} variant="secondary" className="gap-1">
-                    {tech}
-                    <button
-                      type="button"
-                      onClick={() => removeTech(tech)}
-                      className="ml-1 hover:text-destructive"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </Badge>
-                ))}
-              </div>
-            )}
-
-            <div className="flex items-center space-x-2">
-              <Checkbox id="builtWithStory" />
-              <Label htmlFor="builtWithStory" className="text-sm font-normal">
-                Built with Story Protocol
-              </Label>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* IP Registration */}
-        <Card>
-          <CardHeader>
-            <CardTitle>IP Registration</CardTitle>
-            <CardDescription>
-              Register your project as IP on Story Protocol (optional for draft)
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>License Type</Label>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select license type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="non-commercial">
-                    Non-Commercial (free to fork, no commercial use)
-                  </SelectItem>
-                  <SelectItem value="commercial-use">
-                    Commercial Use (free to fork and monetize)
-                  </SelectItem>
-                  <SelectItem value="commercial-remix">
-                    Commercial Remix (fork, monetize, with royalties)
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="rounded-lg bg-muted p-4">
-              <p className="text-sm text-muted-foreground">
-                IP registration will happen when you submit your project. You can
-                save as draft first to continue working on your submission.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Actions */}
-        <div className="flex gap-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleSaveDraft}
-            disabled={isLoading}
-          >
-            Save as Draft
+      {/* Navigation */}
+      <div className="flex items-center justify-between border-t pt-6">
+        <div className="flex gap-2">
+          {currentStep > 1 && (
+            <Button variant="outline" onClick={handleBack}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back
+            </Button>
+          )}
+          <Button variant="ghost" onClick={handleSaveAndExit}>
+            <Save className="h-4 w-4 mr-2" />
+            Save & Exit
           </Button>
-          <Button type="submit" disabled={isLoading} className="flex-1">
+        </div>
+
+        {currentStep < STEPS.length ? (
+          <Button onClick={handleNext}>
+            Next
+            <ArrowRight className="h-4 w-4 ml-2" />
+          </Button>
+        ) : (
+          <Button onClick={handleSubmit} disabled={isLoading}>
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -428,8 +289,8 @@ export default function SubmitPage() {
               "Submit Project"
             )}
           </Button>
-        </div>
-      </form>
+        )}
+      </div>
     </div>
   );
 }
