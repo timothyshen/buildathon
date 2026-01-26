@@ -8,6 +8,7 @@ export const mockUsers: User[] = [
     name: "Alex Admin",
     role: "admin",
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=admin",
+    hasCompletedOnboarding: true,
     createdAt: new Date("2024-01-01"),
   },
   {
@@ -18,6 +19,7 @@ export const mockUsers: User[] = [
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=judge",
     bio: "Web3 investor and advisor",
     twitter: "jordanjudge",
+    hasCompletedOnboarding: true,
     createdAt: new Date("2024-01-15"),
   },
   {
@@ -28,6 +30,7 @@ export const mockUsers: User[] = [
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=builder",
     walletAddress: "0x1234...5678",
     github: "blakebuilder",
+    hasCompletedOnboarding: true,
     createdAt: new Date("2024-02-01"),
   },
   {
@@ -36,6 +39,7 @@ export const mockUsers: User[] = [
     name: "Sam Smith",
     role: "participant",
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=sam",
+    hasCompletedOnboarding: true,
     createdAt: new Date("2024-02-15"),
   },
   {
@@ -45,6 +49,7 @@ export const mockUsers: User[] = [
     role: "sponsor",
     sponsorOrgId: "sponsor-org-1",
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=sponsor",
+    hasCompletedOnboarding: true,
     createdAt: new Date("2024-02-01"),
   },
 ];
