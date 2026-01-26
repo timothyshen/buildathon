@@ -4,12 +4,20 @@ import { createContext, useContext, useState, useCallback, useEffect } from "rea
 import type { User } from "@/types";
 import { getUserByEmail, mockUsers } from "@/data/mock-data";
 
+interface OnboardingData {
+  name: string;
+  bio?: string;
+  twitter?: string;
+  github?: string;
+}
+
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   switchRole: (role: User["role"]) => void;
+  completeOnboarding: (data: OnboardingData) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -53,6 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         name: email.split("@")[0],
         role: "participant",
         avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
+        hasCompletedOnboarding: false,
         createdAt: new Date(),
       };
       setUser(newUser);
@@ -79,8 +88,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedUser));
   }, [user]);
 
+  // Complete onboarding and update user profile
+  const completeOnboarding = useCallback((data: OnboardingData) => {
+    if (!user) return;
+
+    const updatedUser: User = {
+      ...user,
+      name: data.name,
+      bio: data.bio,
+      twitter: data.twitter,
+      github: data.github,
+      hasCompletedOnboarding: true,
+    };
+    setUser(updatedUser);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedUser));
+  }, [user]);
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout, switchRole }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout, switchRole, completeOnboarding }}>
       {children}
     </AuthContext.Provider>
   );
