@@ -7,10 +7,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **Always use pnpm** (not npm or yarn).
 
 ```bash
-pnpm dev         # Start development server at http://localhost:3000
+pnpm dev         # Start development server at http://localhost:5567
 pnpm build       # Production build (also runs TypeScript checks)
 pnpm lint        # Run ESLint
-pnpm start       # Start production server
+pnpm start       # Start production server at http://localhost:5567
 ```
 
 ## Architecture
