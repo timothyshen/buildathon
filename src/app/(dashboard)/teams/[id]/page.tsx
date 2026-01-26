@@ -112,7 +112,7 @@ export default function TeamDetailPage() {
     const teamIndex = mockTeams.findIndex((t) => t.id === teamId);
     if (teamIndex > -1) {
       mockTeams.splice(teamIndex, 1);
-      toast.success("Team deleted");
+      toast.error("Team has been deleted");
       router.push("/teams");
     }
   };

@@ -1,0 +1,490 @@
+"use client";
+
+import { use, useState } from "react";
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import Image from "next/image";
+import { useAuth } from "@/contexts/auth-context";
+import {
+  getCohortById,
+  getTracksByCohort,
+  getSponsorsByCohort,
+  getSubmissionsByCohort,
+} from "@/data/mock-data";
+import { AdminNav } from "@/components/admin/admin-nav";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  Calendar,
+  Users,
+  FileText,
+  Trophy,
+  ExternalLink,
+  Eye,
+  Loader2,
+} from "lucide-react";
+import { toast } from "sonner";
+import type { Cohort } from "@/types";
+
+interface AdminCohortDetailPageProps {
+  params: Promise<{ id: string }>;
+}
+
+const statusColors: Record<Cohort["status"], string> = {
+  draft: "bg-slate-100 text-slate-700",
+  upcoming: "bg-blue-100 text-blue-700",
+  active: "bg-green-100 text-green-700",
+  judging: "bg-purple-100 text-purple-700",
+  completed: "bg-amber-100 text-amber-700",
+};
+
+function getSubmissionStatusColor(status: string) {
+  switch (status) {
+    case "winner":
+      return "bg-yellow-100 text-yellow-800";
+    case "submitted":
+      return "bg-blue-100 text-blue-800";
+    case "draft":
+      return "bg-gray-100 text-gray-800";
+    case "under_review":
+      return "bg-purple-100 text-purple-800";
+    case "accepted":
+      return "bg-green-100 text-green-800";
+    default:
+      return "bg-gray-100 text-gray-800";
+  }
+}
+
+export default function AdminCohortDetailPage({ params }: AdminCohortDetailPageProps) {
+  const { id } = use(params);
+  const { user, isLoading } = useAuth();
+  const [status, setStatus] = useState<Cohort["status"] | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const cohort = getCohortById(id);
+
+  if (!cohort) {
+    notFound();
+  }
+
+  const tracks = getTracksByCohort(cohort.id);
+  const sponsors = getSponsorsByCohort(cohort.id);
+  const submissions = getSubmissionsByCohort(cohort.id);
+
+  // Handle loading state
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
+
+  // Only admins can access
+  if (user?.role !== "admin") {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-muted-foreground">Access denied. Admin only.</div>
+      </div>
+    );
+  }
+
+  const currentStatus = status ?? cohort.status;
+
+  const handleStatusChange = async (newStatus: Cohort["status"]) => {
+    setIsUpdating(true);
+    try {
+      // Simulate API delay
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      setStatus(newStatus);
+      toast.success(`Cohort status updated to ${newStatus}`);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const totalPrizePool = cohort.prizes?.reduce((sum, prize) => {
+    const amount = parseInt(prize.amount.replace(/[^0-9]/g, ""), 10) || 0;
+    return sum + amount;
+  }, 0) || 0;
+
+  return (
+    <div className="space-y-6">
+      <AdminNav />
+      <Breadcrumb
+        items={[
+          { label: "Admin", href: "/dashboard" },
+          { label: "Cohorts", href: "/admin/cohorts" },
+          { label: cohort.name },
+        ]}
+        className="mb-4"
+      />
+
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold">{cohort.name}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">/{cohort.slug}</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Badge className={statusColors[currentStatus]}>{currentStatus}</Badge>
+          <Select
+            value={currentStatus}
+            onValueChange={(value) => handleStatusChange(value as Cohort["status"])}
+            disabled={isUpdating}
+          >
+            <SelectTrigger className="w-[150px]">
+              {isUpdating ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <SelectValue />
+              )}
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="draft">Draft</SelectItem>
+              <SelectItem value="upcoming">Upcoming</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="judging">Judging</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Submissions
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{submissions.length}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Sponsors
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{sponsors.length}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Trophy className="h-4 w-4" />
+              Tracks
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{tracks.length}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              Prize Pool
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {totalPrizePool > 0 ? `$${totalPrizePool.toLocaleString()}` : "-"}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Tabs */}
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="submissions">Submissions ({submissions.length})</TabsTrigger>
+          <TabsTrigger value="sponsors">Sponsors ({sponsors.length})</TabsTrigger>
+          <TabsTrigger value="tracks">Tracks ({tracks.length})</TabsTrigger>
+        </TabsList>
+
+        {/* Overview Tab */}
+        <TabsContent value="overview" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Main Info */}
+            <div className="lg:col-span-2 space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>About</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground whitespace-pre-wrap">
+                    {cohort.description}
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Prizes */}
+              {cohort.prizes && cohort.prizes.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Trophy className="h-5 w-5 text-yellow-500" />
+                      Prizes
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {cohort.prizes.map((prize, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between border-b last:border-0 pb-3 last:pb-0"
+                        >
+                          <div className="flex items-center gap-3">
+                            <Badge variant="secondary">{prize.place}</Badge>
+                            {prize.description && (
+                              <span className="text-sm text-muted-foreground">
+                                {prize.description}
+                              </span>
+                            )}
+                          </div>
+                          <span className="font-bold">{prize.amount}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            {/* Sidebar */}
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Timeline</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Start Date</p>
+                    <p className="font-medium">
+                      {cohort.startDate.toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">End Date</p>
+                    <p className="font-medium">
+                      {cohort.endDate.toLocaleDateString()}
+                    </p>
+                  </div>
+                  {cohort.submissionDeadline && (
+                    <div>
+                      <p className="text-xs text-muted-foreground">
+                        Submission Deadline
+                      </p>
+                      <p className="font-medium">
+                        {cohort.submissionDeadline.toLocaleDateString()}
+                      </p>
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-xs text-muted-foreground">
+                      Judging Period
+                    </p>
+                    <p className="font-medium">
+                      {cohort.judgingStart.toLocaleDateString()} - {cohort.judgingEnd.toLocaleDateString()}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Settings</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Visibility</span>
+                    <Badge variant={cohort.isPublic ? "default" : "outline"}>
+                      {cohort.isPublic ? "Public" : "Private"}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Max Team Size</span>
+                    <Badge variant="outline">
+                      {cohort.maxTeamSize} members
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Button variant="outline" className="w-full" asChild>
+                <Link href={`/cohorts/${cohort.slug}`}>
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  View Public Page
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* Submissions Tab */}
+        <TabsContent value="submissions">
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Project</TableHead>
+                    <TableHead className="hidden md:table-cell">Team</TableHead>
+                    <TableHead className="hidden md:table-cell">Track</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {submissions.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8">
+                        <p className="text-muted-foreground">No submissions yet</p>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    submissions.map((submission) => (
+                      <TableRow key={submission.id}>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{submission.title}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {submission.tagline?.slice(0, 40)}
+                              {submission.tagline && submission.tagline.length > 40
+                                ? "..."
+                                : ""}
+                            </p>
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          {submission.team?.name || "-"}
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          {submission.track?.name || "Open"}
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={getSubmissionStatusColor(submission.status)}>
+                            {submission.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="icon" asChild>
+                            <Link href={`/admin/submissions/${submission.id}`}>
+                              <Eye className="h-4 w-4" />
+                            </Link>
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Sponsors Tab */}
+        <TabsContent value="sponsors">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {sponsors.length === 0 ? (
+              <div className="col-span-full text-center py-12">
+                <p className="text-muted-foreground">No sponsors yet</p>
+              </div>
+            ) : (
+              sponsors.map((sponsor) => (
+                <Card key={sponsor.id}>
+                  <CardContent className="p-6 flex items-center gap-4">
+                    <div className="w-16 h-16 relative flex-shrink-0">
+                      <Image
+                        src={sponsor.logo}
+                        alt={sponsor.name}
+                        fill
+                        className="object-contain"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{sponsor.name}</p>
+                      <Badge variant="outline" className="mt-1">
+                        {sponsor.tier}
+                      </Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+        </TabsContent>
+
+        {/* Tracks Tab */}
+        <TabsContent value="tracks">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {tracks.length === 0 ? (
+              <div className="col-span-full text-center py-12">
+                <p className="text-muted-foreground">No tracks yet</p>
+              </div>
+            ) : (
+              tracks.map((track) => (
+                <Card key={track.id}>
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      <span>{track.name}</span>
+                      {track.prizePool && (
+                        <Badge variant="secondary">{track.prizePool}</Badge>
+                      )}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">
+                      {track.description}
+                    </p>
+                    {track.sponsorName && (
+                      <div className="flex items-center gap-2 mt-4 pt-4 border-t">
+                        {track.sponsorLogo && (
+                          <div className="w-8 h-8 relative">
+                            <Image
+                              src={track.sponsorLogo}
+                              alt={track.sponsorName}
+                              fill
+                              className="object-contain"
+                            />
+                          </div>
+                        )}
+                        <span className="text-sm">{track.sponsorName}</span>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}

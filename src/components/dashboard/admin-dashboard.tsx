@@ -113,7 +113,7 @@ export function AdminDashboard() {
             <CardDescription>All buildathon cohorts</CardDescription>
           </div>
           <Button variant="outline" asChild>
-            <Link href="/cohorts">
+            <Link href="/admin/cohorts">
               View All
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
@@ -146,7 +146,7 @@ export function AdminDashboard() {
                     </p>
                   </div>
                   <Button variant="outline" asChild>
-                    <Link href={`/cohorts/${cohort.id}`}>Manage</Link>
+                    <Link href={`/admin/cohorts/${cohort.id}`}>Manage</Link>
                   </Button>
                 </div>
               );

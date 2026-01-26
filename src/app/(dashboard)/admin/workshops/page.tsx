@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { mockWorkshops } from "@/data/mock-data";
+import type { Workshop } from "@/types";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,10 +24,21 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Select,
   SelectContent,
@@ -33,12 +46,58 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PlusCircle, Pencil, Trash2, Play, FileText, GraduationCap } from "lucide-react";
+import { PlusCircle, Pencil, Trash2, Play, FileText, GraduationCap, Search, X } from "lucide-react";
 
 export default function AdminWorkshopPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedWorkshop, setSelectedWorkshop] = useState<Workshop | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
 
   const categories = Array.from(new Set(mockWorkshops.map((w) => w.category)));
+
+  // Filter workshops based on search and category
+  const filteredWorkshops = mockWorkshops.filter((workshop) => {
+    const matchesSearch =
+      searchQuery === "" ||
+      workshop.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      workshop.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      workshop.partnerName?.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesCategory =
+      categoryFilter === "all" || workshop.category === categoryFilter;
+
+    return matchesSearch && matchesCategory;
+  });
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setCategoryFilter("all");
+  };
+
+  const handleEdit = (workshop: Workshop) => {
+    setSelectedWorkshop(workshop);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleDelete = (workshop: Workshop) => {
+    setSelectedWorkshop(workshop);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    toast.error(`"${selectedWorkshop?.title}" has been deleted`);
+    setIsDeleteDialogOpen(false);
+    setSelectedWorkshop(null);
+  };
+
+  const saveEdit = () => {
+    toast.success(`"${selectedWorkshop?.title}" updated successfully`);
+    setIsEditDialogOpen(false);
+    setSelectedWorkshop(null);
+  };
 
   return (
     <div className="space-y-6">
@@ -184,12 +243,60 @@ export default function AdminWorkshopPage() {
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle>All Content</CardTitle>
-            <CardDescription>
-              {mockWorkshops.length} workshop{mockWorkshops.length !== 1 ? "s" : ""} available
-            </CardDescription>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <CardTitle>All Content</CardTitle>
+                <CardDescription>
+                  {filteredWorkshops.length} of {mockWorkshops.length} workshop{mockWorkshops.length !== 1 ? "s" : ""}
+                </CardDescription>
+              </div>
+            </div>
+
+            {/* Search and Filter */}
+            <div className="flex flex-col gap-3 pt-4 sm:flex-row sm:items-center">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Search workshops..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {(searchQuery || categoryFilter !== "all") && (
+                <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1">
+                  <X className="h-4 w-4" />
+                  Clear
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
+            {filteredWorkshops.length === 0 ? (
+              <div className="py-12 text-center">
+                <Search className="mx-auto h-12 w-12 text-muted-foreground" />
+                <h3 className="mt-4 text-lg font-semibold">No results found</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Try adjusting your search or filter criteria
+                </p>
+                <Button variant="outline" size="sm" onClick={clearFilters} className="mt-4">
+                  Clear filters
+                </Button>
+              </div>
+            ) : (
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
@@ -204,7 +311,7 @@ export default function AdminWorkshopPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {mockWorkshops.map((workshop) => (
+                  {filteredWorkshops.map((workshop) => (
                     <TableRow key={workshop.id}>
                       <TableCell>
                         <div className="max-w-[280px]">
@@ -246,13 +353,19 @@ export default function AdminWorkshopPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex justify-end gap-1">
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => handleEdit(workshop)}
+                          >
                             <Pencil className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => handleDelete(workshop)}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -263,9 +376,101 @@ export default function AdminWorkshopPage() {
                 </TableBody>
               </Table>
             </div>
+            )}
           </CardContent>
         </Card>
       )}
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Workshop</DialogTitle>
+            <DialogDescription>
+              Update the workshop content details
+            </DialogDescription>
+          </DialogHeader>
+          {selectedWorkshop && (
+            <div className="space-y-4 pt-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-title">Title</Label>
+                <Input id="edit-title" defaultValue={selectedWorkshop.title} />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-description">Description</Label>
+                <Textarea
+                  id="edit-description"
+                  defaultValue={selectedWorkshop.description}
+                  rows={3}
+                />
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-category">Category</Label>
+                  <Select defaultValue={selectedWorkshop.category}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Basics">Basics</SelectItem>
+                      <SelectItem value="Advanced">Advanced</SelectItem>
+                      <SelectItem value="Business">Business</SelectItem>
+                      <SelectItem value="Technical">Technical</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-duration">Duration</Label>
+                  <Input id="edit-duration" defaultValue={selectedWorkshop.duration || ""} />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-videoUrl">Video URL</Label>
+                <Input id="edit-videoUrl" type="url" defaultValue={selectedWorkshop.videoUrl || ""} />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-articleUrl">Article URL</Label>
+                <Input id="edit-articleUrl" type="url" defaultValue={selectedWorkshop.articleUrl || ""} />
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={saveEdit}>
+                  Save Changes
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Workshop</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete &ldquo;{selectedWorkshop?.title}&rdquo;? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
