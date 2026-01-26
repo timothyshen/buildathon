@@ -114,11 +114,11 @@ export function StepTracks({ data, onChange, errors }: StepTracksProps) {
                     )}
                   >
                     {isSelected && (
-                      <CheckCircle2 className="absolute top-3 right-3 h-5 w-5 text-violet-600" />
+                      <CheckCircle2 aria-hidden="true" className="absolute top-3 right-3 h-5 w-5 text-violet-600" />
                     )}
                     <div className="flex items-start gap-3">
                       <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800">
-                        <Trophy className="h-5 w-5 text-amber-500" />
+                        <Trophy aria-hidden="true" className="h-5 w-5 text-amber-500" />
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2">

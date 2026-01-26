@@ -118,7 +118,7 @@ export default function SubmitPage() {
       if (!data.title || data.title.length < 3) {
         newErrors.title = "Title must be at least 3 characters";
       }
-      if (!data.description || data.description.replace(/<[^>]*>/g, "").length < 50) {
+      if (!data.description || data.description.replace(/<[^>]*>/g, "").trim().length < 50) {
         newErrors.description = "Description must be at least 50 characters";
       }
     }

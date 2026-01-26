@@ -88,7 +88,7 @@ export function StepReview({ data, onEdit }: StepReviewProps) {
                     aria-label={`${link.label}: ${link.url} (opens in new tab)`}
                   >
                     {link.url}
-                    <ExternalLink className="h-3 w-3" />
+                    <ExternalLink aria-hidden="true" className="h-3 w-3" />
                   </a>
                 </div>
               ))}
