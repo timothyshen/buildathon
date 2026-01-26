@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { mockWorkshops } from "@/data/mock-data";
+import { workshopsService } from "@/services";
 import type { Workshop } from "@/types";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
@@ -46,9 +46,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PlusCircle, Pencil, Trash2, Play, FileText, GraduationCap, Search, X } from "lucide-react";
+import { PlusCircle, Pencil, Trash2, Play, FileText, GraduationCap, Search, X, Loader2 } from "lucide-react";
 
 export default function AdminWorkshopPage() {
+  const [workshops, setWorkshops] = useState<Workshop[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -56,10 +58,27 @@ export default function AdminWorkshopPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
 
-  const categories = Array.from(new Set(mockWorkshops.map((w) => w.category)));
+  useEffect(() => {
+    async function loadData() {
+      const { data, success } = await workshopsService.list();
+      if (success) setWorkshops(data);
+      setIsLoading(false);
+    }
+    loadData();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  const categories = Array.from(new Set(workshops.map((w) => w.category)));
 
   // Filter workshops based on search and category
-  const filteredWorkshops = mockWorkshops.filter((workshop) => {
+  const filteredWorkshops = workshops.filter((workshop) => {
     const matchesSearch =
       searchQuery === "" ||
       workshop.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -210,7 +229,7 @@ export default function AdminWorkshopPage() {
             <CardTitle className="text-sm font-medium">Total Content</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockWorkshops.length}</div>
+            <div className="text-2xl font-bold">{workshops.length}</div>
           </CardContent>
         </Card>
         {categories.slice(0, 3).map((category) => (
@@ -220,7 +239,7 @@ export default function AdminWorkshopPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {mockWorkshops.filter((w) => w.category === category).length}
+                {workshops.filter((w) => w.category === category).length}
               </div>
             </CardContent>
           </Card>
@@ -228,7 +247,7 @@ export default function AdminWorkshopPage() {
       </div>
 
       {/* Content Table */}
-      {mockWorkshops.length === 0 ? (
+      {workshops.length === 0 ? (
         <Card>
           <CardContent className="py-12">
             <div className="text-center">
@@ -247,7 +266,7 @@ export default function AdminWorkshopPage() {
               <div>
                 <CardTitle>All Content</CardTitle>
                 <CardDescription>
-                  {filteredWorkshops.length} of {mockWorkshops.length} workshop{mockWorkshops.length !== 1 ? "s" : ""}
+                  {filteredWorkshops.length} of {workshops.length} workshop{workshops.length !== 1 ? "s" : ""}
                 </CardDescription>
               </div>
             </div>

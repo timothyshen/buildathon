@@ -22,8 +22,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import type { SponsorOrg } from "@/types";
-import { mockCohorts } from "@/data/mock-data";
+import type { SponsorOrg, Cohort } from "@/types";
 
 interface SponsorFormProps {
   open: boolean;
@@ -31,6 +30,7 @@ interface SponsorFormProps {
   sponsor?: SponsorOrg;
   onSubmit: (data: SponsorFormData) => void;
   defaultCohortId?: string;
+  cohorts: Cohort[];
 }
 
 export function SponsorForm({
@@ -39,6 +39,7 @@ export function SponsorForm({
   sponsor,
   onSubmit,
   defaultCohortId,
+  cohorts,
 }: SponsorFormProps) {
   const {
     register,
@@ -108,7 +109,7 @@ export function SponsorForm({
                   <SelectValue placeholder="Select cohort" />
                 </SelectTrigger>
                 <SelectContent>
-                  {mockCohorts.map((cohort) => (
+                  {cohorts.map((cohort) => (
                     <SelectItem key={cohort.id} value={cohort.id}>
                       {cohort.name}
                     </SelectItem>

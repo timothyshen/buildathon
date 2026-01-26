@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { mockSubmissions, mockCohorts } from "@/data/mock-data";
+import { submissionsService, cohortsService } from "@/services";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Card, CardContent } from "@/components/ui/card";
@@ -24,14 +24,41 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, ExternalLink, Eye } from "lucide-react";
+import { Search, ExternalLink, Eye, Loader2 } from "lucide-react";
+import type { Submission, Cohort } from "@/types";
 
 export default function AdminSubmissionsPage() {
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [cohorts, setCohorts] = useState<Cohort[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedCohort, setSelectedCohort] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
 
-  const filteredSubmissions = mockSubmissions.filter((submission) => {
+  useEffect(() => {
+    async function loadData() {
+      const [submissionsResult, cohortsResult] = await Promise.all([
+        submissionsService.list(),
+        cohortsService.list(),
+      ]);
+
+      if (submissionsResult.success) setSubmissions(submissionsResult.data);
+      if (cohortsResult.success) setCohorts(cohortsResult.data);
+
+      setIsLoading(false);
+    }
+    loadData();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  const filteredSubmissions = submissions.filter((submission) => {
     const matchesSearch =
       search === "" ||
       submission.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -98,7 +125,7 @@ export default function AdminSubmissionsPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Cohorts</SelectItem>
-            {mockCohorts.map((cohort) => (
+            {cohorts.map((cohort) => (
               <SelectItem key={cohort.id} value={cohort.id}>
                 {cohort.name}
               </SelectItem>
@@ -190,7 +217,7 @@ export default function AdminSubmissionsPage() {
       </Card>
 
       <p className="text-sm text-muted-foreground">
-        Showing {filteredSubmissions.length} of {mockSubmissions.length} submissions
+        Showing {filteredSubmissions.length} of {submissions.length} submissions
       </p>
     </div>
   );

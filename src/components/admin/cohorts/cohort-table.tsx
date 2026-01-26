@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,8 +13,8 @@ import {
 } from "@/components/ui/table";
 import { Pencil, Eye, Users } from "lucide-react";
 import Link from "next/link";
-import type { Cohort } from "@/types";
-import { mockCohortSponsors } from "@/data/mock-data";
+import type { Cohort, CohortSponsor } from "@/types";
+import { sponsorsService } from "@/services";
 
 interface CohortTableProps {
   cohorts: Cohort[];
@@ -29,8 +30,18 @@ const statusColors: Record<Cohort["status"], string> = {
 };
 
 export function CohortTable({ cohorts, onEdit }: CohortTableProps) {
+  const [cohortSponsors, setCohortSponsors] = useState<CohortSponsor[]>([]);
+
+  useEffect(() => {
+    async function loadSponsors() {
+      const { data, success } = await sponsorsService.listCohortSponsors();
+      if (success) setCohortSponsors(data);
+    }
+    loadSponsors();
+  }, []);
+
   const getSponsorCount = (cohortId: string) => {
-    return mockCohortSponsors.filter((cs) => cs.cohortId === cohortId).length;
+    return cohortSponsors.filter((cs) => cs.cohortId === cohortId).length;
   };
 
   return (

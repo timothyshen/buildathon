@@ -1,20 +1,31 @@
 "use client";
 
-import { useState } from "react";
-import { mockCohorts } from "@/data/mock-data";
+import { useState, useEffect } from "react";
+import { cohortsService } from "@/services";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, Loader2 } from "lucide-react";
 import { CohortForm } from "@/components/admin/cohorts/cohort-form";
 import { CohortTable } from "@/components/admin/cohorts/cohort-table";
 import type { Cohort } from "@/types";
 import type { CohortFormData } from "@/lib/schemas";
 
 export default function CohortsPage() {
+  const [cohorts, setCohorts] = useState<Cohort[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingCohort, setEditingCohort] = useState<Cohort | undefined>();
+
+  useEffect(() => {
+    async function loadData() {
+      const { data, success } = await cohortsService.list();
+      if (success) setCohorts(data);
+      setIsLoading(false);
+    }
+    loadData();
+  }, []);
 
   const handleEdit = (cohort: Cohort) => {
     setEditingCohort(cohort);
@@ -33,9 +44,17 @@ export default function CohortsPage() {
     }
   };
 
-  const activeCohorts = mockCohorts.filter((c) => c.status === "active").length;
-  const upcomingCohorts = mockCohorts.filter((c) => c.status === "upcoming").length;
-  const completedCohorts = mockCohorts.filter((c) => c.status === "completed").length;
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  const activeCohorts = cohorts.filter((c) => c.status === "active").length;
+  const upcomingCohorts = cohorts.filter((c) => c.status === "upcoming").length;
+  const completedCohorts = cohorts.filter((c) => c.status === "completed").length;
 
   return (
     <div className="space-y-6">
@@ -67,7 +86,7 @@ export default function CohortsPage() {
             <CardTitle className="text-sm font-medium">Total Cohorts</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockCohorts.length}</div>
+            <div className="text-2xl font-bold">{cohorts.length}</div>
           </CardContent>
         </Card>
         <Card>
@@ -98,7 +117,7 @@ export default function CohortsPage() {
 
       <Card>
         <CardContent className="p-0">
-          <CohortTable cohorts={mockCohorts} onEdit={handleEdit} />
+          <CohortTable cohorts={cohorts} onEdit={handleEdit} />
         </CardContent>
       </Card>
 

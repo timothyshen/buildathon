@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { mockSponsorOrgs, mockCohortSponsors, mockCohorts } from "@/data/mock-data";
+import { useState, useEffect, useMemo } from "react";
+import { sponsorsService, cohortsService } from "@/services";
+import type { SponsorOrg, CohortSponsor, Cohort } from "@/types";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,14 +25,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { PlusCircle, Search, Building2 } from "lucide-react";
+import { PlusCircle, Search, Building2, Loader2 } from "lucide-react";
 import { SponsorForm } from "@/components/admin/sponsors/sponsor-form";
 import { SponsorTable } from "@/components/admin/sponsors/sponsor-table";
 import { InviteSponsorForm } from "@/components/admin/sponsors/invite-sponsor-form";
-import type { SponsorOrg } from "@/types";
 import type { SponsorFormData, InviteSponsorFormData } from "@/lib/schemas";
 
 export default function AdminSponsorsPage() {
+  const [sponsorOrgs, setSponsorOrgs] = useState<SponsorOrg[]>([]);
+  const [cohortSponsors, setCohortSponsors] = useState<CohortSponsor[]>([]);
+  const [cohorts, setCohorts] = useState<Cohort[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [editingSponsor, setEditingSponsor] = useState<SponsorOrg | undefined>();
@@ -39,6 +43,30 @@ export default function AdminSponsorsPage() {
   const [deleteTarget, setDeleteTarget] = useState<SponsorOrg | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCohort, setFilterCohort] = useState<string>("all");
+
+  useEffect(() => {
+    async function loadData() {
+      const [orgsResult, cohortSponsorsResult, cohortsResult] = await Promise.all([
+        sponsorsService.listOrgs(),
+        sponsorsService.listCohortSponsors(),
+        cohortsService.list(),
+      ]);
+
+      if (orgsResult.success) setSponsorOrgs(orgsResult.data);
+      if (cohortSponsorsResult.success) setCohortSponsors(cohortSponsorsResult.data);
+      if (cohortsResult.success) setCohorts(cohortsResult.data);
+      setIsLoading(false);
+    }
+    loadData();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   const handleEdit = (sponsor: SponsorOrg) => {
     setEditingSponsor(sponsor);
@@ -83,8 +111,8 @@ export default function AdminSponsorsPage() {
 
   // Get sponsor orgs with their cohort participation info
   const sponsorsWithCohorts = useMemo(() => {
-    return mockSponsorOrgs.map(org => {
-      const cohortLinks = mockCohortSponsors.filter(cs => cs.sponsorOrgId === org.id);
+    return sponsorOrgs.map(org => {
+      const cohortLinks = cohortSponsors.filter(cs => cs.sponsorOrgId === org.id);
       return {
         ...org,
         cohortIds: cohortLinks.map(cs => cs.cohortId),
@@ -98,7 +126,7 @@ export default function AdminSponsorsPage() {
           : null,
       };
     });
-  }, []);
+  }, [sponsorOrgs, cohortSponsors]);
 
   const filteredSponsors = sponsorsWithCohorts.filter((sponsor) => {
     const matchesSearch =
@@ -108,7 +136,7 @@ export default function AdminSponsorsPage() {
     return matchesSearch && matchesCohort;
   });
 
-  const totalContribution = mockCohortSponsors.reduce(
+  const totalContribution = cohortSponsors.reduce(
     (sum, cs) => sum + cs.prizePoolContribution,
     0
   );
@@ -143,7 +171,7 @@ export default function AdminSponsorsPage() {
             <CardTitle className="text-sm font-medium">Total Sponsors</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockSponsorOrgs.length}</div>
+            <div className="text-2xl font-bold">{sponsorOrgs.length}</div>
           </CardContent>
         </Card>
         <Card>
@@ -192,7 +220,7 @@ export default function AdminSponsorsPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Cohorts</SelectItem>
-            {mockCohorts.map((cohort) => (
+            {cohorts.map((cohort) => (
               <SelectItem key={cohort.id} value={cohort.id}>
                 {cohort.name}
               </SelectItem>
@@ -231,6 +259,7 @@ export default function AdminSponsorsPage() {
         onOpenChange={handleFormOpenChange}
         sponsor={editingSponsor}
         onSubmit={handleFormSubmit}
+        cohorts={cohorts}
       />
 
       <InviteSponsorForm
@@ -238,6 +267,7 @@ export default function AdminSponsorsPage() {
         onOpenChange={handleInviteOpenChange}
         onSubmit={handleInviteSubmit}
         defaultSponsor={invitingSponsor}
+        sponsorOrgs={sponsorOrgs}
       />
 
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>

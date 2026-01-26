@@ -32,6 +32,7 @@ export interface SponsorsService {
   deleteOrg(id: string): Promise<ServiceResponse<void>>;
 
   // CohortSponsor (junction) operations
+  listCohortSponsors(): Promise<ServiceResponse<CohortSponsor[]>>;
   getCohortSponsors(cohortId: string): Promise<ServiceResponse<CohortSponsorWithOrg[]>>;
   getSponsorCohorts(sponsorOrgId: string): Promise<ServiceResponse<CohortSponsor[]>>;
   getCohortSponsor(cohortId: string, sponsorOrgId: string): Promise<ServiceResponse<CohortSponsor | null>>;
@@ -118,6 +119,11 @@ async function deleteOrg(id: string): Promise<ServiceResponse<void>> {
 
 // CohortSponsor operations
 
+async function listCohortSponsors(): Promise<ServiceResponse<CohortSponsor[]>> {
+  await delay();
+  return success([...mockCohortSponsors]);
+}
+
 async function getCohortSponsors(cohortId: string): Promise<ServiceResponse<CohortSponsorWithOrg[]>> {
   await delay();
   const sponsors = mockGetSponsorsByCohort(cohortId);
@@ -195,6 +201,7 @@ export const sponsorsService: SponsorsService = {
   createOrg,
   updateOrg,
   deleteOrg,
+  listCohortSponsors,
   getCohortSponsors,
   getSponsorCohorts,
   getCohortSponsor,

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { mockUsers, mockReviews, mockCohorts } from "@/data/mock-data";
+import { useState, useEffect } from "react";
+import { usersService, reviewsService } from "@/services";
+import type { User, Review } from "@/types";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,13 +26,36 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Search, UserPlus, Star, CheckCircle, Clock, Users } from "lucide-react";
-
-const judges = mockUsers.filter((u) => u.role === "judge");
+import { Search, UserPlus, Star, CheckCircle, Clock, Users, Loader2 } from "lucide-react";
 
 export default function AdminJudgesPage() {
+  const [judges, setJudges] = useState<User[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+
+  useEffect(() => {
+    async function loadData() {
+      const [usersResult, reviewsResult] = await Promise.all([
+        usersService.list({ role: "judge" }),
+        reviewsService.list(),
+      ]);
+
+      if (usersResult.success) setJudges(usersResult.data as User[]);
+      if (reviewsResult.success) setReviews(reviewsResult.data);
+      setIsLoading(false);
+    }
+    loadData();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   const filteredJudges = judges.filter(
     (judge) =>
@@ -112,7 +136,7 @@ export default function AdminJudgesPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {mockReviews.filter((r) => r.status === "completed").length}
+              {reviews.filter((r) => r.status === "completed").length}
             </div>
           </CardContent>
         </Card>
@@ -123,7 +147,7 @@ export default function AdminJudgesPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {mockReviews.filter((r) => r.status === "pending").length}
+              {reviews.filter((r) => r.status === "pending").length}
             </div>
           </CardContent>
         </Card>
@@ -170,7 +194,7 @@ export default function AdminJudgesPage() {
               </TableHeader>
               <TableBody>
                 {filteredJudges.map((judge) => {
-                  const judgeReviews = mockReviews.filter(
+                  const judgeReviews = reviews.filter(
                     (r) => r.judgeId === judge.id
                   );
                   const completed = judgeReviews.filter(

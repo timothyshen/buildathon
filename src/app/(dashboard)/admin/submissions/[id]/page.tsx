@@ -1,10 +1,11 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
-import { getSubmissionById, mockReviews, getTracksByCohort } from "@/data/mock-data";
+import { submissionsService, reviewsService, tracksService } from "@/services";
+import type { Submission, Review, Track } from "@/types";
 import { ProjectGallery } from "@/components/projects/project-gallery";
 import { ProjectTeam } from "@/components/projects/project-team";
 import { AdminNav } from "@/components/admin/admin-nav";
@@ -73,35 +74,59 @@ const scoreCategories = [
 
 export default function AdminSubmissionDetailPage({ params }: AdminSubmissionDetailPageProps) {
   const { id } = use(params);
-  const { user, isLoading } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
+  const [submission, setSubmission] = useState<Submission | null>(null);
+  const [completedReviews, setCompletedReviews] = useState<Review[]>([]);
+  const [tracks, setTracks] = useState<Track[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [status, setStatus] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const submission = getSubmissionById(id);
+  useEffect(() => {
+    async function loadData() {
+      const { data: submissionData } = await submissionsService.getById(id);
 
-  // Get completed reviews for this submission
-  const completedReviews = mockReviews.filter(
-    (r) => r.submissionId === id && r.status === "completed"
-  );
+      if (!submissionData) {
+        setIsLoading(false);
+        return;
+      }
 
-  // Get track info
-  const tracks = submission?.cohortId
-    ? getTracksByCohort(submission.cohortId)
-    : [];
+      setSubmission(submissionData);
+
+      // Load reviews and tracks in parallel
+      const [reviewsResult, tracksResult] = await Promise.all([
+        reviewsService.getBySubmission(id),
+        submissionData.cohortId
+          ? tracksService.getByCohort(submissionData.cohortId)
+          : Promise.resolve({ data: [], success: true }),
+      ]);
+
+      if (reviewsResult.success) {
+        setCompletedReviews(reviewsResult.data.filter((r) => r.status === "completed"));
+      }
+      if (tracksResult.success) {
+        setTracks(tracksResult.data);
+      }
+
+      setIsLoading(false);
+    }
+    loadData();
+  }, [id]);
+
   const submissionTrack = tracks.find((t) => t.id === submission?.trackId);
+
+  // Handle loading state
+  if (isLoading || authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   // Handle not found
   if (!submission) {
     notFound();
-  }
-
-  // Handle loading state
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-muted-foreground">Loading...</div>
-      </div>
-    );
   }
 
   // Only admins can access
@@ -118,10 +143,16 @@ export default function AdminSubmissionDetailPage({ params }: AdminSubmissionDet
   const handleStatusChange = async (newStatus: string) => {
     setIsUpdating(true);
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      setStatus(newStatus);
-      toast.success(`Status updated to ${newStatus}`);
+      const { success, error } = await submissionsService.updateStatus(
+        submission.id,
+        newStatus as Submission["status"]
+      );
+      if (success) {
+        setStatus(newStatus);
+        toast.success(`Status updated to ${newStatus}`);
+      } else {
+        toast.error(error || "Failed to update status");
+      }
     } finally {
       setIsUpdating(false);
     }

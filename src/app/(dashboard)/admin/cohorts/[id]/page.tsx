@@ -1,16 +1,16 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/contexts/auth-context";
 import {
-  getCohortById,
-  getTracksByCohort,
-  getSponsorsByCohort,
-  getSubmissionsByCohort,
-} from "@/data/mock-data";
+  cohortsService,
+  tracksService,
+  sponsorsService,
+  submissionsService,
+} from "@/services";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,7 +42,8 @@ import {
   Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
-import type { Cohort } from "@/types";
+import type { Cohort, Track, Submission } from "@/types";
+import type { CohortSponsorWithOrg } from "@/services/sponsors.service";
 
 interface AdminCohortDetailPageProps {
   params: Promise<{ id: string }>;
@@ -75,27 +76,51 @@ function getSubmissionStatusColor(status: string) {
 
 export default function AdminCohortDetailPage({ params }: AdminCohortDetailPageProps) {
   const { id } = use(params);
-  const { user, isLoading } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
+  const [cohort, setCohort] = useState<Cohort | null>(null);
+  const [tracks, setTracks] = useState<Track[]>([]);
+  const [sponsors, setSponsors] = useState<CohortSponsorWithOrg[]>([]);
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [status, setStatus] = useState<Cohort["status"] | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const cohort = getCohortById(id);
+  useEffect(() => {
+    async function loadData() {
+      const cohortResult = await cohortsService.getById(id);
+
+      if (!cohortResult.success || !cohortResult.data) {
+        setIsLoading(false);
+        return;
+      }
+
+      setCohort(cohortResult.data);
+
+      const [tracksResult, sponsorsResult, submissionsResult] = await Promise.all([
+        tracksService.getByCohort(id),
+        sponsorsService.getCohortSponsors(id),
+        submissionsService.getByCohort(id),
+      ]);
+
+      if (tracksResult.success) setTracks(tracksResult.data);
+      if (sponsorsResult.success) setSponsors(sponsorsResult.data);
+      if (submissionsResult.success) setSubmissions(submissionsResult.data);
+
+      setIsLoading(false);
+    }
+    loadData();
+  }, [id]);
+
+  if (isLoading || authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   if (!cohort) {
     notFound();
-  }
-
-  const tracks = getTracksByCohort(cohort.id);
-  const sponsors = getSponsorsByCohort(cohort.id);
-  const submissions = getSubmissionsByCohort(cohort.id);
-
-  // Handle loading state
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-muted-foreground">Loading...</div>
-      </div>
-    );
   }
 
   // Only admins can access
@@ -112,10 +137,11 @@ export default function AdminCohortDetailPage({ params }: AdminCohortDetailPageP
   const handleStatusChange = async (newStatus: Cohort["status"]) => {
     setIsUpdating(true);
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      setStatus(newStatus);
-      toast.success(`Cohort status updated to ${newStatus}`);
+      const result = await cohortsService.updateStatus(id, newStatus);
+      if (result.success) {
+        setStatus(newStatus);
+        toast.success(`Cohort status updated to ${newStatus}`);
+      }
     } finally {
       setIsUpdating(false);
     }
