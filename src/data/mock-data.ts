@@ -1,4 +1,4 @@
-import type { User, Cohort, Track, Team, Submission, Review, Workshop, Template, SponsorOrg, CohortSponsor, Sponsor, MediaAsset, WorkshopVersion, WorkshopRSVP } from "@/types";
+import type { User, Cohort, Track, Team, TeamInvite, Submission, Review, Workshop, Template, SponsorOrg, CohortSponsor, Sponsor, MediaAsset, WorkshopVersion, WorkshopRSVP } from "@/types";
 
 // Mock Users
 export const mockUsers: User[] = [
@@ -163,6 +163,21 @@ export const mockTeams: Team[] = [
     members: [
       { userId: "user-3", user: mockUsers[2], role: "lead", joinedAt: new Date("2024-03-01") },
     ],
+  },
+];
+
+// Mock Team Invites
+export const mockTeamInvites: TeamInvite[] = [
+  {
+    id: "invite-1",
+    teamId: "team-1",
+    team: mockTeams[0],
+    email: "newuser@example.com",
+    invitedBy: "user-3",
+    inviter: mockUsers[2],
+    status: "pending",
+    createdAt: new Date("2024-06-15"),
+    expiresAt: new Date("2024-06-22"),
   },
 ];
 
@@ -698,4 +713,28 @@ export function getCohortById(id: string): Cohort | undefined {
 // Helper function to get submission by ID
 export function getSubmissionById(id: string): Submission | undefined {
   return mockSubmissions.find(s => s.id === id);
+}
+
+// Team helper functions
+export function getUserTeams(userId: string): Team[] {
+  return mockTeams.filter((t) => t.members.some((m) => m.userId === userId));
+}
+
+export function getUserTeamForCohort(userId: string, cohortId: string): Team | undefined {
+  return mockTeams.find(
+    (t) => t.cohortId === cohortId && t.members.some((m) => m.userId === userId)
+  );
+}
+
+export function getPendingInvitesForUser(email: string): TeamInvite[] {
+  return mockTeamInvites.filter((i) => i.email === email && i.status === "pending");
+}
+
+export function getTeamInvites(teamId: string): TeamInvite[] {
+  return mockTeamInvites.filter((i) => i.teamId === teamId);
+}
+
+export function isTeamLead(userId: string, teamId: string): boolean {
+  const team = mockTeams.find((t) => t.id === teamId);
+  return team?.members.some((m) => m.userId === userId && m.role === "lead") ?? false;
 }
