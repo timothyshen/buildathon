@@ -126,6 +126,11 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
   const isAdmin = user?.role === "admin";
   const hasAccess = isTeamMember || isAdmin;
 
+  // Handle not found - check this first before auth
+  if (!submission) {
+    notFound();
+  }
+
   // Handle loading state
   if (isLoading) {
     return (
@@ -139,11 +144,6 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
   if (!hasAccess) {
     router.push("/submissions");
     return null;
-  }
-
-  // Handle not found
-  if (!submission) {
-    notFound();
   }
 
   const statusBanner = getStatusBanner(submission.status);

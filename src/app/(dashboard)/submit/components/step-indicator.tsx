@@ -15,47 +15,67 @@ interface StepIndicatorProps {
 
 export function StepIndicator({ steps, currentStep }: StepIndicatorProps) {
   return (
-    <nav aria-label="Progress steps">
-      <ol className="flex items-center justify-between">
+    <nav aria-label="Progress steps" className="w-full">
+      <ol className="flex items-center">
         {steps.map((step, index) => {
           const isCompleted = step.id < currentStep;
           const isCurrent = step.id === currentStep;
+          const isLast = index === steps.length - 1;
 
           return (
             <li
               key={step.id}
-              className="flex items-center"
+              className={cn("flex items-center", !isLast && "flex-1")}
               aria-current={isCurrent ? "step" : undefined}
             >
+              {/* Step circle and label */}
               <div className="flex flex-col items-center">
+                {/* Circle */}
                 <div
                   className={cn(
-                    "flex h-10 w-10 items-center justify-center rounded-full border-2 text-sm font-semibold transition-colors",
-                    isCompleted && "border-violet-600 bg-violet-600 text-white",
-                    isCurrent && "border-violet-600 text-violet-600",
-                    !isCompleted && !isCurrent && "border-slate-300 text-slate-400"
+                    "relative flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold transition-all duration-300",
+                    isCompleted &&
+                      "bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-lg shadow-violet-500/30",
+                    isCurrent &&
+                      "border-2 border-violet-500 bg-violet-50 text-violet-600 ring-4 ring-violet-100 dark:bg-violet-950 dark:ring-violet-900/30",
+                    !isCompleted &&
+                      !isCurrent &&
+                      "border-2 border-slate-200 bg-white text-slate-400 dark:border-slate-700 dark:bg-slate-800"
                   )}
                   aria-label={`Step ${step.id}: ${step.label}${isCompleted ? " - completed" : isCurrent ? " - current" : ""}`}
                 >
-                  {isCompleted ? <Check className="h-5 w-5" aria-hidden="true" /> : step.id}
+                  {isCompleted ? (
+                    <Check className="h-5 w-5" strokeWidth={3} aria-hidden="true" />
+                  ) : (
+                    step.id
+                  )}
                 </div>
+
+                {/* Label */}
                 <span
                   className={cn(
-                    "mt-2 text-xs font-medium",
-                    isCurrent ? "text-violet-600" : "text-muted-foreground"
+                    "mt-2 text-xs font-medium transition-colors hidden sm:block",
+                    isCompleted && "text-violet-600 dark:text-violet-400",
+                    isCurrent && "text-violet-600 dark:text-violet-400",
+                    !isCompleted && !isCurrent && "text-slate-400 dark:text-slate-500"
                   )}
                 >
                   {step.label}
                 </span>
               </div>
-              {index < steps.length - 1 && (
-                <div
-                  className={cn(
-                    "mx-2 h-0.5 w-12 sm:w-20",
-                    isCompleted ? "bg-violet-600" : "bg-slate-200"
-                  )}
-                  aria-hidden="true"
-                />
+
+              {/* Connector line */}
+              {!isLast && (
+                <div className="flex-1 px-2 sm:px-4" aria-hidden="true">
+                  <div
+                    className={cn(
+                      "h-0.5 w-full rounded-full transition-colors duration-300",
+                      isCompleted
+                        ? "bg-gradient-to-r from-violet-500 to-indigo-500"
+                        : "bg-slate-200 dark:bg-slate-700"
+                    )}
+                  />
+                </div>
               )}
             </li>
           );
