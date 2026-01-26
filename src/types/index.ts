@@ -67,6 +67,18 @@ export interface TeamMember {
   joinedAt: Date;
 }
 
+export interface TeamInvite {
+  id: string;
+  teamId: string;
+  team?: Team;
+  email: string;
+  invitedBy: string;
+  inviter?: User;
+  status: "pending" | "accepted" | "declined";
+  createdAt: Date;
+  expiresAt: Date;
+}
+
 export interface Submission {
   id: string;
   cohortId: string;
