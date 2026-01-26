@@ -2,15 +2,26 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Loader2, ArrowLeft, ArrowRight, Save } from "lucide-react";
 import { StepIndicator } from "./components/step-indicator";
 import { StepDetails } from "./components/step-details";
 import { StepLinksTech } from "./components/step-links-tech";
 import { StepTracks } from "./components/step-tracks";
 import { StepReview } from "./components/step-review";
-import { mockTracks } from "@/data/mock-data";
+import { mockTracks, getUserTeams, mockCohorts } from "@/data/mock-data";
+import { useAuth } from "@/contexts/auth-context";
 
 const STORAGE_KEY = "submission-draft";
 
@@ -22,6 +33,7 @@ const STEPS = [
 ];
 
 interface SubmissionDraft {
+  teamId: string;
   title: string;
   tagline: string;
   description: string;
@@ -38,6 +50,7 @@ interface SubmissionDraft {
 }
 
 const initialData: SubmissionDraft = {
+  teamId: "",
   title: "",
   tagline: "",
   description: "",
@@ -57,22 +70,23 @@ export default function SubmitPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const preselectedCohort = searchParams.get("cohort");
+  const { user } = useAuth();
+
+  const userTeams = user ? getUserTeams(user.id) : [];
 
   const [data, setData] = useState<SubmissionDraft>(initialData);
   const [currentStep, setCurrentStep] = useState(1);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
-  const [showDraftBanner, setShowDraftBanner] = useState(false);
 
-  // Check for existing draft on mount
+  // Load draft or preselected cohort on mount
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
-        if (parsed.title || parsed.description || parsed.cohortId) {
-          setShowDraftBanner(true);
-        }
+        setData(parsed);
+        setCurrentStep(parsed.currentStep || 1);
       } catch {
         localStorage.removeItem(STORAGE_KEY);
       }
@@ -89,23 +103,6 @@ export default function SubmitPage() {
     return () => clearTimeout(timeout);
   }, [data, currentStep]);
 
-  const loadDraft = () => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      setData(parsed);
-      setCurrentStep(parsed.currentStep || 1);
-    }
-    setShowDraftBanner(false);
-  };
-
-  const startFresh = () => {
-    localStorage.removeItem(STORAGE_KEY);
-    setData(preselectedCohort ? { ...initialData, cohortId: preselectedCohort } : initialData);
-    setCurrentStep(1);
-    setShowDraftBanner(false);
-  };
-
   const handleChange = useCallback((field: string, value: string | string[] | boolean) => {
     setData((prev) => ({ ...prev, [field]: value }));
     setErrors((prev) => ({ ...prev, [field]: "" }));
@@ -115,6 +112,9 @@ export default function SubmitPage() {
     const newErrors: Record<string, string> = {};
 
     if (step === 1) {
+      if (!data.teamId) {
+        newErrors.teamId = "Please select a team";
+      }
       if (!data.title || data.title.length < 3) {
         newErrors.title = "Title must be at least 3 characters";
       }
@@ -194,24 +194,6 @@ export default function SubmitPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
-      {/* Draft Recovery Banner */}
-      {showDraftBanner && (
-        <div className="rounded-lg border border-violet-200 bg-violet-50 p-4 dark:border-violet-800 dark:bg-violet-950/20">
-          <p className="font-medium">Resume your draft?</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            You have an unsaved submission draft.
-          </p>
-          <div className="flex gap-2 mt-3">
-            <Button size="sm" onClick={loadDraft}>
-              Continue Draft
-            </Button>
-            <Button size="sm" variant="outline" onClick={startFresh}>
-              Start Fresh
-            </Button>
-          </div>
-        </div>
-      )}
-
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">Submit Project</h1>
@@ -226,11 +208,58 @@ export default function SubmitPage() {
       {/* Step Content */}
       <div className="min-h-[400px]">
         {currentStep === 1 && (
-          <StepDetails
-            data={{ title: data.title, tagline: data.tagline, description: data.description }}
-            onChange={handleChange}
-            errors={errors}
-          />
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Select Team</CardTitle>
+                <CardDescription>Choose which team is submitting this project</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <Label htmlFor="team">Team *</Label>
+                  <Select
+                    value={data.teamId}
+                    onValueChange={(value) => handleChange("teamId", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select your team" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {userTeams
+                        .filter((t) => {
+                          const cohort = mockCohorts.find((c) => c.id === t.cohortId);
+                          return cohort?.status === "active";
+                        })
+                        .map((team) => {
+                          const cohort = mockCohorts.find((c) => c.id === team.cohortId);
+                          return (
+                            <SelectItem key={team.id} value={team.id}>
+                              {team.name} ({cohort?.name})
+                            </SelectItem>
+                          );
+                        })}
+                    </SelectContent>
+                  </Select>
+                  {errors.teamId && (
+                    <p className="text-sm text-destructive">{errors.teamId}</p>
+                  )}
+                  {userTeams.filter((t) => {
+                    const cohort = mockCohorts.find((c) => c.id === t.cohortId);
+                    return cohort?.status === "active";
+                  }).length === 0 && (
+                    <p className="text-sm text-amber-600">
+                      You need to <Link href="/teams/new" className="underline">create a team</Link> first.
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+            <StepDetails
+              data={{ title: data.title, tagline: data.tagline, description: data.description }}
+              onChange={handleChange}
+              errors={errors}
+            />
+          </div>
         )}
         {currentStep === 2 && (
           <StepLinksTech
