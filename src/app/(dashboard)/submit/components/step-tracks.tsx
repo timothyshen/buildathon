@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Trophy, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { mockCohorts, mockTracks, mockSponsorOrgs } from "@/data/mock-data";
+import type { Cohort, Track, SponsorOrg } from "@/types";
 
 interface StepTracksProps {
   data: {
@@ -21,13 +21,16 @@ interface StepTracksProps {
   };
   onChange: (field: string, value: string | string[]) => void;
   errors: Record<string, string>;
+  cohorts: Cohort[];
+  tracks: Track[];
+  sponsorOrgs: SponsorOrg[];
 }
 
-export function StepTracks({ data, onChange, errors }: StepTracksProps) {
-  const activeCohorts = mockCohorts.filter(
+export function StepTracks({ data, onChange, errors, cohorts, tracks, sponsorOrgs }: StepTracksProps) {
+  const activeCohorts = cohorts.filter(
     (c) => c.status === "active" && c.isPublic
   );
-  const cohortTracks = mockTracks.filter((t) => t.cohortId === data.cohortId);
+  const cohortTracks = tracks.filter((t) => t.cohortId === data.cohortId);
 
   const toggleTrack = (trackId: string) => {
     const newTrackIds = data.trackIds.includes(trackId)
@@ -36,9 +39,9 @@ export function StepTracks({ data, onChange, errors }: StepTracksProps) {
     onChange("trackIds", newTrackIds);
   };
 
-  const getSponsorForTrack = (track: typeof mockTracks[0]) => {
+  const getSponsorForTrack = (track: Track) => {
     if (track.sponsorOrgId) {
-      return mockSponsorOrgs.find((s) => s.id === track.sponsorOrgId);
+      return sponsorOrgs.find((s) => s.id === track.sponsorOrgId);
     }
     return null;
   };

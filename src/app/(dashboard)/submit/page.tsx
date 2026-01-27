@@ -20,8 +20,9 @@ import { StepDetails } from "./components/step-details";
 import { StepLinksTech } from "./components/step-links-tech";
 import { StepTracks } from "./components/step-tracks";
 import { StepReview } from "./components/step-review";
-import { mockTracks, getUserTeams, mockCohorts } from "@/data/mock-data";
+import { teamsService, cohortsService, tracksService, sponsorsService } from "@/services";
 import { useAuth } from "@/contexts/auth-context";
+import type { Team, Cohort, Track, SponsorOrg } from "@/types";
 
 const STORAGE_KEY = "submission-draft";
 
@@ -72,12 +73,41 @@ export default function SubmitPage() {
   const preselectedCohort = searchParams.get("cohort");
   const { user } = useAuth();
 
-  const userTeams = user ? getUserTeams(user.id) : [];
+  const [userTeams, setUserTeams] = useState<Team[]>([]);
+  const [cohorts, setCohorts] = useState<Cohort[]>([]);
+  const [tracks, setTracks] = useState<Track[]>([]);
+  const [sponsorOrgs, setSponsorOrgs] = useState<SponsorOrg[]>([]);
+  const [isLoadingData, setIsLoadingData] = useState(true);
 
   const [data, setData] = useState<SubmissionDraft>(initialData);
   const [currentStep, setCurrentStep] = useState(1);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
+
+  // Load teams, cohorts, tracks, and sponsors
+  useEffect(() => {
+    async function loadData() {
+      if (!user) {
+        setIsLoadingData(false);
+        return;
+      }
+
+      const [teamsResult, cohortsResult, tracksResult, sponsorsResult] = await Promise.all([
+        teamsService.getByUser(user.id),
+        cohortsService.list(),
+        tracksService.list(),
+        sponsorsService.listOrgs(),
+      ]);
+
+      if (teamsResult.success) setUserTeams(teamsResult.data);
+      if (cohortsResult.success) setCohorts(cohortsResult.data);
+      if (tracksResult.success) setTracks(tracksResult.data);
+      if (sponsorsResult.success) setSponsorOrgs(sponsorsResult.data);
+
+      setIsLoadingData(false);
+    }
+    loadData();
+  }, [user]);
 
   // Load draft or preselected cohort on mount
   useEffect(() => {
@@ -143,7 +173,7 @@ export default function SubmitPage() {
       if (!data.cohortId) {
         newErrors.cohortId = "Please select a cohort";
       }
-      const cohortTracks = mockTracks.filter((t) => t.cohortId === data.cohortId);
+      const cohortTracks = tracks.filter((t) => t.cohortId === data.cohortId);
       if (cohortTracks.length > 0 && data.trackIds.length === 0) {
         newErrors.trackIds = "Please select at least one track";
       }
@@ -192,6 +222,14 @@ export default function SubmitPage() {
     }
   };
 
+  if (isLoadingData) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-3xl space-y-8">
       {/* Header */}
@@ -227,11 +265,11 @@ export default function SubmitPage() {
                     <SelectContent>
                       {userTeams
                         .filter((t) => {
-                          const cohort = mockCohorts.find((c) => c.id === t.cohortId);
+                          const cohort = cohorts.find((c) => c.id === t.cohortId);
                           return cohort?.status === "active";
                         })
                         .map((team) => {
-                          const cohort = mockCohorts.find((c) => c.id === team.cohortId);
+                          const cohort = cohorts.find((c) => c.id === team.cohortId);
                           return (
                             <SelectItem key={team.id} value={team.id}>
                               {team.name} ({cohort?.name})
@@ -244,7 +282,7 @@ export default function SubmitPage() {
                     <p className="text-sm text-destructive">{errors.teamId}</p>
                   )}
                   {userTeams.filter((t) => {
-                    const cohort = mockCohorts.find((c) => c.id === t.cohortId);
+                    const cohort = cohorts.find((c) => c.id === t.cohortId);
                     return cohort?.status === "active";
                   }).length === 0 && (
                     <p className="text-sm text-amber-600">
@@ -280,10 +318,18 @@ export default function SubmitPage() {
             data={{ cohortId: data.cohortId, trackIds: data.trackIds }}
             onChange={handleChange}
             errors={errors}
+            cohorts={cohorts}
+            tracks={tracks}
+            sponsorOrgs={sponsorOrgs}
           />
         )}
         {currentStep === 4 && (
-          <StepReview data={data} onEdit={handleEdit} />
+          <StepReview
+            data={data}
+            onEdit={handleEdit}
+            cohorts={cohorts}
+            tracks={tracks}
+          />
         )}
       </div>
 

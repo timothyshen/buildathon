@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { mockReviews } from "@/data/mock-data";
+import { reviewsService } from "@/services";
+import type { Review } from "@/types";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,18 +32,47 @@ const scoreCategories = [
 export default function ReviewDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const review = mockReviews.find((r) => r.id === params.id);
 
+  const [review, setReview] = useState<Review | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [scores, setScores] = useState({
-    innovation: review?.innovationScore || 0,
-    execution: review?.executionScore || 0,
-    design: review?.designScore || 0,
-    impact: review?.impactScore || 0,
-    presentation: review?.presentationScore || 0,
+    innovation: 0,
+    execution: 0,
+    design: 0,
+    impact: 0,
+    presentation: 0,
   });
-  const [feedback, setFeedback] = useState(review?.feedback || "");
-  const [internalNotes, setInternalNotes] = useState(review?.internalNotes || "");
+  const [feedback, setFeedback] = useState("");
+  const [internalNotes, setInternalNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    async function loadData() {
+      const { data, success } = await reviewsService.getById(params.id as string);
+      if (success && data) {
+        setReview(data);
+        setScores({
+          innovation: data.innovationScore || 0,
+          execution: data.executionScore || 0,
+          design: data.designScore || 0,
+          impact: data.impactScore || 0,
+          presentation: data.presentationScore || 0,
+        });
+        setFeedback(data.feedback || "");
+        setInternalNotes(data.internalNotes || "");
+      }
+      setIsLoading(false);
+    }
+    loadData();
+  }, [params.id]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   if (!review || !review.submission) {
     return (

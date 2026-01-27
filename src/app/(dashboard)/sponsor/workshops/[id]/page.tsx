@@ -4,7 +4,8 @@ import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
-import { mockWorkshops, getSponsorByUser } from "@/data/mock-data";
+import { workshopsService, sponsorsService } from "@/services";
+import type { Workshop, SponsorOrg } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,9 +42,10 @@ export default function WorkshopEditPage({ params }: WorkshopEditPageProps) {
   const { id } = use(params);
   const router = useRouter();
   const { user } = useAuth();
-  const sponsor = getSponsorByUser(user?.id || "");
 
-  const workshop = mockWorkshops.find((w) => w.id === id);
+  const [sponsor, setSponsor] = useState<SponsorOrg | null>(null);
+  const [workshop, setWorkshop] = useState<Workshop | null>(null);
+  const [isLoadingData, setIsLoadingData] = useState(true);
 
   const [isLoading, setIsLoading] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -56,16 +58,43 @@ export default function WorkshopEditPage({ params }: WorkshopEditPageProps) {
   const [status, setStatus] = useState<"draft" | "published" | "archived">("draft");
 
   useEffect(() => {
-    if (workshop) {
-      setTitle(workshop.title);
-      setDescription(workshop.description);
-      setCategory(workshop.category);
-      setDuration(workshop.duration || "");
-      setVideoUrl(workshop.videoUrl || "");
-      setArticleUrl(workshop.articleUrl || "");
-      setStatus(workshop.status);
+    async function loadData() {
+      if (!user) {
+        setIsLoadingData(false);
+        return;
+      }
+
+      const [sponsorResult, workshopResult] = await Promise.all([
+        sponsorsService.getOrgByUser(user.id),
+        workshopsService.getById(id),
+      ]);
+
+      if (sponsorResult.success) setSponsor(sponsorResult.data);
+
+      if (workshopResult.success && workshopResult.data) {
+        const ws = workshopResult.data;
+        setWorkshop(ws);
+        setTitle(ws.title);
+        setDescription(ws.description);
+        setCategory(ws.category);
+        setDuration(ws.duration || "");
+        setVideoUrl(ws.videoUrl || "");
+        setArticleUrl(ws.articleUrl || "");
+        setStatus(ws.status);
+      }
+
+      setIsLoadingData(false);
     }
-  }, [workshop]);
+    loadData();
+  }, [id, user]);
+
+  if (isLoadingData) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   if (!sponsor) {
     return (

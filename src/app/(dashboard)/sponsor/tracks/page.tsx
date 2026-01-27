@@ -1,12 +1,14 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { mockTracks, mockCohorts, mockSponsorOrgs, mockCohortSponsors } from "@/data/mock-data";
+import { tracksService, cohortsService, sponsorsService } from "@/services";
 import { useAuth } from "@/contexts/auth-context";
+import type { Track, Cohort, SponsorOrg, CohortSponsor } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Target, Trophy, Calendar, ArrowRight } from "lucide-react";
+import { Target, Trophy, Calendar, ArrowRight, Loader2 } from "lucide-react";
 
 const tierColors: Record<string, string> = {
   platinum: "bg-slate-200 text-slate-800",
@@ -19,9 +21,49 @@ const tierColors: Record<string, string> = {
 export default function SponsorTracksPage() {
   const { user } = useAuth();
 
-  const sponsor = mockSponsorOrgs.find((s) => s.id === user?.sponsorOrgId);
-  const sponsorCohortLinks = mockCohortSponsors.filter((cs) => cs.sponsorOrgId === sponsor?.id);
-  const sponsorTracks = mockTracks.filter((t) => t.sponsorOrgId === sponsor?.id);
+  const [sponsor, setSponsor] = useState<SponsorOrg | null>(null);
+  const [sponsorCohortLinks, setSponsorCohortLinks] = useState<CohortSponsor[]>([]);
+  const [sponsorTracks, setSponsorTracks] = useState<Track[]>([]);
+  const [cohorts, setCohorts] = useState<Cohort[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadData() {
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+
+      const sponsorResult = await sponsorsService.getOrgByUser(user.id);
+      if (!sponsorResult.success || !sponsorResult.data) {
+        setIsLoading(false);
+        return;
+      }
+
+      setSponsor(sponsorResult.data);
+
+      const [cohortLinksResult, tracksResult, cohortsResult] = await Promise.all([
+        sponsorsService.getSponsorCohorts(sponsorResult.data.id),
+        tracksService.getBySponsor(sponsorResult.data.id),
+        cohortsService.list(),
+      ]);
+
+      if (cohortLinksResult.success) setSponsorCohortLinks(cohortLinksResult.data);
+      if (tracksResult.success) setSponsorTracks(tracksResult.data);
+      if (cohortsResult.success) setCohorts(cohortsResult.data);
+
+      setIsLoading(false);
+    }
+    loadData();
+  }, [user]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   if (!sponsor) {
     return (
@@ -101,7 +143,7 @@ export default function SponsorTracksPage() {
       ) : (
         <div className="space-y-4">
           {sponsorCohortLinks.map((cohortSponsor) => {
-            const cohort = mockCohorts.find((c) => c.id === cohortSponsor.cohortId);
+            const cohort = cohorts.find((c) => c.id === cohortSponsor.cohortId);
             if (!cohort) return null;
 
             const cohortTracks = sponsorTracks.filter((t) => t.cohortId === cohort.id);

@@ -1,7 +1,9 @@
 "use client";
 
-import { mockReviews, mockSubmissions } from "@/data/mock-data";
+import { useState, useEffect } from "react";
+import { reviewsService, submissionsService } from "@/services";
 import { useAuth } from "@/contexts/auth-context";
+import type { Review, Submission } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,7 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import Link from "next/link";
-import { Eye } from "lucide-react";
+import { Eye, Loader2 } from "lucide-react";
 
 const statusColors = {
   pending: "bg-amber-100 text-amber-700",
@@ -25,12 +27,46 @@ const statusColors = {
 export default function SponsorReviewsPage() {
   const { user } = useAuth();
 
-  const userReviews = mockReviews.filter((r) => r.judgeId === user?.id);
+  const [userReviews, setUserReviews] = useState<Review[]>([]);
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadData() {
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+
+      const reviewsResult = await reviewsService.getByJudge(user.id);
+      if (reviewsResult.success) {
+        setUserReviews(reviewsResult.data);
+      }
+
+      // Load submissions list for lookup
+      const submissionsResult = await submissionsService.list();
+      if (submissionsResult.success) {
+        setSubmissions(submissionsResult.data);
+      }
+
+      setIsLoading(false);
+    }
+    loadData();
+  }, [user]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
   const pendingCount = userReviews.filter((r) => r.status === "pending").length;
   const completedCount = userReviews.filter((r) => r.status === "completed").length;
 
   const getSubmission = (submissionId: string) => {
-    return mockSubmissions.find((s) => s.id === submissionId);
+    return submissions.find((s) => s.id === submissionId);
   };
 
   return (

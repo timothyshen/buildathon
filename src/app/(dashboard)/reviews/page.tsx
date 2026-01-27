@@ -1,23 +1,48 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
-import { mockReviews } from "@/data/mock-data";
+import { reviewsService } from "@/services";
+import type { Review } from "@/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Star, Clock, CheckCircle } from "lucide-react";
+import { Star, Clock, CheckCircle, Loader2 } from "lucide-react";
 
 export default function ReviewsPage() {
   const { user } = useAuth();
+  const [judgeReviews, setJudgeReviews] = useState<Review[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const judgeReviews = mockReviews.filter((r) => r.judgeId === user?.id);
+  useEffect(() => {
+    async function loadData() {
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+
+      const { data, success } = await reviewsService.getByJudge(user.id);
+      if (success) setJudgeReviews(data);
+      setIsLoading(false);
+    }
+    loadData();
+  }, [user]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
   const pendingReviews = judgeReviews.filter((r) => r.status === "pending");
   const inProgressReviews = judgeReviews.filter((r) => r.status === "in_progress");
   const completedReviews = judgeReviews.filter((r) => r.status === "completed");
 
-  const ReviewCard = ({ review }: { review: (typeof mockReviews)[0] }) => (
+  const ReviewCard = ({ review }: { review: Review }) => (
     <Card>
       <CardContent className="p-6">
         <div className="flex items-start justify-between">

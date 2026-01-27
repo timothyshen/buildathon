@@ -1,14 +1,10 @@
 "use client";
 
-import { useState, use } from "react";
+import { useState, useEffect, use } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
-import {
-  mockCohorts,
-  mockCohortSponsors,
-  mockTracks,
-  getSponsorByUser,
-} from "@/data/mock-data";
+import { cohortsService, sponsorsService, tracksService } from "@/services";
+import type { Cohort, CohortSponsor, Track, SponsorOrg } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,25 +49,63 @@ const tierColors: Record<string, string> = {
 export default function SponsorCohortPage({ params }: SponsorCohortPageProps) {
   const { cohortId } = use(params);
   const { user } = useAuth();
-  const sponsor = getSponsorByUser(user?.id || "");
 
-  const cohort = mockCohorts.find((c) => c.id === cohortId);
-  const cohortSponsor = sponsor
-    ? mockCohortSponsors.find(
-        (cs) => cs.cohortId === cohortId && cs.sponsorOrgId === sponsor.id
-      )
-    : undefined;
-
-  const sponsorTracks = mockTracks.filter(
-    (t) => t.cohortId === cohortId && t.sponsorOrgId === sponsor?.id
-  );
+  const [sponsor, setSponsor] = useState<SponsorOrg | null>(null);
+  const [cohort, setCohort] = useState<Cohort | null>(null);
+  const [cohortSponsor, setCohortSponsor] = useState<CohortSponsor | null>(null);
+  const [sponsorTracks, setSponsorTracks] = useState<Track[]>([]);
+  const [isLoadingData, setIsLoadingData] = useState(true);
 
   const [isLoading, setIsLoading] = useState(false);
-  const [description, setDescription] = useState(cohortSponsor?.description || "");
+  const [description, setDescription] = useState("");
   const [editingTrackId, setEditingTrackId] = useState<string | null>(null);
   const [newTrack, setNewTrack] = useState({ name: "", prizePool: "", description: "" });
   const [showNewTrackForm, setShowNewTrackForm] = useState(false);
   const [deleteTrackTarget, setDeleteTrackTarget] = useState<{ id: string; name: string } | null>(null);
+
+  useEffect(() => {
+    async function loadData() {
+      if (!user) {
+        setIsLoadingData(false);
+        return;
+      }
+
+      const sponsorResult = await sponsorsService.getOrgByUser(user.id);
+      if (!sponsorResult.success || !sponsorResult.data) {
+        setIsLoadingData(false);
+        return;
+      }
+
+      setSponsor(sponsorResult.data);
+
+      const [cohortResult, cohortSponsorResult, tracksResult] = await Promise.all([
+        cohortsService.getById(cohortId),
+        sponsorsService.getCohortSponsor(cohortId, sponsorResult.data.id),
+        tracksService.getByCohort(cohortId),
+      ]);
+
+      if (cohortResult.success) setCohort(cohortResult.data);
+      if (cohortSponsorResult.success && cohortSponsorResult.data) {
+        setCohortSponsor(cohortSponsorResult.data);
+        setDescription(cohortSponsorResult.data.description || "");
+      }
+      if (tracksResult.success) {
+        // Filter tracks to only show this sponsor's tracks
+        setSponsorTracks(tracksResult.data.filter((t) => t.sponsorOrgId === sponsorResult.data!.id));
+      }
+
+      setIsLoadingData(false);
+    }
+    loadData();
+  }, [cohortId, user]);
+
+  if (isLoadingData) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   if (!sponsor) {
     return (

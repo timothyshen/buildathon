@@ -9,12 +9,18 @@ import type { ServiceResponse } from "./types";
 import { success, error, delay, generateId } from "./types";
 
 export interface TracksService {
+  list(): Promise<ServiceResponse<Track[]>>;
   getById(id: string): Promise<ServiceResponse<Track | null>>;
   getByCohort(cohortId: string): Promise<ServiceResponse<Track[]>>;
   getBySponsor(sponsorOrgId: string): Promise<ServiceResponse<Track[]>>;
   create(data: Omit<Track, "id">): Promise<ServiceResponse<Track>>;
   update(id: string, data: Partial<Track>): Promise<ServiceResponse<Track>>;
   delete(id: string): Promise<ServiceResponse<void>>;
+}
+
+async function list(): Promise<ServiceResponse<Track[]>> {
+  await delay();
+  return success([...mockTracks]);
 }
 
 async function getById(id: string): Promise<ServiceResponse<Track | null>> {
@@ -74,6 +80,7 @@ async function deleteTrack(id: string): Promise<ServiceResponse<void>> {
 }
 
 export const tracksService: TracksService = {
+  list,
   getById,
   getByCohort,
   getBySponsor,

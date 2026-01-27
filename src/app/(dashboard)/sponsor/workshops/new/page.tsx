@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
-import { getSponsorByUser } from "@/data/mock-data";
+import { sponsorsService } from "@/services";
+import type { SponsorOrg } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,7 +26,8 @@ const categories = ["Basics", "Advanced", "Business", "Technical"];
 export default function NewWorkshopPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const sponsor = getSponsorByUser(user?.id || "");
+  const [sponsor, setSponsor] = useState<SponsorOrg | null>(null);
+  const [isLoadingData, setIsLoadingData] = useState(true);
 
   const [isLoading, setIsLoading] = useState(false);
   const [title, setTitle] = useState("");
@@ -35,6 +37,28 @@ export default function NewWorkshopPage() {
   const [videoUrl, setVideoUrl] = useState("");
   const [articleUrl, setArticleUrl] = useState("");
   const [status, setStatus] = useState<"draft" | "published">("draft");
+
+  useEffect(() => {
+    async function loadData() {
+      if (!user) {
+        setIsLoadingData(false);
+        return;
+      }
+
+      const { data } = await sponsorsService.getOrgByUser(user.id);
+      setSponsor(data);
+      setIsLoadingData(false);
+    }
+    loadData();
+  }, [user]);
+
+  if (isLoadingData) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   if (!sponsor) {
     return (

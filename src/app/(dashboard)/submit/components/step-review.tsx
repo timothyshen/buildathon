@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RichTextDisplay } from "@/components/ui/rich-text-editor";
 import { Pencil, ExternalLink } from "lucide-react";
-import { mockCohorts, mockTracks } from "@/data/mock-data";
+import type { Cohort, Track } from "@/types";
 
 interface SubmissionData {
   title: string;
@@ -25,11 +25,13 @@ interface SubmissionData {
 interface StepReviewProps {
   data: SubmissionData;
   onEdit: (step: number) => void;
+  cohorts: Cohort[];
+  tracks: Track[];
 }
 
-export function StepReview({ data, onEdit }: StepReviewProps) {
-  const cohort = mockCohorts.find((c) => c.id === data.cohortId);
-  const selectedTracks = mockTracks.filter((t) => data.trackIds.includes(t.id));
+export function StepReview({ data, onEdit, cohorts, tracks }: StepReviewProps) {
+  const cohort = cohorts.find((c) => c.id === data.cohortId);
+  const selectedTracks = tracks.filter((t) => data.trackIds.includes(t.id));
 
   const links = [
     { label: "Demo", url: data.demoUrl },

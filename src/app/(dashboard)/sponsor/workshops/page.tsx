@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { mockWorkshops, mockSponsorOrgs } from "@/data/mock-data";
+import { workshopsService, sponsorsService } from "@/services";
 import { useAuth } from "@/contexts/auth-context";
+import type { Workshop, SponsorOrg } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,8 +26,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { PlusCircle, Pencil, Trash2, Play, FileText } from "lucide-react";
-import type { Workshop } from "@/types";
+import { PlusCircle, Pencil, Trash2, Play, FileText, Loader2 } from "lucide-react";
 
 const statusColors: Record<Workshop["status"], string> = {
   draft: "bg-slate-100 text-slate-700",
@@ -36,10 +36,39 @@ const statusColors: Record<Workshop["status"], string> = {
 
 export default function SponsorWorkshopsPage() {
   const { user } = useAuth();
+  const [sponsor, setSponsor] = useState<SponsorOrg | null>(null);
+  const [sponsorWorkshops, setSponsorWorkshops] = useState<Workshop[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<Workshop | null>(null);
 
-  const sponsor = mockSponsorOrgs.find((s) => s.id === user?.sponsorOrgId);
-  const sponsorWorkshops = mockWorkshops.filter((w) => w.sponsorOrgId === sponsor?.id);
+  useEffect(() => {
+    async function loadData() {
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+
+      const sponsorResult = await sponsorsService.getOrgByUser(user.id);
+      if (sponsorResult.success && sponsorResult.data) {
+        setSponsor(sponsorResult.data);
+
+        const workshopsResult = await workshopsService.getBySponsor(sponsorResult.data.id);
+        if (workshopsResult.success) {
+          setSponsorWorkshops(workshopsResult.data);
+        }
+      }
+      setIsLoading(false);
+    }
+    loadData();
+  }, [user]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   const handleDelete = (workshop: Workshop) => {
     setDeleteTarget(workshop);

@@ -1,10 +1,11 @@
 "use client";
 
-import { use } from "react";
+import { use, useState, useEffect } from "react";
 import { notFound, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
-import { getSubmissionById, mockReviews, getTracksByCohort } from "@/data/mock-data";
+import { submissionsService, reviewsService, tracksService } from "@/services";
+import type { Submission, Review, Track } from "@/types";
 import { ProjectGallery } from "@/components/projects/project-gallery";
 import { ProjectTeam } from "@/components/projects/project-team";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
@@ -24,6 +25,7 @@ import {
   Presentation,
   Calendar,
   Tag,
+  Loader2,
 } from "lucide-react";
 
 interface SubmissionDetailPageProps {
@@ -104,41 +106,65 @@ const scoreCategories = [
 export default function SubmissionDetailPage({ params }: SubmissionDetailPageProps) {
   const { id } = use(params);
   const router = useRouter();
-  const { user, isLoading } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
 
-  const submission = getSubmissionById(id);
+  const [submission, setSubmission] = useState<Submission | null>(null);
+  const [completedReviews, setCompletedReviews] = useState<Review[]>([]);
+  const [tracks, setTracks] = useState<Track[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Get completed reviews for this submission
-  const completedReviews = mockReviews.filter(
-    (r) => r.submissionId === id && r.status === "completed"
-  );
+  useEffect(() => {
+    async function loadData() {
+      const { data: submissionData } = await submissionsService.getById(id);
 
-  // Get track info
-  const tracks = submission?.cohortId
-    ? getTracksByCohort(submission.cohortId)
-    : [];
+      if (!submissionData) {
+        setIsLoading(false);
+        return;
+      }
+
+      setSubmission(submissionData);
+
+      const [reviewsResult, tracksResult] = await Promise.all([
+        reviewsService.getBySubmission(id),
+        submissionData.cohortId
+          ? tracksService.getByCohort(submissionData.cohortId)
+          : Promise.resolve({ data: [], success: true }),
+      ]);
+
+      if (reviewsResult.success) {
+        setCompletedReviews(reviewsResult.data.filter((r) => r.status === "completed"));
+      }
+      if (tracksResult.success) {
+        setTracks(tracksResult.data);
+      }
+
+      setIsLoading(false);
+    }
+    loadData();
+  }, [id]);
+
   const submissionTrack = tracks.find((t) => t.id === submission?.trackId);
 
-  // Check if user is team member or admin
-  const isTeamMember = submission?.team?.members.some(
-    (m) => m.userId === user?.id
-  );
-  const isAdmin = user?.role === "admin";
-  const hasAccess = isTeamMember || isAdmin;
+  // Handle loading state
+  if (isLoading || authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
-  // Handle not found - check this first before auth
+  // Handle not found
   if (!submission) {
     notFound();
   }
 
-  // Handle loading state
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-muted-foreground">Loading...</div>
-      </div>
-    );
-  }
+  // Check if user is team member or admin
+  const isTeamMember = submission.team?.members.some(
+    (m) => m.userId === user?.id
+  );
+  const isAdmin = user?.role === "admin";
+  const hasAccess = isTeamMember || isAdmin;
 
   // Redirect if not authorized
   if (!hasAccess) {
