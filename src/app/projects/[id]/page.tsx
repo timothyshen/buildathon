@@ -80,7 +80,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
       ];
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+    <div className="min-h-screen bg-muted">
       {/* Breadcrumb */}
       <div className="max-w-6xl mx-auto px-4 pt-6">
         <Breadcrumb items={breadcrumbItems} />
@@ -116,7 +116,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                   {submission.description}
                 </p>
                 {submission.builtWithStory && (
-                  <Badge className="bg-purple-500 text-white hover:bg-purple-600">
+                  <Badge className="bg-primary text-primary-foreground hover:bg-primary/90">
                     <Shield className="h-3 w-3 mr-1" />
                     Built with Story Protocol
                   </Badge>
@@ -187,12 +187,12 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <FileCheck className="h-5 w-5 text-green-500" />
+                    <FileCheck className="h-5 w-5 text-success-foreground" />
                     IP Registration
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <Badge className="bg-green-500 text-white hover:bg-green-600">
+                  <Badge className="bg-success text-success-foreground hover:bg-success/90">
                     Registered on Story Protocol
                   </Badge>
 

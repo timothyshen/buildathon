@@ -2,9 +2,18 @@
 
 import { Trophy, Award, Medal, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { prizeBadgeColors } from "@/lib/utils/colors";
 import type { PrizeBadgeType, PrizeInfo } from "@/lib/prize-utils";
 
-// Prize badge configuration
+// Prize badge icons and labels (colors come from centralized colors.ts)
+const prizeBadgeIcons: Record<PrizeBadgeType, { Icon: typeof Trophy; label: string }> = {
+  "grand-prize": { Icon: Trophy, label: "Winner" },
+  "runner-up": { Icon: Medal, label: "Runner-up" },
+  "track-winner": { Icon: Award, label: "Track" },
+  "honorable": { Icon: Star, label: "Award" },
+};
+
+// Combined config for backward compatibility
 const prizeBadgeConfig: Record<
   PrizeBadgeType,
   {
@@ -16,32 +25,20 @@ const prizeBadgeConfig: Record<
   }
 > = {
   "grand-prize": {
-    Icon: Trophy,
-    bg: "bg-amber-100 dark:bg-amber-900/30",
-    text: "text-amber-700 dark:text-amber-400",
-    line: "bg-amber-500",
-    label: "Winner",
+    ...prizeBadgeIcons["grand-prize"],
+    ...prizeBadgeColors["grand-prize"],
   },
   "runner-up": {
-    Icon: Medal,
-    bg: "bg-slate-100 dark:bg-slate-800",
-    text: "text-slate-700 dark:text-slate-300",
-    line: "bg-slate-400",
-    label: "Runner-up",
+    ...prizeBadgeIcons["runner-up"],
+    ...prizeBadgeColors["runner-up"],
   },
   "track-winner": {
-    Icon: Award,
-    bg: "bg-violet-100 dark:bg-violet-900/30",
-    text: "text-violet-700 dark:text-violet-400",
-    line: "bg-violet-500",
-    label: "Track",
+    ...prizeBadgeIcons["track-winner"],
+    ...prizeBadgeColors["track-winner"],
   },
   "honorable": {
-    Icon: Star,
-    bg: "bg-blue-100 dark:bg-blue-900/30",
-    text: "text-blue-700 dark:text-blue-400",
-    line: "bg-blue-500",
-    label: "Award",
+    ...prizeBadgeIcons["honorable"],
+    ...prizeBadgeColors["honorable"],
   },
 };
 
@@ -111,7 +108,7 @@ export function PrizeBadges({
       {remainingCount > 0 && (
         <span
           className={cn(
-            "font-medium text-neutral-500 dark:text-neutral-400",
+            "font-medium text-muted-foreground",
             size === "sm" ? "px-2 py-0.5 text-xs" : "px-3 py-1 text-sm"
           )}
         >

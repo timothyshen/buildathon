@@ -15,37 +15,10 @@ export interface PrizeInfo {
 }
 
 /**
- * Prize badge styling configuration
+ * Prize badge styling configuration - uses theme tokens from colors.ts
+ * Import prizeBadgeColors from @/lib/utils/colors for the actual colors
  */
-export const prizeBadgeStyles: Record<
-  PrizeBadgeType,
-  { bg: string; text: string; border: string; icon: string }
-> = {
-  "grand-prize": {
-    bg: "bg-yellow-100 dark:bg-yellow-900/30",
-    text: "text-yellow-800 dark:text-yellow-200",
-    border: "border-yellow-300 dark:border-yellow-700",
-    icon: "Trophy",
-  },
-  "runner-up": {
-    bg: "bg-slate-100 dark:bg-slate-800",
-    text: "text-slate-700 dark:text-slate-200",
-    border: "border-slate-300 dark:border-slate-600",
-    icon: "Medal",
-  },
-  "track-winner": {
-    bg: "bg-purple-100 dark:bg-purple-900/30",
-    text: "text-purple-800 dark:text-purple-200",
-    border: "border-purple-300 dark:border-purple-700",
-    icon: "Award",
-  },
-  "honorable": {
-    bg: "bg-blue-100 dark:bg-blue-900/30",
-    text: "text-blue-800 dark:text-blue-200",
-    border: "border-blue-300 dark:border-blue-700",
-    icon: "Star",
-  },
-};
+export { prizeBadgeColors as prizeBadgeStyles } from "@/lib/utils/colors";
 
 /**
  * Check if a submission is a winner

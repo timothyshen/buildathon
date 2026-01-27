@@ -1,6 +1,7 @@
 import { Trophy, Medal, Award, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { prizeBadgeStyles, type PrizeBadgeType } from "@/lib/prize-utils";
+import { prizeBadgeColors } from "@/lib/utils/colors";
+import type { PrizeBadgeType } from "@/lib/prize-utils";
 
 interface PrizeBadgeProps {
   type: PrizeBadgeType;
@@ -9,11 +10,11 @@ interface PrizeBadgeProps {
   className?: string;
 }
 
-const iconMap = {
-  Trophy,
-  Medal,
-  Award,
-  Star,
+const prizeIcons: Record<PrizeBadgeType, typeof Trophy> = {
+  "grand-prize": Trophy,
+  "runner-up": Medal,
+  "track-winner": Award,
+  "honorable": Star,
 };
 
 const defaultLabels: Record<PrizeBadgeType, string> = {
@@ -29,17 +30,17 @@ export function PrizeBadge({
   size = "default",
   className,
 }: PrizeBadgeProps) {
-  const style = prizeBadgeStyles[type];
-  const Icon = iconMap[style.icon as keyof typeof iconMap];
+  const colors = prizeBadgeColors[type];
+  const Icon = prizeIcons[type];
   const displayLabel = label || defaultLabels[type];
 
   return (
     <span
       className={cn(
         "inline-flex items-center gap-1 rounded-full border font-medium",
-        style.bg,
-        style.text,
-        style.border,
+        colors.bg,
+        colors.text,
+        colors.border,
         size === "sm" ? "px-2 py-0.5 text-xs" : "px-2.5 py-1 text-xs",
         className
       )}

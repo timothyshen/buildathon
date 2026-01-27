@@ -149,38 +149,38 @@ function ExploreContent() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white dark:bg-neutral-950 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-neutral-400" />
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-neutral-950">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-neutral-200 dark:border-neutral-800">
+      <header className="border-b">
         <div className="mx-auto max-w-6xl px-6 py-16">
-          <h1 className="text-4xl font-bold tracking-tight text-black dark:text-white">
+          <h1 className="text-4xl font-bold tracking-tight text-foreground">
             Explore Projects
           </h1>
-          <p className="mt-3 text-lg text-neutral-500 dark:text-neutral-400 max-w-xl">
+          <p className="mt-3 text-lg text-muted-foreground max-w-xl">
             Discover award-winning projects from our buildathons.
           </p>
 
           {/* Search */}
           <div className="mt-8 relative max-w-xl">
-            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search projects..."
-              className="w-full pl-11 pr-10 py-3 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-md text-sm focus:outline-none focus:border-black dark:focus:border-white transition-colors"
+              className="w-full pl-11 pr-10 py-3 bg-background border rounded-md text-sm focus:outline-none focus:border-foreground transition-colors"
             />
             {searchQuery && (
               <button
                 onClick={handleClearSearch}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-neutral-400 hover:text-black dark:hover:text-white transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground transition-colors"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -212,7 +212,7 @@ function ExploreContent() {
 
         {/* Results Count */}
         <div className="flex items-center justify-between mb-6">
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">
+          <p className="text-sm text-muted-foreground">
             {filteredSubmissions.length} project
             {filteredSubmissions.length !== 1 ? "s" : ""}
             {(activeFilter !== "all" || hasActiveFilters(parsedQuery)) && (
@@ -230,11 +230,11 @@ function ExploreContent() {
           </div>
         ) : (
           <div className="text-center py-16">
-            <Filter className="mx-auto h-12 w-12 text-neutral-300 dark:text-neutral-700" />
-            <h3 className="mt-4 text-lg font-semibold text-black dark:text-white">
+            <Filter className="mx-auto h-12 w-12 text-muted-foreground/50" />
+            <h3 className="mt-4 text-lg font-semibold text-foreground">
               No projects found
             </h3>
-            <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400 max-w-md mx-auto">
+            <p className="mt-2 text-sm text-muted-foreground max-w-md mx-auto">
               Try adjusting your filters or search query.
             </p>
           </div>
@@ -248,8 +248,8 @@ export default function ExplorePage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-white dark:bg-neutral-950 flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-neutral-400" />
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       }
     >

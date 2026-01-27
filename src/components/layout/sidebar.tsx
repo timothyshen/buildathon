@@ -20,6 +20,7 @@ import {
   BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getRoleBadgeColor } from "@/lib/utils/colors";
 import { useAuth } from "@/contexts/auth-context";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -188,30 +189,15 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
     router.push("/");
   };
 
-  const getRoleBadgeColor = (role: string) => {
-    switch (role) {
-      case "admin":
-        return "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900";
-      case "sponsor":
-        return "bg-neutral-200 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-200";
-      case "judge":
-        return "bg-neutral-200 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-200";
-      case "participant":
-        return "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400";
-      default:
-        return "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400";
-    }
-  };
-
   const handleNavClick = () => {
     onNavigate?.();
   };
 
   return (
-    <div className="flex h-full flex-col bg-white dark:bg-neutral-950">
+    <div className="flex h-full flex-col bg-background">
       {/* Logo Section */}
-      <div className="flex h-14 items-center gap-3 border-b border-neutral-200 px-6 dark:border-neutral-800">
-        <Link href="/" className="text-lg font-bold tracking-tight text-black dark:text-white" onClick={handleNavClick}>
+      <div className="flex h-14 items-center gap-3 border-b px-6">
+        <Link href="/" className="text-lg font-bold tracking-tight text-foreground" onClick={handleNavClick}>
           SWA.XYZ
         </Link>
       </div>
@@ -222,7 +208,7 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
           {filteredSections.map((section, sectionIndex) => (
             <div key={sectionIndex}>
               {section.title && (
-                <h3 className="mb-2 px-3 text-xs font-medium uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+                <h3 className="mb-2 px-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   {section.title}
                 </h3>
               )}
@@ -239,16 +225,16 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
                       className={cn(
                         "group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                         isActive
-                          ? "bg-neutral-100 text-black dark:bg-neutral-800 dark:text-white"
-                          : "text-neutral-600 hover:bg-neutral-50 hover:text-black dark:text-neutral-400 dark:hover:bg-neutral-800/50 dark:hover:text-white"
+                          ? "bg-accent text-accent-foreground"
+                          : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
                       )}
                     >
                       <item.icon
                         className={cn(
                           "h-4 w-4",
                           isActive
-                            ? "text-black dark:text-white"
-                            : "text-neutral-400 group-hover:text-neutral-600 dark:group-hover:text-neutral-300"
+                            ? "text-foreground"
+                            : "text-muted-foreground group-hover:text-foreground"
                         )}
                       />
                       <span className="flex-1">{item.label}</span>
@@ -258,8 +244,8 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
                           className={cn(
                             "ml-auto h-5 min-w-[20px] justify-center rounded px-1.5 text-[10px] font-medium",
                             isActive
-                              ? "bg-neutral-200 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-200"
-                              : "bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400"
+                              ? "bg-secondary text-secondary-foreground"
+                              : "bg-muted text-muted-foreground"
                           )}
                         >
                           {item.badge}
@@ -269,9 +255,7 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
                         <ChevronRight
                           className={cn(
                             "h-4 w-4 opacity-0 transition-opacity group-hover:opacity-100",
-                            isActive
-                              ? "text-neutral-400 dark:text-neutral-500"
-                              : "text-neutral-300 dark:text-neutral-600"
+                            "text-muted-foreground"
                           )}
                         />
                       )}
@@ -285,11 +269,11 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
       </nav>
 
       {/* Quick Actions */}
-      <div className="border-t border-neutral-200 p-3 dark:border-neutral-800">
+      <div className="border-t p-3">
         <Link
           href="/"
           onClick={handleNavClick}
-          className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-black dark:hover:bg-neutral-800 dark:hover:text-white"
+          className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
         >
           <Home className="h-4 w-4" />
           <span>Back to Home</span>
@@ -298,9 +282,9 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
 
       {/* Role Switcher (Dev Tool) */}
       {user && (
-        <div className="border-t border-neutral-200 p-3 dark:border-neutral-800">
-          <div className="rounded-md bg-neutral-50 p-3 dark:bg-neutral-900">
-            <p className="mb-2 text-[10px] font-medium uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+        <div className="border-t p-3">
+          <div className="rounded-md bg-muted p-3">
+            <p className="mb-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
               Dev Mode
             </p>
             <div className="grid grid-cols-2 gap-1.5">
@@ -311,8 +295,8 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
                   className={cn(
                     "rounded px-2 py-1.5 text-xs font-medium transition-colors",
                     user.role === role
-                      ? "bg-black text-white dark:bg-white dark:text-black"
-                      : "bg-white text-neutral-600 hover:bg-neutral-100 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-700"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-background text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                   )}
                 >
                   {role.charAt(0).toUpperCase() + role.slice(1)}
@@ -325,7 +309,7 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
 
       {/* User Profile */}
       {user && (
-        <div className="border-t border-neutral-200 p-3 dark:border-neutral-800">
+        <div className="border-t p-3">
           <div className="flex items-center gap-3">
             <div className="relative">
               <img
@@ -334,12 +318,12 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
                   `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`
                 }
                 alt={user.name}
-                className="h-9 w-9 rounded-md object-cover border border-neutral-200 dark:border-neutral-700"
+                className="h-9 w-9 rounded-md object-cover border"
               />
-              <div className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500 dark:border-neutral-950" />
+              <div className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-background bg-success-foreground" />
             </div>
             <div className="flex-1 overflow-hidden">
-              <p className="truncate text-sm font-medium text-black dark:text-white">
+              <p className="truncate text-sm font-medium text-foreground">
                 {user.name}
               </p>
               <Badge
@@ -356,7 +340,7 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
               size="icon"
               onClick={handleLogout}
               aria-label="Log out"
-              className="h-8 w-8 rounded-md text-neutral-400 hover:bg-neutral-100 hover:text-red-600 dark:hover:bg-neutral-800"
+              className="h-8 w-8 rounded-md text-muted-foreground hover:bg-accent hover:text-destructive"
             >
               <LogOut className="h-4 w-4" />
             </Button>
@@ -369,7 +353,7 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
 
 export function Sidebar() {
   return (
-    <aside className="hidden md:flex h-full w-64 flex-col border-r border-neutral-200 dark:border-neutral-800">
+    <aside className="hidden md:flex h-full w-64 flex-col border-r">
       <SidebarContent />
     </aside>
   );

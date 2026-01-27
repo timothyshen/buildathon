@@ -1,44 +1,20 @@
 /**
- * Status color utilities for consistent styling across the app
+ * Status color and label utilities for consistent styling across the app
+ * Color utilities are re-exported from @/lib/utils/colors for backward compatibility
  */
 
 import type { Submission, Cohort } from "@/types";
 
-/**
- * Get CSS classes for submission status badges
- */
-export function getSubmissionStatusColor(status: Submission["status"]): string {
-  switch (status) {
-    case "winner":
-      return "bg-yellow-100 text-yellow-800";
-    case "submitted":
-      return "bg-blue-100 text-blue-800";
-    case "under_review":
-      return "bg-purple-100 text-purple-800";
-    case "accepted":
-      return "bg-green-100 text-green-800";
-    case "draft":
-    default:
-      return "bg-gray-100 text-gray-800";
-  }
-}
-
-/**
- * Get CSS classes for cohort status badges
- */
-export function getCohortStatusColor(status: Cohort["status"]): string {
-  switch (status) {
-    case "active":
-      return "bg-green-100 text-green-800";
-    case "upcoming":
-      return "bg-blue-100 text-blue-800";
-    case "judging":
-      return "bg-purple-100 text-purple-800";
-    case "completed":
-    default:
-      return "bg-gray-100 text-gray-800";
-  }
-}
+// Re-export color utilities from centralized colors module
+export {
+  getSubmissionStatusColor,
+  getCohortStatusColor,
+  getReviewStatusColor,
+  getSponsorTierColor,
+  getWorkshopCategoryColor,
+  getRoleBadgeColor,
+  semanticColors,
+} from "./colors";
 
 /**
  * Get human-readable label for submission status

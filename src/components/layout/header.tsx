@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/auth-context";
 import { cn } from "@/lib/utils";
+import { getRoleBadgeColor } from "@/lib/utils/colors";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,27 +31,12 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, logout } = useAuth();
 
-  const getRoleBadgeColor = (role: string) => {
-    switch (role) {
-      case "admin":
-        return "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900";
-      case "judge":
-        return "bg-neutral-200 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-200";
-      case "sponsor":
-        return "bg-neutral-200 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-200";
-      case "participant":
-        return "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400";
-      default:
-        return "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400";
-    }
-  };
-
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-neutral-200 bg-white/80 backdrop-blur-lg dark:border-neutral-800 dark:bg-neutral-950/80">
+    <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-lg">
       <nav className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
-          <span className="text-lg font-bold tracking-tight text-black dark:text-white">
+          <span className="text-lg font-bold tracking-tight text-foreground">
             SWA.XYZ
           </span>
         </Link>
@@ -66,8 +52,8 @@ export function Header() {
                 className={cn(
                   "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
                   isActive
-                    ? "bg-neutral-100 text-black dark:bg-neutral-800 dark:text-white"
-                    : "text-neutral-600 hover:text-black dark:text-neutral-400 dark:hover:text-white"
+                    ? "bg-accent text-accent-foreground"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 {link.label}
@@ -80,11 +66,7 @@ export function Header() {
         <div className="hidden items-center gap-3 md:flex">
           {user ? (
             <>
-              <Button
-                asChild
-                size="sm"
-                className="bg-black text-white hover:bg-neutral-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
-              >
+              <Button asChild size="sm">
                 <Link href="/dashboard">
                   <LayoutDashboard className="mr-2 h-4 w-4" />
                   Dashboard
@@ -92,14 +74,14 @@ export function Header() {
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-2 rounded-md p-1 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800">
+                  <button className="flex items-center gap-2 rounded-md p-1 transition-colors hover:bg-accent">
                     <div className="relative">
                       <img
                         src={user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`}
                         alt={user.name}
-                        className="h-8 w-8 rounded-md object-cover border border-neutral-200 dark:border-neutral-700"
+                        className="h-8 w-8 rounded-md object-cover border"
                       />
-                      <div className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500 dark:border-neutral-950" />
+                      <div className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-background bg-success-foreground" />
                     </div>
                   </button>
                 </DropdownMenuTrigger>
@@ -113,7 +95,7 @@ export function Header() {
                       />
                       <div className="flex-1 overflow-hidden">
                         <p className="truncate font-semibold text-sm">{user.name}</p>
-                        <p className="truncate text-xs font-normal text-neutral-500">
+                        <p className="truncate text-xs font-normal text-muted-foreground">
                           {user.email}
                         </p>
                         <Badge
@@ -132,20 +114,20 @@ export function Header() {
                     <Link href="/dashboard" className="cursor-pointer">
                       <LayoutDashboard className="mr-2 h-4 w-4" />
                       Dashboard
-                      <ChevronRight className="ml-auto h-4 w-4 text-neutral-400" />
+                      <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground" />
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link href="/settings" className="cursor-pointer">
                       <User className="mr-2 h-4 w-4" />
                       Settings
-                      <ChevronRight className="ml-auto h-4 w-4 text-neutral-400" />
+                      <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground" />
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={logout}
-                    className="cursor-pointer text-red-600 focus:bg-red-50 focus:text-red-600 dark:focus:bg-red-950"
+                    className="cursor-pointer text-destructive focus:bg-destructive/10 focus:text-destructive"
                   >
                     <LogOut className="mr-2 h-4 w-4" />
                     Sign Out
@@ -157,15 +139,11 @@ export function Header() {
             <>
               <Link
                 href="/login"
-                className="text-sm font-medium text-neutral-600 hover:text-black dark:text-neutral-400 dark:hover:text-white transition-colors"
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
                 Sign In
               </Link>
-              <Button
-                asChild
-                size="sm"
-                className="bg-black text-white hover:bg-neutral-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
-              >
+              <Button asChild size="sm">
                 <Link href="/#waitlist">Join Waitlist</Link>
               </Button>
             </>
@@ -175,7 +153,7 @@ export function Header() {
         {/* Mobile Menu Button */}
         <button
           type="button"
-          className="inline-flex items-center justify-center rounded-md p-2 text-neutral-600 transition-colors hover:bg-neutral-100 md:hidden dark:text-neutral-400 dark:hover:bg-neutral-800"
+          className="inline-flex items-center justify-center rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent md:hidden"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
         >
           <span className="sr-only">Open main menu</span>
@@ -189,7 +167,7 @@ export function Header() {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="border-t border-neutral-200 bg-white md:hidden dark:border-neutral-800 dark:bg-neutral-950">
+        <div className="border-t bg-background md:hidden">
           <div className="space-y-1 px-4 py-4">
             {navLinks.map((link) => {
               const isActive = pathname === link.href;
@@ -200,8 +178,8 @@ export function Header() {
                   className={cn(
                     "block rounded-md px-4 py-2.5 text-sm font-medium transition-colors",
                     isActive
-                      ? "bg-neutral-100 text-black dark:bg-neutral-800 dark:text-white"
-                      : "text-neutral-600 hover:bg-neutral-50 dark:text-neutral-400 dark:hover:bg-neutral-800/50"
+                      ? "bg-accent text-accent-foreground"
+                      : "text-muted-foreground hover:bg-accent/50"
                   )}
                   onClick={() => setMobileMenuOpen(false)}
                 >
@@ -210,12 +188,12 @@ export function Header() {
               );
             })}
 
-            <div className="my-4 border-t border-neutral-200 dark:border-neutral-800" />
+            <div className="my-4 border-t" />
 
             {user ? (
               <>
                 {/* User info */}
-                <div className="flex items-center gap-3 rounded-md bg-neutral-50 p-3 dark:bg-neutral-800/50">
+                <div className="flex items-center gap-3 rounded-md bg-muted p-3">
                   <img
                     src={user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`}
                     alt={user.name}
@@ -236,7 +214,7 @@ export function Header() {
 
                 <Link
                   href="/dashboard"
-                  className="mt-3 flex items-center justify-center gap-2 rounded-md bg-black px-4 py-2.5 text-sm font-medium text-white dark:bg-white dark:text-black"
+                  className="mt-3 flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <LayoutDashboard className="h-4 w-4" />
@@ -248,7 +226,7 @@ export function Header() {
                     logout();
                     setMobileMenuOpen(false);
                   }}
-                  className="mt-2 flex w-full items-center justify-center gap-2 rounded-md border border-neutral-200 px-4 py-2.5 text-sm font-medium text-neutral-600 transition-colors hover:border-neutral-300 hover:text-black dark:border-neutral-700 dark:text-neutral-400 dark:hover:border-neutral-600 dark:hover:text-white"
+                  className="mt-2 flex w-full items-center justify-center gap-2 rounded-md border px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
                 >
                   <LogOut className="h-4 w-4" />
                   Sign Out
@@ -258,14 +236,14 @@ export function Header() {
               <div className="space-y-2">
                 <Link
                   href="/login"
-                  className="block rounded-md border border-neutral-200 px-4 py-2.5 text-center text-sm font-medium text-neutral-600 transition-colors hover:border-black hover:text-black dark:border-neutral-700 dark:text-neutral-400 dark:hover:border-white dark:hover:text-white"
+                  className="block rounded-md border px-4 py-2.5 text-center text-sm font-medium text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Sign In
                 </Link>
                 <Link
                   href="/#waitlist"
-                  className="block rounded-md bg-black px-4 py-2.5 text-center text-sm font-medium text-white dark:bg-white dark:text-black"
+                  className="block rounded-md bg-primary px-4 py-2.5 text-center text-sm font-medium text-primary-foreground"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Join Waitlist

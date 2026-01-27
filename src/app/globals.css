@@ -44,6 +44,54 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
+
+  /* Status colors */
+  --color-status-draft: var(--status-draft);
+  --color-status-draft-foreground: var(--status-draft-foreground);
+  --color-status-upcoming: var(--status-upcoming);
+  --color-status-upcoming-foreground: var(--status-upcoming-foreground);
+  --color-status-active: var(--status-active);
+  --color-status-active-foreground: var(--status-active-foreground);
+  --color-status-judging: var(--status-judging);
+  --color-status-judging-foreground: var(--status-judging-foreground);
+  --color-status-completed: var(--status-completed);
+  --color-status-completed-foreground: var(--status-completed-foreground);
+  --color-status-pending: var(--status-pending);
+  --color-status-pending-foreground: var(--status-pending-foreground);
+  --color-status-in-progress: var(--status-in-progress);
+  --color-status-in-progress-foreground: var(--status-in-progress-foreground);
+
+  /* Prize colors */
+  --color-prize-grand: var(--prize-grand);
+  --color-prize-grand-foreground: var(--prize-grand-foreground);
+  --color-prize-runner-up: var(--prize-runner-up);
+  --color-prize-runner-up-foreground: var(--prize-runner-up-foreground);
+  --color-prize-track: var(--prize-track);
+  --color-prize-track-foreground: var(--prize-track-foreground);
+  --color-prize-honorable: var(--prize-honorable);
+  --color-prize-honorable-foreground: var(--prize-honorable-foreground);
+
+  /* Sponsor tier colors */
+  --color-tier-platinum: var(--tier-platinum);
+  --color-tier-platinum-foreground: var(--tier-platinum-foreground);
+  --color-tier-gold: var(--tier-gold);
+  --color-tier-gold-foreground: var(--tier-gold-foreground);
+  --color-tier-silver: var(--tier-silver);
+  --color-tier-silver-foreground: var(--tier-silver-foreground);
+
+  /* Workshop category colors */
+  --color-category-technical: var(--category-technical);
+  --color-category-technical-foreground: var(--category-technical-foreground);
+  --color-category-design: var(--category-design);
+  --color-category-design-foreground: var(--category-design-foreground);
+  --color-category-business: var(--category-business);
+  --color-category-business-foreground: var(--category-business-foreground);
+
+  /* Success/warning */
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
 }
 
 :root {
@@ -79,6 +127,54 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* Status colors - Light mode */
+  --status-draft: oklch(0.95 0 0);
+  --status-draft-foreground: oklch(0.4 0 0);
+  --status-upcoming: oklch(0.93 0.04 250);
+  --status-upcoming-foreground: oklch(0.45 0.15 250);
+  --status-active: oklch(0.93 0.05 145);
+  --status-active-foreground: oklch(0.4 0.15 145);
+  --status-judging: oklch(0.93 0.05 300);
+  --status-judging-foreground: oklch(0.45 0.2 300);
+  --status-completed: oklch(0.93 0.04 85);
+  --status-completed-foreground: oklch(0.5 0.15 85);
+  --status-pending: oklch(0.93 0.05 85);
+  --status-pending-foreground: oklch(0.5 0.15 85);
+  --status-in-progress: oklch(0.93 0.04 250);
+  --status-in-progress-foreground: oklch(0.45 0.15 250);
+
+  /* Prize colors - Light mode */
+  --prize-grand: oklch(0.93 0.08 85);
+  --prize-grand-foreground: oklch(0.45 0.12 85);
+  --prize-runner-up: oklch(0.95 0 0);
+  --prize-runner-up-foreground: oklch(0.4 0 0);
+  --prize-track: oklch(0.93 0.06 300);
+  --prize-track-foreground: oklch(0.45 0.18 300);
+  --prize-honorable: oklch(0.93 0.04 250);
+  --prize-honorable-foreground: oklch(0.45 0.15 250);
+
+  /* Sponsor tier colors - Light mode */
+  --tier-platinum: oklch(0.92 0 0);
+  --tier-platinum-foreground: oklch(0.3 0 0);
+  --tier-gold: oklch(0.93 0.08 85);
+  --tier-gold-foreground: oklch(0.45 0.12 85);
+  --tier-silver: oklch(0.95 0 0);
+  --tier-silver-foreground: oklch(0.45 0 0);
+
+  /* Workshop category colors - Light mode */
+  --category-technical: oklch(0.93 0.06 300);
+  --category-technical-foreground: oklch(0.45 0.18 300);
+  --category-design: oklch(0.93 0.04 250);
+  --category-design-foreground: oklch(0.45 0.15 250);
+  --category-business: oklch(0.95 0 0);
+  --category-business-foreground: oklch(0.4 0 0);
+
+  /* Success/warning - Light mode */
+  --success: oklch(0.93 0.05 145);
+  --success-foreground: oklch(0.4 0.15 145);
+  --warning: oklch(0.93 0.08 85);
+  --warning-foreground: oklch(0.45 0.12 85);
 }
 
 .dark {
@@ -113,6 +209,54 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+
+  /* Status colors - Dark mode */
+  --status-draft: oklch(0.3 0 0);
+  --status-draft-foreground: oklch(0.7 0 0);
+  --status-upcoming: oklch(0.3 0.08 250);
+  --status-upcoming-foreground: oklch(0.75 0.12 250);
+  --status-active: oklch(0.3 0.1 145);
+  --status-active-foreground: oklch(0.75 0.15 145);
+  --status-judging: oklch(0.3 0.1 300);
+  --status-judging-foreground: oklch(0.75 0.15 300);
+  --status-completed: oklch(0.3 0.08 85);
+  --status-completed-foreground: oklch(0.8 0.12 85);
+  --status-pending: oklch(0.3 0.08 85);
+  --status-pending-foreground: oklch(0.8 0.12 85);
+  --status-in-progress: oklch(0.3 0.08 250);
+  --status-in-progress-foreground: oklch(0.75 0.12 250);
+
+  /* Prize colors - Dark mode */
+  --prize-grand: oklch(0.35 0.12 85);
+  --prize-grand-foreground: oklch(0.85 0.1 85);
+  --prize-runner-up: oklch(0.3 0 0);
+  --prize-runner-up-foreground: oklch(0.75 0 0);
+  --prize-track: oklch(0.35 0.12 300);
+  --prize-track-foreground: oklch(0.8 0.12 300);
+  --prize-honorable: oklch(0.3 0.08 250);
+  --prize-honorable-foreground: oklch(0.75 0.12 250);
+
+  /* Sponsor tier colors - Dark mode */
+  --tier-platinum: oklch(0.35 0 0);
+  --tier-platinum-foreground: oklch(0.85 0 0);
+  --tier-gold: oklch(0.35 0.12 85);
+  --tier-gold-foreground: oklch(0.85 0.1 85);
+  --tier-silver: oklch(0.3 0 0);
+  --tier-silver-foreground: oklch(0.7 0 0);
+
+  /* Workshop category colors - Dark mode */
+  --category-technical: oklch(0.35 0.12 300);
+  --category-technical-foreground: oklch(0.8 0.12 300);
+  --category-design: oklch(0.3 0.08 250);
+  --category-design-foreground: oklch(0.75 0.12 250);
+  --category-business: oklch(0.3 0 0);
+  --category-business-foreground: oklch(0.7 0 0);
+
+  /* Success/warning - Dark mode */
+  --success: oklch(0.3 0.1 145);
+  --success-foreground: oklch(0.75 0.15 145);
+  --warning: oklch(0.35 0.12 85);
+  --warning-foreground: oklch(0.85 0.1 85);
 }
 
 @layer base {

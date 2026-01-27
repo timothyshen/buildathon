@@ -31,22 +31,22 @@ function getCategoryBadge(category: string) {
   switch (category.toLowerCase()) {
     case "basics":
       return {
-        className: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
+        className: "bg-category-technical/10 text-category-technical border-category-technical/20",
         icon: <GraduationCap className="h-3 w-3 mr-1" />,
       };
     case "advanced":
       return {
-        className: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20",
+        className: "bg-category-design/10 text-category-design border-category-design/20",
         icon: <Sparkles className="h-3 w-3 mr-1" />,
       };
     case "business":
       return {
-        className: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
+        className: "bg-category-business/10 text-category-business border-category-business/20",
         icon: <Briefcase className="h-3 w-3 mr-1" />,
       };
     default:
       return {
-        className: "bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20",
+        className: "bg-muted text-muted-foreground border-border",
         icon: null,
       };
   }
@@ -92,7 +92,7 @@ export function WorkshopCard({
   const categoryBadge = getCategoryBadge(workshop.category);
 
   return (
-    <Card className="overflow-hidden transition-all hover:shadow-lg border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+    <Card className="overflow-hidden transition-all hover:shadow-lg bg-card">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -100,11 +100,11 @@ export function WorkshopCard({
               <img
                 src={workshop.partnerLogo}
                 alt={workshop.partnerName || "Partner"}
-                className="h-12 w-12 rounded-xl object-cover bg-slate-100 dark:bg-slate-800"
+                className="h-12 w-12 rounded-xl object-cover bg-muted"
               />
             ) : (
-              <div className="h-12 w-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                <GraduationCap className="h-6 w-6 text-slate-400" />
+              <div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center">
+                <GraduationCap className="h-6 w-6 text-muted-foreground" />
               </div>
             )}
             <div className="flex-1 min-w-0">
@@ -118,7 +118,7 @@ export function WorkshopCard({
           </div>
           <div className="flex items-center gap-2">
             {hasUserRsvp && (
-              <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
+              <Badge className="bg-status-active/10 text-status-active border-status-active/20">
                 <Check className="h-3 w-3 mr-1" />
                 RSVP'd
               </Badge>
@@ -144,7 +144,7 @@ export function WorkshopCard({
             </div>
           )}
           {duration && (
-            <div className="flex items-center gap-1.5 text-slate-400">
+            <div className="flex items-center gap-1.5 text-muted-foreground">
               <span>•</span>
               <span>{duration}</span>
             </div>
@@ -165,7 +165,7 @@ export function WorkshopCard({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+        <div className="flex items-center gap-2 pt-3 border-t">
           <Button
             variant="outline"
             size="sm"

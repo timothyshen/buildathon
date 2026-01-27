@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { Loading } from "@/components/ui/loading";
 import type { SponsorOrg, CohortSponsor, Cohort, Track, Submission, Workshop } from "@/types";
+import { getSubmissionStatusColor, getCohortStatusColor, getWorkshopStatusColor } from "@/lib/utils/colors";
 
 export function SponsorDashboard() {
   const { user } = useAuth();
@@ -136,7 +137,7 @@ export function SponsorDashboard() {
               <img
                 src={sponsor.logo}
                 alt={sponsor.name}
-                className="h-12 w-12 rounded-lg object-contain bg-slate-100"
+                className="h-12 w-12 rounded-lg object-contain bg-muted"
               />
             )}
             <div>
@@ -166,7 +167,7 @@ export function SponsorDashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Pending Reviews</CardTitle>
-            <Clock className="h-4 w-4 text-yellow-500" />
+            <Clock className="h-4 w-4 text-warning-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{pendingSubmissions.length}</div>
@@ -176,7 +177,7 @@ export function SponsorDashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Track Submissions</CardTitle>
-            <FileText className="h-4 w-4 text-blue-500" />
+            <FileText className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{trackSubmissions.length}</div>
@@ -186,7 +187,7 @@ export function SponsorDashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Active Workshops</CardTitle>
-            <GraduationCap className="h-4 w-4 text-purple-500" />
+            <GraduationCap className="h-4 w-4 text-category-design" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{publishedWorkshops.length}</div>
@@ -196,7 +197,7 @@ export function SponsorDashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Prize Pool</CardTitle>
-            <TrendingUp className="h-4 w-4 text-green-500" />
+            <TrendingUp className="h-4 w-4 text-success-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">${totalContribution.toLocaleString()}</div>
@@ -221,7 +222,7 @@ export function SponsorDashboard() {
         <CardContent>
           {pendingSubmissions.length === 0 ? (
             <div className="py-8 text-center">
-              <CheckCircle className="mx-auto h-12 w-12 text-green-500" />
+              <CheckCircle className="mx-auto h-12 w-12 text-success-foreground" />
               <h3 className="mt-4 text-lg font-semibold">All caught up!</h3>
               <p className="mt-2 text-sm text-muted-foreground">
                 No pending submissions to review.
@@ -243,13 +244,7 @@ export function SponsorDashboard() {
                       </p>
                       <div className="mt-2 flex items-center gap-2">
                         <Badge variant="outline">{track?.name || "Open Track"}</Badge>
-                        <Badge
-                          className={
-                            submission.status === "submitted"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : "bg-blue-100 text-blue-800"
-                          }
-                        >
+                        <Badge className={getSubmissionStatusColor(submission.status)}>
                           {submission.status === "submitted" ? "New" : "Under Review"}
                         </Badge>
                       </div>
@@ -339,13 +334,7 @@ export function SponsorDashboard() {
                       <p className="font-medium truncate">{workshop.title}</p>
                       <p className="text-xs text-muted-foreground">{workshop.category}</p>
                     </div>
-                    <Badge
-                      className={
-                        workshop.status === "published"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-slate-100 text-slate-700"
-                      }
-                    >
+                    <Badge className={getWorkshopStatusColor(workshop.status)}>
                       {workshop.status}
                     </Badge>
                   </div>
@@ -371,13 +360,7 @@ export function SponsorDashboard() {
                   <div key={cohort.id} className="rounded-lg border p-4">
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="font-semibold">{cohort.name}</h3>
-                      <Badge
-                        className={
-                          cohort.status === "active"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-purple-100 text-purple-800"
-                        }
-                      >
+                      <Badge className={getCohortStatusColor(cohort.status)}>
                         {cohort.status}
                       </Badge>
                     </div>
@@ -386,7 +369,7 @@ export function SponsorDashboard() {
                       <p>Contribution: <span className="font-medium text-foreground">${cohortSponsor?.prizePoolContribution.toLocaleString()}</span></p>
                       {cohortSponsor?.hasDedicatedTrack && (
                         <div className="flex items-center gap-1 mt-2">
-                          <Trophy className="h-3 w-3 text-yellow-500" />
+                          <Trophy className="h-3 w-3 text-prize-grand" />
                           <span className="text-xs">Has dedicated track</span>
                         </div>
                       )}

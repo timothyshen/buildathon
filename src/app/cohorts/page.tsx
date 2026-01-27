@@ -57,8 +57,8 @@ function HeroCard({ cohort }: { cohort: EnrichedCohort }) {
           {/* Content */}
           <div className="flex flex-col justify-center">
             <div className="flex items-center gap-3 mb-4">
-              <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
-                <span className="mr-1.5 h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+              <Badge className="bg-status-active/20 text-status-active border-status-active/30">
+                <span className="mr-1.5 h-2 w-2 rounded-full bg-status-active animate-pulse" />
                 Live Now
               </Badge>
               {countdown && (
@@ -112,7 +112,7 @@ function HeroCard({ cohort }: { cohort: EnrichedCohort }) {
 
             {/* CTA */}
             <div className="mt-8">
-              <Button size="lg" className="bg-white text-slate-900 hover:bg-slate-100 group-hover:gap-3 transition-all">
+              <Button size="lg" className="bg-background text-foreground hover:bg-accent group-hover:gap-3 transition-all">
                 Explore Buildathon
                 <ArrowUpRight className="h-4 w-4" />
               </Button>
@@ -155,14 +155,14 @@ function ListCard({ cohort }: { cohort: EnrichedCohort }) {
 
   return (
     <Link href={`/cohorts/${cohort.slug}`} className="group block">
-      <div className="flex gap-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 transition-all hover:shadow-lg hover:border-slate-300 dark:hover:border-slate-700">
+      <div className="flex gap-6 rounded-2xl border bg-card p-6 transition-all hover:shadow-lg hover:border-foreground/20">
         {/* Thumbnail */}
-        <div className="hidden sm:block h-32 w-32 shrink-0 rounded-xl bg-slate-100 dark:bg-slate-800 overflow-hidden">
+        <div className="hidden sm:block h-32 w-32 shrink-0 rounded-xl bg-muted overflow-hidden">
           {cohort.bannerImage ? (
             <img src={cohort.bannerImage} alt={`${cohort.name} banner`} className="h-full w-full object-cover" />
           ) : (
             <div className="h-full w-full flex items-center justify-center">
-              <Calendar className="h-8 w-8 text-slate-400" />
+              <Calendar className="h-8 w-8 text-muted-foreground" />
             </div>
           )}
         </div>
@@ -173,32 +173,32 @@ function ListCard({ cohort }: { cohort: EnrichedCohort }) {
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <Badge variant="outline" className="capitalize">{cohort.status}</Badge>
-                <span className="text-sm text-slate-500">
+                <span className="text-sm text-muted-foreground">
                   {new Date(cohort.startDate).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
                 </span>
               </div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors">
+              <h3 className="text-xl font-bold text-foreground group-hover:text-foreground/80 transition-colors">
                 {cohort.name}
               </h3>
               {cohort.tagline && (
-                <p className="mt-1 text-slate-600 dark:text-slate-400">{cohort.tagline}</p>
+                <p className="mt-1 text-muted-foreground">{cohort.tagline}</p>
               )}
             </div>
 
-            <ArrowUpRight className="h-5 w-5 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 shrink-0 transition-colors" />
+            <ArrowUpRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground shrink-0 transition-colors" />
           </div>
 
           {/* Stats and sponsors */}
           <div className="mt-4 flex items-center gap-6 text-sm">
-            <div className="flex items-center gap-1.5 text-slate-500">
+            <div className="flex items-center gap-1.5 text-muted-foreground">
               <Calendar className="h-4 w-4" />
               <span>{tracks.length} tracks</span>
             </div>
-            <div className="flex items-center gap-1.5 text-slate-500">
+            <div className="flex items-center gap-1.5 text-muted-foreground">
               <Users className="h-4 w-4" />
               <span>{submissions.length} projects</span>
             </div>
-            <div className="flex items-center gap-1.5 text-slate-500">
+            <div className="flex items-center gap-1.5 text-muted-foreground">
               <Trophy className="h-4 w-4" />
               <span>${(totalPrize / 1000).toFixed(0)}k prizes</span>
             </div>
@@ -206,7 +206,7 @@ function ListCard({ cohort }: { cohort: EnrichedCohort }) {
             {sponsors.length > 0 && (
               <div className="ml-auto flex items-center -space-x-2">
                 {sponsors.slice(0, 3).map((s) => (
-                  <img key={s.id} src={s.logo} alt={`${s.name} logo`} className="h-6 w-6 rounded-full border-2 border-white dark:border-slate-900 bg-white" />
+                  <img key={s.id} src={s.logo} alt={`${s.name} logo`} className="h-6 w-6 rounded-full border-2 border-background bg-background" />
                 ))}
               </div>
             )}
@@ -293,15 +293,15 @@ export default function CohortsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+    <div className="min-h-screen bg-muted">
       {/* Typography-focused header */}
       <div className="mx-auto max-w-6xl px-4 py-16">
         <div className="text-center">
-          <p className="text-sm uppercase tracking-widest text-slate-500 font-medium">Story Protocol</p>
-          <h1 className="mt-4 text-6xl font-bold text-slate-900 dark:text-white">
+          <p className="text-sm uppercase tracking-widest text-muted-foreground font-medium">Story Protocol</p>
+          <h1 className="mt-4 text-6xl font-bold text-foreground">
             Buildathons
           </h1>
-          <p className="mt-4 text-xl text-slate-600 dark:text-slate-400 max-w-xl mx-auto">
+          <p className="mt-4 text-xl text-muted-foreground max-w-xl mx-auto">
             Where innovators come together to shape the future of programmable intellectual property
           </p>
         </div>
@@ -317,7 +317,7 @@ export default function CohortsPage() {
       {/* Filter & List */}
       <div className="mx-auto max-w-6xl px-4 pb-16 min-h-[50vh]">
         <div className="flex items-center justify-between mb-8">
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+          <h2 className="text-2xl font-bold text-foreground">
             {filter === "all" ? "All Buildathons" : `${filter.charAt(0).toUpperCase() + filter.slice(1)} Buildathons`}
           </h2>
           <div className="flex flex-col sm:flex-row gap-2">
@@ -343,9 +343,9 @@ export default function CohortsPage() {
 
         {filteredCohorts.length === 0 && (
           <div className="text-center py-16">
-            <Calendar className="mx-auto h-12 w-12 text-slate-400" />
-            <h3 className="mt-4 text-lg font-semibold text-slate-900 dark:text-white">No buildathons found</h3>
-            <p className="mt-2 text-sm text-slate-500">
+            <Calendar className="mx-auto h-12 w-12 text-muted-foreground/50" />
+            <h3 className="mt-4 text-lg font-semibold text-foreground">No buildathons found</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
               {filter === "upcoming" && "Check back soon for upcoming buildathons!"}
               {filter === "completed" && "No completed buildathons yet."}
               {filter === "all" && "No buildathons available at this time."}

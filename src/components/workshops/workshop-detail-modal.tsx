@@ -38,22 +38,22 @@ function getCategoryBadge(category: string) {
   switch (category.toLowerCase()) {
     case "basics":
       return {
-        className: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
+        className: "bg-category-technical/10 text-category-technical border-category-technical/20",
         icon: <GraduationCap className="h-3 w-3 mr-1" />,
       };
     case "advanced":
       return {
-        className: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20",
+        className: "bg-category-design/10 text-category-design border-category-design/20",
         icon: <Sparkles className="h-3 w-3 mr-1" />,
       };
     case "business":
       return {
-        className: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
+        className: "bg-category-business/10 text-category-business border-category-business/20",
         icon: <Briefcase className="h-3 w-3 mr-1" />,
       };
     default:
       return {
-        className: "bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20",
+        className: "bg-muted text-muted-foreground border-border",
         icon: null,
       };
   }
@@ -116,11 +116,11 @@ export function WorkshopDetailModal({
               <img
                 src={workshop.partnerLogo}
                 alt={workshop.partnerName || "Partner"}
-                className="h-14 w-14 rounded-xl object-cover flex-shrink-0 bg-slate-100 dark:bg-slate-800"
+                className="h-14 w-14 rounded-xl object-cover flex-shrink-0 bg-muted"
               />
             ) : (
-              <div className="h-14 w-14 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center flex-shrink-0">
-                <GraduationCap className="h-7 w-7 text-slate-400" />
+              <div className="h-14 w-14 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
+                <GraduationCap className="h-7 w-7 text-muted-foreground" />
               </div>
             )}
             <div className="flex-1 min-w-0">
@@ -130,7 +130,7 @@ export function WorkshopDetailModal({
                   {workshop.category}
                 </Badge>
                 {hasUserRsvp && (
-                  <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
+                  <Badge className="bg-status-active/10 text-status-active border-status-active/20">
                     <Check className="h-3 w-3 mr-1" />
                     RSVP'd
                   </Badge>
@@ -239,7 +239,7 @@ export function WorkshopDetailModal({
             variant={hasUserRsvp ? "outline" : "default"}
             size="lg"
             onClick={onRsvp}
-            className={hasUserRsvp ? "" : "bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100"}
+            className={hasUserRsvp ? "" : "bg-foreground text-background hover:bg-foreground/90"}
           >
             {hasUserRsvp ? "Cancel RSVP" : "RSVP for this Workshop"}
           </Button>

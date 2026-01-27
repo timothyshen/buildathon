@@ -35,12 +35,12 @@ export function StepIndicator({ steps, currentStep }: StepIndicatorProps) {
                   className={cn(
                     "relative flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold transition-all duration-300",
                     isCompleted &&
-                      "bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-lg shadow-violet-500/30",
+                      "bg-primary text-primary-foreground shadow-lg shadow-primary/30",
                     isCurrent &&
-                      "border-2 border-violet-500 bg-violet-50 text-violet-600 ring-4 ring-violet-100 dark:bg-violet-950 dark:ring-violet-900/30",
+                      "border-2 border-primary bg-primary/10 text-primary ring-4 ring-primary/20",
                     !isCompleted &&
                       !isCurrent &&
-                      "border-2 border-slate-200 bg-white text-slate-400 dark:border-slate-700 dark:bg-slate-800"
+                      "border-2 border-border bg-background text-muted-foreground"
                   )}
                   aria-label={`Step ${step.id}: ${step.label}${isCompleted ? " - completed" : isCurrent ? " - current" : ""}`}
                 >
@@ -55,9 +55,9 @@ export function StepIndicator({ steps, currentStep }: StepIndicatorProps) {
                 <span
                   className={cn(
                     "mt-2 text-xs font-medium transition-colors hidden sm:block",
-                    isCompleted && "text-violet-600 dark:text-violet-400",
-                    isCurrent && "text-violet-600 dark:text-violet-400",
-                    !isCompleted && !isCurrent && "text-slate-400 dark:text-slate-500"
+                    isCompleted && "text-primary",
+                    isCurrent && "text-primary",
+                    !isCompleted && !isCurrent && "text-muted-foreground"
                   )}
                 >
                   {step.label}
@@ -71,8 +71,8 @@ export function StepIndicator({ steps, currentStep }: StepIndicatorProps) {
                     className={cn(
                       "h-0.5 w-full rounded-full transition-colors duration-300",
                       isCompleted
-                        ? "bg-gradient-to-r from-violet-500 to-indigo-500"
-                        : "bg-slate-200 dark:bg-slate-700"
+                        ? "bg-primary"
+                        : "bg-border"
                     )}
                   />
                 </div>

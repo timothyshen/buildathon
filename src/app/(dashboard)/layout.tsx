@@ -38,12 +38,12 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="flex h-screen flex-col md:flex-row bg-neutral-50 dark:bg-neutral-950">
+    <div className="flex h-screen flex-col md:flex-row bg-muted">
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
         <MobileHeader />
         <main className="flex-1 overflow-y-auto">
-          <div className="min-h-full bg-white dark:bg-neutral-900">
+          <div className="min-h-full bg-background">
             <div className="mx-auto max-w-6xl px-4 py-6 md:px-6 md:py-8 lg:px-8">
               {children}
             </div>

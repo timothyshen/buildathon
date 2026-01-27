@@ -44,34 +44,10 @@ import {
 import { toast } from "sonner";
 import type { Cohort, Track, Submission } from "@/types";
 import type { CohortSponsorWithOrg } from "@/services/sponsors.service";
+import { getCohortStatusColor, getSubmissionStatusColor } from "@/lib/utils/colors";
 
 interface AdminCohortDetailPageProps {
   params: Promise<{ id: string }>;
-}
-
-const statusColors: Record<Cohort["status"], string> = {
-  draft: "bg-slate-100 text-slate-700",
-  upcoming: "bg-blue-100 text-blue-700",
-  active: "bg-green-100 text-green-700",
-  judging: "bg-purple-100 text-purple-700",
-  completed: "bg-amber-100 text-amber-700",
-};
-
-function getSubmissionStatusColor(status: string) {
-  switch (status) {
-    case "winner":
-      return "bg-yellow-100 text-yellow-800";
-    case "submitted":
-      return "bg-blue-100 text-blue-800";
-    case "draft":
-      return "bg-gray-100 text-gray-800";
-    case "under_review":
-      return "bg-purple-100 text-purple-800";
-    case "accepted":
-      return "bg-green-100 text-green-800";
-    default:
-      return "bg-gray-100 text-gray-800";
-  }
 }
 
 export default function AdminCohortDetailPage({ params }: AdminCohortDetailPageProps) {
@@ -171,7 +147,7 @@ export default function AdminCohortDetailPage({ params }: AdminCohortDetailPageP
           <p className="mt-1 text-sm text-muted-foreground">/{cohort.slug}</p>
         </div>
         <div className="flex items-center gap-3">
-          <Badge className={statusColors[currentStatus]}>{currentStatus}</Badge>
+          <Badge className={getCohortStatusColor(currentStatus)}>{currentStatus}</Badge>
           <Select
             value={currentStatus}
             onValueChange={(value) => handleStatusChange(value as Cohort["status"])}
@@ -275,7 +251,7 @@ export default function AdminCohortDetailPage({ params }: AdminCohortDetailPageP
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <Trophy className="h-5 w-5 text-yellow-500" />
+                      <Trophy className="h-5 w-5 text-prize-grand" />
                       Prizes
                     </CardTitle>
                   </CardHeader>

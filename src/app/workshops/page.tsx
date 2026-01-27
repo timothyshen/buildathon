@@ -202,7 +202,7 @@ export default function WorkshopsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+    <div className="min-h-screen bg-muted">
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-slate-900 mx-4 mt-4 rounded-3xl">
         {/* Subtle pattern overlay */}
@@ -213,7 +213,7 @@ export default function WorkshopsPage() {
           }}
         />
         <div className="relative max-w-6xl mx-auto px-8 py-16 text-center">
-          <Badge className="bg-teal-500/20 text-teal-400 border-teal-500/30 mb-4">
+          <Badge className="bg-category-technical/20 text-category-technical border-category-technical/30 mb-4">
             <Calendar className="h-3 w-3 mr-1.5" />
             Live Sessions
           </Badge>
@@ -223,7 +223,7 @@ export default function WorkshopsPage() {
           <p className="mt-4 text-xl text-slate-400 max-w-2xl mx-auto">
             Join live sessions, RSVP for upcoming workshops, and learn from Story Protocol experts.
           </p>
-          <Button asChild className="mt-8 bg-white text-slate-900 hover:bg-slate-100">
+          <Button asChild className="mt-8 bg-background text-foreground hover:bg-accent">
             <Link href="/workshops/resources">
               <BookOpen className="h-4 w-4 mr-2" />
               Browse Learning Resources

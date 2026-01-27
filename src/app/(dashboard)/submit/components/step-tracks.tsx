@@ -110,18 +110,18 @@ export function StepTracks({ data, onChange, errors, cohorts, tracks, sponsorOrg
                       }
                     }}
                     className={cn(
-                      "relative cursor-pointer rounded-lg border-2 p-4 transition-all hover:border-violet-300 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2",
+                      "relative cursor-pointer rounded-lg border-2 p-4 transition-all hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
                       isSelected
-                        ? "border-violet-600 bg-violet-50 dark:bg-violet-950/20"
-                        : "border-slate-200 dark:border-slate-800"
+                        ? "border-primary bg-primary/10"
+                        : "border-border"
                     )}
                   >
                     {isSelected && (
-                      <CheckCircle2 aria-hidden="true" className="absolute top-3 right-3 h-5 w-5 text-violet-600" />
+                      <CheckCircle2 aria-hidden="true" className="absolute top-3 right-3 h-5 w-5 text-primary" />
                     )}
                     <div className="flex items-start gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800">
-                        <Trophy aria-hidden="true" className="h-5 w-5 text-amber-500" />
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+                        <Trophy aria-hidden="true" className="h-5 w-5 text-prize-grand" />
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
@@ -157,7 +157,7 @@ export function StepTracks({ data, onChange, errors, cohorts, tracks, sponsorOrg
                             <ul className="text-xs text-muted-foreground space-y-0.5">
                               {track.requirements.map((req, idx) => (
                                 <li key={idx} className="flex items-center gap-1">
-                                  <span className="text-violet-500">*</span> {req}
+                                  <span className="text-primary">*</span> {req}
                                 </li>
                               ))}
                             </ul>

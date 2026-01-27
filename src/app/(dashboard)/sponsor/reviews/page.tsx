@@ -17,12 +17,7 @@ import {
 } from "@/components/ui/table";
 import Link from "next/link";
 import { Eye, Loader2 } from "lucide-react";
-
-const statusColors = {
-  pending: "bg-amber-100 text-amber-700",
-  in_progress: "bg-blue-100 text-blue-700",
-  completed: "bg-green-100 text-green-700",
-};
+import { getReviewStatusColor } from "@/lib/utils/colors";
 
 export default function SponsorReviewsPage() {
   const { user } = useAuth();
@@ -92,7 +87,7 @@ export default function SponsorReviewsPage() {
             <CardTitle className="text-sm font-medium">Pending</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-amber-600">{pendingCount}</div>
+            <div className="text-2xl font-bold text-warning-foreground">{pendingCount}</div>
           </CardContent>
         </Card>
         <Card>
@@ -100,7 +95,7 @@ export default function SponsorReviewsPage() {
             <CardTitle className="text-sm font-medium">Completed</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{completedCount}</div>
+            <div className="text-2xl font-bold text-success-foreground">{completedCount}</div>
           </CardContent>
         </Card>
       </div>
@@ -132,7 +127,7 @@ export default function SponsorReviewsPage() {
                     </TableCell>
                     <TableCell>{submission?.team?.name || "Unknown"}</TableCell>
                     <TableCell>
-                      <Badge className={statusColors[review.status]}>
+                      <Badge className={getReviewStatusColor(review.status)}>
                         {review.status.replace("_", " ")}
                       </Badge>
                     </TableCell>

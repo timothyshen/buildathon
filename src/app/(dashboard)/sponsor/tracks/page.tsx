@@ -9,14 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Target, Trophy, Calendar, ArrowRight, Loader2 } from "lucide-react";
-
-const tierColors: Record<string, string> = {
-  platinum: "bg-slate-200 text-slate-800",
-  gold: "bg-amber-100 text-amber-800",
-  silver: "bg-slate-100 text-slate-600",
-  bronze: "bg-orange-100 text-orange-800",
-  community: "bg-green-100 text-green-800",
-};
+import { getSponsorTierColor, getCohortStatusColor } from "@/lib/utils/colors";
 
 export default function SponsorTracksPage() {
   const { user } = useAuth();
@@ -154,18 +147,10 @@ export default function SponsorTracksPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <h3 className="text-xl font-semibold">{cohort.name}</h3>
-                      <Badge className={tierColors[cohortSponsor.tier]}>
+                      <Badge className={getSponsorTierColor(cohortSponsor.tier)}>
                         {cohortSponsor.tier}
                       </Badge>
-                      <Badge
-                        className={
-                          cohort.status === "active"
-                            ? "bg-green-100 text-green-800"
-                            : cohort.status === "judging"
-                            ? "bg-purple-100 text-purple-800"
-                            : "bg-slate-100 text-slate-700"
-                        }
-                      >
+                      <Badge className={getCohortStatusColor(cohort.status)}>
                         {cohort.status}
                       </Badge>
                     </div>

@@ -34,7 +34,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
           <div className="flex items-center gap-2">
             <CardTitle className="text-lg">{project.title}</CardTitle>
             {project.status === "winner" && (
-              <Badge className="bg-yellow-500 text-yellow-950 hover:bg-yellow-500">
+              <Badge className="bg-prize-grand text-prize-grand-foreground hover:bg-prize-grand">
                 Winner
               </Badge>
             )}

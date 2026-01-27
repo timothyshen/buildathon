@@ -64,7 +64,7 @@ export function JudgeDashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Pending Reviews</CardTitle>
-            <Clock className="h-4 w-4 text-yellow-500" />
+            <Clock className="h-4 w-4 text-warning-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{pendingReviews.length}</div>
@@ -74,7 +74,7 @@ export function JudgeDashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Completed</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-500" />
+            <CheckCircle className="h-4 w-4 text-success-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{completedReviews.length}</div>
@@ -94,7 +94,7 @@ export function JudgeDashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Avg Score Given</CardTitle>
-            <Star className="h-4 w-4 text-yellow-500" />
+            <Star className="h-4 w-4 text-prize-grand" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -119,7 +119,7 @@ export function JudgeDashboard() {
         <CardContent>
           {pendingReviews.length === 0 ? (
             <div className="py-8 text-center">
-              <CheckCircle className="mx-auto h-12 w-12 text-green-500" />
+              <CheckCircle className="mx-auto h-12 w-12 text-success-foreground" />
               <h3 className="mt-4 text-lg font-semibold">All caught up!</h3>
               <p className="mt-2 text-sm text-muted-foreground">
                 You&apos;ve reviewed all assigned submissions.
@@ -173,7 +173,7 @@ export function JudgeDashboard() {
                   <div>
                     <div className="flex items-center gap-2">
                       <h3 className="font-semibold">{review.submission?.title}</h3>
-                      <Badge className="bg-green-100 text-green-800">Reviewed</Badge>
+                      <Badge className="bg-status-completed text-status-completed-foreground">Reviewed</Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">
                       Score: {review.overallScore?.toFixed(1)}/10
