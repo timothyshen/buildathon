@@ -23,14 +23,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { PlusCircle, Trash2 } from "lucide-react";
-import type { Track } from "@/types";
-import { mockCohorts } from "@/data/mock-data";
+import type { Track, Cohort } from "@/types";
 
 interface TrackFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   track?: Track;
   onSubmit: (data: TrackFormData) => void;
+  cohorts: Cohort[];
   allowedCohortIds?: string[];
 }
 
@@ -39,6 +39,7 @@ export function TrackForm({
   onOpenChange,
   track,
   onSubmit,
+  cohorts,
   allowedCohortIds,
 }: TrackFormProps) {
   const [requirements, setRequirements] = useState<string[]>(
@@ -68,8 +69,8 @@ export function TrackForm({
   });
 
   const availableCohorts = allowedCohortIds
-    ? mockCohorts.filter((c) => allowedCohortIds.includes(c.id))
-    : mockCohorts;
+    ? cohorts.filter((c) => allowedCohortIds.includes(c.id))
+    : cohorts;
 
   const addRequirement = () => {
     setRequirements([...requirements, ""]);

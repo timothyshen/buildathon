@@ -6,15 +6,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Users, Crown, ChevronRight } from "lucide-react";
 import { Team, Cohort } from "@/types";
-import { mockCohorts } from "@/data/mock-data";
 
 interface TeamCardProps {
   team: Team;
   currentUserId: string;
+  cohort?: Cohort;
 }
 
-export function TeamCard({ team, currentUserId }: TeamCardProps) {
-  const cohort = mockCohorts.find((c) => c.id === team.cohortId);
+export function TeamCard({ team, currentUserId, cohort }: TeamCardProps) {
   const isLead = team.members.some(
     (m) => m.userId === currentUserId && m.role === "lead"
   );

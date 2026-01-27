@@ -1,7 +1,6 @@
 "use client";
 
 import { Workshop, WorkshopRSVP } from "@/types";
-import { getRSVPsByWorkshop } from "@/data/mock-data";
 import {
   Dialog,
   DialogContent,
@@ -30,6 +29,7 @@ interface WorkshopDetailModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   userRsvp?: WorkshopRSVP;
+  rsvpCount?: number;
   onRsvp: () => void;
   onAddToCalendar: (type: "google" | "apple" | "ics") => void;
 }
@@ -95,13 +95,13 @@ export function WorkshopDetailModal({
   open,
   onOpenChange,
   userRsvp,
+  rsvpCount = 0,
   onRsvp,
   onAddToCalendar,
 }: WorkshopDetailModalProps) {
   if (!workshop) return null;
 
-  const rsvps = getRSVPsByWorkshop(workshop.id);
-  const attendeeCount = rsvps.length;
+  const attendeeCount = rsvpCount;
   const duration = formatDuration(workshop);
   const hasUserRsvp = userRsvp && userRsvp.status === "registered";
   const categoryBadge = getCategoryBadge(workshop.category);

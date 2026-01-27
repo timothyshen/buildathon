@@ -1,13 +1,13 @@
 "use client";
 
 import { Workshop, WorkshopRSVP } from "@/types";
-import { getRSVPsByWorkshop } from "@/data/mock-data";
 import { WorkshopCard } from "./workshop-card";
 import { Calendar } from "lucide-react";
 
 interface CalendarAgendaViewProps {
   workshops: Workshop[];
   userRsvps: WorkshopRSVP[];
+  rsvpCounts: Record<string, number>;
   onViewDetails: (workshop: Workshop) => void;
   onRsvp: (workshop: Workshop) => void;
   onAddToCalendar: (workshop: Workshop, type: "google" | "outlook" | "ical") => void;
@@ -86,6 +86,7 @@ function groupWorkshopsByDate(workshops: Workshop[]): GroupedWorkshops[] {
 export function CalendarAgendaView({
   workshops,
   userRsvps,
+  rsvpCounts,
   onViewDetails,
   onRsvp,
   onAddToCalendar,
@@ -126,13 +127,12 @@ export function CalendarAgendaView({
               const userRsvp = userRsvps.find(
                 (r) => r.workshopId === workshop.id
               );
-              const rsvpCount = getRSVPsByWorkshop(workshop.id).length;
 
               return (
                 <WorkshopCard
                   key={workshop.id}
                   workshop={workshop}
-                  rsvpCount={rsvpCount}
+                  rsvpCount={rsvpCounts[workshop.id] || 0}
                   userRsvp={userRsvp}
                   onViewDetails={onViewDetails}
                   onRsvp={onRsvp}

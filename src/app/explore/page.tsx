@@ -2,8 +2,9 @@
 
 import { useState, useMemo, useCallback, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { mockSubmissions, getTracksByCohort, getCohortById } from "@/data/mock-data";
-import { Filter } from "lucide-react";
+import { submissionsService, tracksService, cohortsService } from "@/services";
+import type { Submission, Track, Cohort } from "@/types";
+import { Filter, Loader2 } from "lucide-react";
 import {
   AdvancedSearchInput,
   ProjectCardExplore,
@@ -21,31 +22,13 @@ import {
 } from "@/lib/search-utils";
 import { getSubmissionPrizes } from "@/lib/prize-utils";
 
-// Prepare enriched submissions with cohort, track, and prize data
-function enrichSubmissions(): EnrichedSubmission[] {
-  // Only show submitted/winner/accepted projects
-  const publicSubmissions = mockSubmissions.filter(
-    (s) => s.status === "submitted" || s.status === "winner" || s.status === "accepted"
-  );
-
-  return publicSubmissions.map((submission) => {
-    const cohort = getCohortById(submission.cohortId);
-    const tracks = submission.cohortId ? getTracksByCohort(submission.cohortId) : [];
-    const track = tracks.find((t) => t.id === submission.trackId);
-    const prizes = getSubmissionPrizes(submission, cohort, track);
-
-    return {
-      ...submission,
-      cohort,
-      track,
-      prizes,
-    };
-  });
-}
-
 function ExploreContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // Data loading state
+  const [enrichedSubmissions, setEnrichedSubmissions] = useState<EnrichedSubmission[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Initialize search from URL
   const [searchQuery, setSearchQuery] = useState(() => {
@@ -55,8 +38,55 @@ function ExploreContent() {
   // Parse the search query
   const parsedQuery = useMemo(() => parseSearchQuery(searchQuery), [searchQuery]);
 
-  // Enrich submissions once
-  const enrichedSubmissions = useMemo(() => enrichSubmissions(), []);
+  // Load and enrich submissions
+  useEffect(() => {
+    async function loadData() {
+      // Load all submissions
+      const { data: allSubmissions } = await submissionsService.list();
+
+      // Only show submitted/winner/accepted projects
+      const publicSubmissions = allSubmissions.filter(
+        (s: Submission) => s.status === "submitted" || s.status === "winner" || s.status === "accepted"
+      );
+
+      // Get unique cohort IDs
+      const cohortIds = [...new Set(publicSubmissions.map((s: Submission) => s.cohortId).filter(Boolean))];
+
+      // Load cohorts and tracks in parallel
+      const [cohortsResult, ...trackResults] = await Promise.all([
+        cohortsService.list(),
+        ...cohortIds.map((id) => tracksService.getByCohort(id as string)),
+      ]);
+
+      // Build lookup maps
+      const cohortMap = new Map<string, Cohort>(
+        cohortsResult.data.map((c: Cohort) => [c.id, c])
+      );
+      const trackMap = new Map<string, Track[]>();
+      cohortIds.forEach((id, index) => {
+        trackMap.set(id as string, trackResults[index].data);
+      });
+
+      // Enrich submissions
+      const enriched: EnrichedSubmission[] = publicSubmissions.map((submission: Submission) => {
+        const cohort = submission.cohortId ? cohortMap.get(submission.cohortId) : undefined;
+        const tracks = submission.cohortId ? (trackMap.get(submission.cohortId) || []) : [];
+        const track = tracks.find((t) => t.id === submission.trackId);
+        const prizes = getSubmissionPrizes(submission, cohort, track);
+
+        return {
+          ...submission,
+          cohort,
+          track,
+          prizes,
+        };
+      });
+
+      setEnrichedSubmissions(enriched);
+      setIsLoading(false);
+    }
+    loadData();
+  }, []);
 
   // Filter submissions based on parsed query
   const filteredSubmissions = useMemo(() => {
@@ -67,6 +97,14 @@ function ExploreContent() {
       matchesQuery(submission, parsedQuery)
     );
   }, [enrichedSubmissions, parsedQuery]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   // Update URL when search changes (debounced)
   useEffect(() => {

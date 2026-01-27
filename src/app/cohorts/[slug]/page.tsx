@@ -1,12 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import {
-  getCohortBySlug,
-  getTracksByCohort,
-  getSponsorsByCohort,
-  getSubmissionsByCohort,
-} from "@/data/mock-data";
+import { cohortsService, tracksService, sponsorsService, submissionsService } from "@/services";
 import { CohortHero } from "@/components/cohorts/cohort-hero";
 import { CohortTimeline } from "@/components/cohorts/cohort-timeline";
 import { CohortTracks } from "@/components/cohorts/cohort-tracks";
@@ -68,15 +63,21 @@ export default async function CohortDetailPage({
 }: CohortDetailPageProps) {
   const { slug } = await params;
 
-  const cohort = getCohortBySlug(slug);
+  const { data: cohort } = await cohortsService.getBySlug(slug);
 
   if (!cohort) {
     notFound();
   }
 
-  const tracks = getTracksByCohort(cohort.id);
-  const sponsors = getSponsorsByCohort(cohort.id);
-  const submissions = getSubmissionsByCohort(cohort.id);
+  const [tracksResponse, sponsorsResponse, submissionsResponse] = await Promise.all([
+    tracksService.getByCohort(cohort.id),
+    sponsorsService.getCohortSponsors(cohort.id),
+    submissionsService.getByCohort(cohort.id),
+  ]);
+
+  const tracks = tracksResponse.data;
+  const sponsors = sponsorsResponse.data;
+  const submissions = submissionsResponse.data;
 
   // Filter out draft submissions for public display
   const publishedSubmissions = submissions.filter((s) => s.status !== "draft");

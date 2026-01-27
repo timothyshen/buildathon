@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -23,7 +24,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { mockSubmissions, mockReviews } from "@/data/mock-data";
+import { submissionsService, reviewsService } from "@/services";
 
 interface NavItem {
   href: string;
@@ -49,15 +50,36 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
   const router = useRouter();
   const { user, logout, switchRole } = useAuth();
 
-  // Calculate dynamic badges
-  const userSubmissions = mockSubmissions.filter((s) =>
-    s.team?.members.some((m) => m.userId === user?.id)
-  );
-  const draftCount = userSubmissions.filter((s) => s.status === "draft").length;
-  const pendingReviews = mockReviews.filter(
-    (r) => r.judgeId === user?.id && r.status === "pending"
-  ).length;
-  const totalSubmissions = mockSubmissions.length;
+  // Badge count state
+  const [draftCount, setDraftCount] = useState(0);
+  const [pendingReviews, setPendingReviews] = useState(0);
+  const [totalSubmissions, setTotalSubmissions] = useState(0);
+
+  // Load badge counts
+  useEffect(() => {
+    async function loadCounts() {
+      if (!user) return;
+
+      const [submissionsRes, reviewsRes] = await Promise.all([
+        submissionsService.list(),
+        reviewsService.list(),
+      ]);
+
+      const submissions = submissionsRes.data;
+      const reviews = reviewsRes.data;
+
+      // Calculate dynamic badges
+      const userSubmissions = submissions.filter((s) =>
+        s.team?.members.some((m) => m.userId === user.id)
+      );
+      setDraftCount(userSubmissions.filter((s) => s.status === "draft").length);
+      setPendingReviews(
+        reviews.filter((r) => r.judgeId === user.id && r.status === "pending").length
+      );
+      setTotalSubmissions(submissions.length);
+    }
+    loadCounts();
+  }, [user]);
 
   const navSections: NavSection[] = [
     {

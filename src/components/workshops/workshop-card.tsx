@@ -1,7 +1,6 @@
 "use client";
 
 import { Workshop, WorkshopRSVP } from "@/types";
-import { getRSVPsByWorkshop } from "@/data/mock-data";
 import {
   Card,
   CardContent,
@@ -21,7 +20,7 @@ import { Clock, Users, MapPin, ChevronDown, Calendar, Sparkles, GraduationCap, B
 
 interface WorkshopCardProps {
   workshop: Workshop;
-  rsvpCount?: number;
+  rsvpCount: number;
   userRsvp?: WorkshopRSVP;
   onViewDetails: (workshop: Workshop) => void;
   onRsvp: (workshop: Workshop) => void;
@@ -88,7 +87,6 @@ export function WorkshopCard({
   onRsvp,
   onAddToCalendar,
 }: WorkshopCardProps) {
-  const actualRsvpCount = rsvpCount ?? getRSVPsByWorkshop(workshop.id).length;
   const duration = formatDuration(workshop);
   const hasUserRsvp = userRsvp && userRsvp.status === "registered";
   const categoryBadge = getCategoryBadge(workshop.category);
@@ -160,7 +158,7 @@ export function WorkshopCard({
           <div className="flex items-center gap-1.5">
             <Users className="h-4 w-4" />
             <span>
-              {actualRsvpCount}
+              {rsvpCount}
               {workshop.maxAttendees && ` / ${workshop.maxAttendees}`} attending
             </span>
           </div>

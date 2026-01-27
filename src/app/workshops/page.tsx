@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
-import { mockWorkshops, getRSVPsByWorkshop, mockWorkshopRSVPs } from "@/data/mock-data";
+import { workshopsService } from "@/services";
 import { Workshop, WorkshopRSVP } from "@/types";
 import { CalendarMonthView } from "@/components/workshops/calendar-month-view";
 import { CalendarAgendaView } from "@/components/workshops/calendar-agenda-view";
@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { generateGoogleCalendarUrl, downloadICSFile } from "@/lib/calendar-utils";
-import { Calendar, List, LogIn, BookOpen } from "lucide-react";
+import { Calendar, List, LogIn, BookOpen, Loader2 } from "lucide-react";
 
 function isSameDay(date1: Date, date2: Date): boolean {
   return (
@@ -27,18 +27,63 @@ function isSameDay(date1: Date, date2: Date): boolean {
 export default function WorkshopsPage() {
   const { user } = useAuth();
 
+  // Data loading state
+  const [workshops, setWorkshops] = useState<Workshop[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
   // State management
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [view, setView] = useState<"month" | "agenda">("month");
   const [selectedWorkshop, setSelectedWorkshop] = useState<Workshop | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [localRsvps, setLocalRsvps] = useState<WorkshopRSVP[]>(mockWorkshopRSVPs);
+  const [localRsvps, setLocalRsvps] = useState<WorkshopRSVP[]>([]);
+  const [rsvpCounts, setRsvpCounts] = useState<Record<string, number>>({});
+
+  // Load workshops and RSVPs
+  useEffect(() => {
+    async function loadData() {
+      const { data: workshopList } = await workshopsService.list();
+      setWorkshops(workshopList);
+
+      // Load RSVPs for all published workshops
+      const publishedIds = workshopList
+        .filter((w) => w.status === "published" && w.scheduledAt)
+        .map((w) => w.id);
+
+      const rsvpPromises = publishedIds.map(async (id) => {
+        const { data } = await workshopsService.getRSVPs(id);
+        return { id, rsvps: data };
+      });
+
+      const rsvpResults = await Promise.all(rsvpPromises);
+
+      const counts: Record<string, number> = {};
+      const allRsvps: WorkshopRSVP[] = [];
+      for (const { id, rsvps } of rsvpResults) {
+        counts[id] = rsvps.length;
+        allRsvps.push(...rsvps);
+      }
+
+      setRsvpCounts(counts);
+      setLocalRsvps(allRsvps);
+      setIsLoading(false);
+    }
+    loadData();
+  }, []);
 
   // Get published workshops only
   const publishedWorkshops = useMemo(() => {
-    return mockWorkshops.filter((w) => w.status === "published" && w.scheduledAt);
-  }, []);
+    return workshops.filter((w) => w.status === "published" && w.scheduledAt);
+  }, [workshops]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   // Get upcoming workshops (next 5)
   const upcomingWorkshops = useMemo(() => {
@@ -216,7 +261,7 @@ export default function WorkshopsPage() {
                             <WorkshopCard
                               key={workshop.id}
                               workshop={workshop}
-                              rsvpCount={getRSVPsByWorkshop(workshop.id).length}
+                              rsvpCount={rsvpCounts[workshop.id] || 0}
                               userRsvp={getUserRsvpForWorkshop(workshop.id)}
                               onViewDetails={handleViewDetails}
                               onRsvp={handleRsvp}
@@ -232,6 +277,7 @@ export default function WorkshopsPage() {
                 <CalendarAgendaView
                   workshops={publishedWorkshops}
                   userRsvps={userRsvps}
+                  rsvpCounts={rsvpCounts}
                   onViewDetails={handleViewDetails}
                   onRsvp={handleRsvp}
                   onAddToCalendar={handleAddToCalendar}
@@ -345,6 +391,7 @@ export default function WorkshopsPage() {
         open={modalOpen}
         onOpenChange={setModalOpen}
         userRsvp={selectedWorkshop ? getUserRsvpForWorkshop(selectedWorkshop.id) : undefined}
+        rsvpCount={selectedWorkshop ? (rsvpCounts[selectedWorkshop.id] || 0) : 0}
         onRsvp={() => {
           if (selectedWorkshop) {
             handleRsvp(selectedWorkshop);

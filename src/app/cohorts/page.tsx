@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { mockCohorts, getTracksByCohort, getSponsorsByCohort, getSubmissionsByCohort } from "@/data/mock-data";
-import { Cohort } from "@/types";
+import { cohortsService, tracksService, sponsorsService, submissionsService } from "@/services";
+import type { Cohort, Track, Submission } from "@/types";
+import type { CohortSponsorWithOrg } from "@/services/sponsors.service";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Users, Trophy, Clock, ArrowUpRight, Star } from "lucide-react";
+import { Calendar, Users, Trophy, Clock, ArrowUpRight, Star, Loader2 } from "lucide-react";
 
 /**
  * Cohort Listing Page - Magazine Style
@@ -19,6 +20,13 @@ import { Calendar, Users, Trophy, Clock, ArrowUpRight, Star } from "lucide-react
  * - Stacked list for other cohorts
  */
 
+// Enriched cohort type with related data
+interface EnrichedCohort extends Cohort {
+  tracks: Track[];
+  sponsors: CohortSponsorWithOrg[];
+  submissions: Submission[];
+}
+
 function getCountdown(deadline: Date) {
   const now = new Date();
   const diff = new Date(deadline).getTime() - now.getTime();
@@ -28,10 +36,8 @@ function getCountdown(deadline: Date) {
   return { days, hours };
 }
 
-function HeroCard({ cohort }: { cohort: Cohort }) {
-  const tracks = getTracksByCohort(cohort.id);
-  const sponsors = getSponsorsByCohort(cohort.id);
-  const submissions = getSubmissionsByCohort(cohort.id);
+function HeroCard({ cohort }: { cohort: EnrichedCohort }) {
+  const { tracks, sponsors, submissions } = cohort;
   const countdown = getCountdown(cohort.submissionDeadline);
   const totalPrize = cohort.prizes?.reduce((sum, p) => sum + parseInt(p.amount.replace(/[^0-9]/g, "") || "0"), 0) || 0;
   const featuredProject = submissions.find(s => s.status === "winner") || submissions[0];
@@ -143,10 +149,8 @@ function HeroCard({ cohort }: { cohort: Cohort }) {
   );
 }
 
-function ListCard({ cohort }: { cohort: Cohort }) {
-  const tracks = getTracksByCohort(cohort.id);
-  const sponsors = getSponsorsByCohort(cohort.id);
-  const submissions = getSubmissionsByCohort(cohort.id);
+function ListCard({ cohort }: { cohort: EnrichedCohort }) {
+  const { tracks, sponsors, submissions } = cohort;
   const totalPrize = cohort.prizes?.reduce((sum, p) => sum + parseInt(p.amount.replace(/[^0-9]/g, "") || "0"), 0) || 0;
 
   return (
@@ -215,15 +219,54 @@ function ListCard({ cohort }: { cohort: Cohort }) {
 
 export default function CohortsPage() {
   const [filter, setFilter] = useState<string>("all");
-  const publicCohorts = mockCohorts.filter(c => c.isPublic);
-  const filteredCohorts = publicCohorts.filter(c => {
+  const [enrichedCohorts, setEnrichedCohorts] = useState<EnrichedCohort[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadData() {
+      // Load all cohorts
+      const { data: cohorts } = await cohortsService.list();
+      const publicCohorts = cohorts.filter((c: Cohort) => c.isPublic);
+
+      // Load tracks, sponsors, and submissions for each cohort in parallel
+      const enriched = await Promise.all(
+        publicCohorts.map(async (cohort: Cohort) => {
+          const [tracksRes, sponsorsRes, submissionsRes] = await Promise.all([
+            tracksService.getByCohort(cohort.id),
+            sponsorsService.getCohortSponsors(cohort.id),
+            submissionsService.getByCohort(cohort.id),
+          ]);
+          return {
+            ...cohort,
+            tracks: tracksRes.data,
+            sponsors: sponsorsRes.data,
+            submissions: submissionsRes.data,
+          };
+        })
+      );
+
+      setEnrichedCohorts(enriched);
+      setIsLoading(false);
+    }
+    loadData();
+  }, []);
+
+  const filteredCohorts = enrichedCohorts.filter((c) => {
     if (filter === "all") return true;
     if (filter === "completed") return c.status === "completed" || c.status === "judging";
     return c.status === filter;
   });
 
-  const activeCohort = filteredCohorts.find(c => c.status === "active");
-  const otherCohorts = filteredCohorts.filter(c => c.id !== activeCohort?.id);
+  const activeCohort = filteredCohorts.find((c) => c.status === "active");
+  const otherCohorts = filteredCohorts.filter((c) => c.id !== activeCohort?.id);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Cohort } from "@/types";
+import { Cohort, Track } from "@/types";
 import {
   Card,
   CardContent,
@@ -9,10 +9,10 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Users, Trophy } from "lucide-react";
-import { getTracksByCohort } from "@/data/mock-data";
 
 interface CohortCardProps {
   cohort: Cohort;
+  tracks?: Track[];
 }
 
 function formatDateRange(startDate: Date, endDate: Date): string {
@@ -60,8 +60,7 @@ function calculateTotalPrizePool(cohort: Cohort): string {
   return `$${total.toLocaleString()}`;
 }
 
-export function CohortCard({ cohort }: CohortCardProps) {
-  const tracks = getTracksByCohort(cohort.id);
+export function CohortCard({ cohort, tracks = [] }: CohortCardProps) {
   const totalPrizePool = calculateTotalPrizePool(cohort);
   const dateRange = formatDateRange(cohort.startDate, cohort.endDate);
 

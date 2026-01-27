@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getSubmissionById, getSubmissionsByCohort, getTracksByCohort, getCohortById } from "@/data/mock-data";
+import { submissionsService, tracksService, cohortsService } from "@/services";
 import { ProjectHero } from "@/components/projects/project-hero";
 import { ProjectGallery } from "@/components/projects/project-gallery";
 import { ProjectTeam } from "@/components/projects/project-team";
@@ -17,22 +17,29 @@ interface ProjectPageProps {
 export default async function ProjectPage({ params }: ProjectPageProps) {
   const { id } = await params;
 
-  const submission = getSubmissionById(id);
+  const { data: submission } = await submissionsService.getById(id);
 
   // Return 404 if not found or if status is draft
   if (!submission || submission.status === "draft") {
     notFound();
   }
 
+  // Fetch related data in parallel
+  const [tracksResponse, cohortResponse, cohortSubmissionsResponse] = await Promise.all([
+    submission.cohortId ? tracksService.getByCohort(submission.cohortId) : Promise.resolve({ data: [] }),
+    submission.cohortId ? cohortsService.getById(submission.cohortId) : Promise.resolve({ data: null }),
+    submissionsService.getByCohort(submission.cohortId),
+  ]);
+
   // Get the track info if projectTrack exists
-  const tracks = submission.cohortId ? getTracksByCohort(submission.cohortId) : [];
+  const tracks = tracksResponse.data;
   const projectTrack = tracks.find((t) => t.id === submission.trackId);
 
   // Get cohort info for breadcrumb
-  const cohort = submission.cohortId ? getCohortById(submission.cohortId) : null;
+  const cohort = cohortResponse.data;
 
   // Get related projects from same cohort (excluding current and drafts)
-  const cohortSubmissions = getSubmissionsByCohort(submission.cohortId);
+  const cohortSubmissions = cohortSubmissionsResponse.data;
   const relatedProjects = cohortSubmissions
     .filter((s) => s.id !== submission.id && s.status !== "draft")
     .slice(0, 3);

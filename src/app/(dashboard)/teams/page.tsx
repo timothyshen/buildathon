@@ -3,27 +3,29 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
-import { teamsService } from "@/services";
+import { teamsService, cohortsService } from "@/services";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PlusCircle, Users, Loader2 } from "lucide-react";
 import { TeamCard, PendingInvites } from "@/components/teams";
 import { toast } from "sonner";
-import type { Team, TeamInvite } from "@/types";
+import type { Team, TeamInvite, Cohort } from "@/types";
 
 export default function TeamsPage() {
   const { user } = useAuth();
   const [userTeams, setUserTeams] = useState<Team[]>([]);
   const [pendingInvites, setPendingInvites] = useState<TeamInvite[]>([]);
+  const [cohortMap, setCohortMap] = useState<Map<string, Cohort>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function loadData() {
       if (!user) return;
 
-      const [teamsResult, invitesResult] = await Promise.all([
+      const [teamsResult, invitesResult, cohortsResult] = await Promise.all([
         teamsService.getByUser(user.id),
         teamsService.getPendingInvitesForUser(user.email),
+        cohortsService.list(),
       ]);
 
       if (teamsResult.success) {
@@ -31,6 +33,9 @@ export default function TeamsPage() {
       }
       if (invitesResult.success) {
         setPendingInvites(invitesResult.data);
+      }
+      if (cohortsResult.success) {
+        setCohortMap(new Map(cohortsResult.data.map((c: Cohort) => [c.id, c])));
       }
       setIsLoading(false);
     }
@@ -109,7 +114,12 @@ export default function TeamsPage() {
       ) : (
         <div className="grid gap-6 md:grid-cols-2">
           {userTeams.map((team) => (
-            <TeamCard key={team.id} team={team} currentUserId={user.id} />
+            <TeamCard
+              key={team.id}
+              team={team}
+              currentUserId={user.id}
+              cohort={team.cohortId ? cohortMap.get(team.cohortId) : undefined}
+            />
           ))}
         </div>
       )}
