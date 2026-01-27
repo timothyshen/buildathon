@@ -3,10 +3,11 @@
  * Handles track CRUD and queries
  */
 
-import { mockTracks, getTracksByCohort as mockGetTracksByCohort } from "@/data/mock-data";
+import { createClient } from "@/lib/supabase/client";
+import type { TablesInsert, TablesUpdate } from "@/lib/supabase/database.types";
 import type { Track } from "@/types";
 import type { ServiceResponse } from "./types";
-import { success, error, delay, generateId } from "./types";
+import { success, error } from "./types";
 
 export interface TracksService {
   list(): Promise<ServiceResponse<Track[]>>;
@@ -18,64 +19,200 @@ export interface TracksService {
   delete(id: string): Promise<ServiceResponse<void>>;
 }
 
+// Convert database row to Track type
+function toTrack(row: Record<string, unknown>, sponsorData?: { name: string; logo: string } | null): Track {
+  return {
+    id: row.id as string,
+    cohortId: row.cohort_id as string,
+    sponsorOrgId: row.sponsor_org_id as string | undefined,
+    name: row.name as string,
+    description: row.description as string,
+    prizePool: row.prize_pool as string | undefined,
+    requirements: (row.requirements as string[]) || [],
+    sponsorName: sponsorData?.name,
+    sponsorLogo: sponsorData?.logo,
+  };
+}
+
+// Convert Track to database format
+function toDbTrack(data: Partial<Track>): Record<string, unknown> {
+  const dbData: Record<string, unknown> = {};
+
+  if (data.cohortId !== undefined) dbData.cohort_id = data.cohortId;
+  if (data.sponsorOrgId !== undefined) dbData.sponsor_org_id = data.sponsorOrgId;
+  if (data.name !== undefined) dbData.name = data.name;
+  if (data.description !== undefined) dbData.description = data.description;
+  if (data.prizePool !== undefined) dbData.prize_pool = data.prizePool;
+  if (data.requirements !== undefined) dbData.requirements = data.requirements;
+
+  return dbData;
+}
+
 async function list(): Promise<ServiceResponse<Track[]>> {
-  await delay();
-  return success([...mockTracks]);
+  const supabase = createClient();
+  const { data, error: dbError } = await supabase
+    .from("tracks")
+    .select(`
+      *,
+      sponsor_orgs (
+        name,
+        logo
+      )
+    `)
+    .order("created_at", { ascending: false });
+
+  if (dbError) {
+    return error(dbError.message, []);
+  }
+
+  const tracks = (data || []).map((row) => {
+    const sponsorData = row.sponsor_orgs as { name: string; logo: string } | null;
+    return toTrack(row, sponsorData);
+  });
+
+  return success(tracks);
 }
 
 async function getById(id: string): Promise<ServiceResponse<Track | null>> {
-  await delay();
-  const track = mockTracks.find((t) => t.id === id) || null;
-  return success(track);
+  const supabase = createClient();
+  const { data, error: dbError } = await supabase
+    .from("tracks")
+    .select(`
+      *,
+      sponsor_orgs (
+        name,
+        logo
+      )
+    `)
+    .eq("id", id)
+    .single();
+
+  if (dbError) {
+    if (dbError.code === "PGRST116") {
+      return success(null);
+    }
+    return error(dbError.message, null);
+  }
+
+  const sponsorData = data.sponsor_orgs as { name: string; logo: string } | null;
+  return success(toTrack(data, sponsorData));
 }
 
 async function getByCohort(cohortId: string): Promise<ServiceResponse<Track[]>> {
-  await delay();
-  const tracks = mockGetTracksByCohort(cohortId);
+  const supabase = createClient();
+  const { data, error: dbError } = await supabase
+    .from("tracks")
+    .select(`
+      *,
+      sponsor_orgs (
+        name,
+        logo
+      )
+    `)
+    .eq("cohort_id", cohortId)
+    .order("created_at", { ascending: true });
+
+  if (dbError) {
+    return error(dbError.message, []);
+  }
+
+  const tracks = (data || []).map((row) => {
+    const sponsorData = row.sponsor_orgs as { name: string; logo: string } | null;
+    return toTrack(row, sponsorData);
+  });
+
   return success(tracks);
 }
 
 async function getBySponsor(sponsorOrgId: string): Promise<ServiceResponse<Track[]>> {
-  await delay();
-  const tracks = mockTracks.filter((t) => t.sponsorOrgId === sponsorOrgId);
+  const supabase = createClient();
+  const { data, error: dbError } = await supabase
+    .from("tracks")
+    .select(`
+      *,
+      sponsor_orgs (
+        name,
+        logo
+      )
+    `)
+    .eq("sponsor_org_id", sponsorOrgId)
+    .order("created_at", { ascending: false });
+
+  if (dbError) {
+    return error(dbError.message, []);
+  }
+
+  const tracks = (data || []).map((row) => {
+    const sponsorData = row.sponsor_orgs as { name: string; logo: string } | null;
+    return toTrack(row, sponsorData);
+  });
+
   return success(tracks);
 }
 
 async function create(data: Omit<Track, "id">): Promise<ServiceResponse<Track>> {
-  await delay(200);
+  const supabase = createClient();
 
-  const newTrack: Track = {
-    ...data,
-    id: generateId("track"),
-  };
+  const dbData = toDbTrack(data) as TablesInsert<"tracks">;
 
-  mockTracks.push(newTrack);
-  return success(newTrack);
+  const { data: created, error: dbError } = await supabase
+    .from("tracks")
+    .insert(dbData)
+    .select(`
+      *,
+      sponsor_orgs (
+        name,
+        logo
+      )
+    `)
+    .single();
+
+  if (dbError) {
+    return error(dbError.message, null as unknown as Track);
+  }
+
+  const sponsorData = created.sponsor_orgs as { name: string; logo: string } | null;
+  return success(toTrack(created, sponsorData));
 }
 
 async function update(id: string, data: Partial<Track>): Promise<ServiceResponse<Track>> {
-  await delay(150);
+  const supabase = createClient();
 
-  const trackIndex = mockTracks.findIndex((t) => t.id === id);
-  if (trackIndex === -1) {
-    return error("Track not found", null as unknown as Track);
+  const dbData = toDbTrack(data) as TablesUpdate<"tracks">;
+
+  const { data: updated, error: dbError } = await supabase
+    .from("tracks")
+    .update(dbData)
+    .eq("id", id)
+    .select(`
+      *,
+      sponsor_orgs (
+        name,
+        logo
+      )
+    `)
+    .single();
+
+  if (dbError) {
+    return error(dbError.message, null as unknown as Track);
   }
 
-  const updatedTrack = { ...mockTracks[trackIndex], ...data };
-  mockTracks[trackIndex] = updatedTrack;
-
-  return success(updatedTrack);
+  const sponsorData = updated.sponsor_orgs as { name: string; logo: string } | null;
+  return success(toTrack(updated, sponsorData));
 }
 
 async function deleteTrack(id: string): Promise<ServiceResponse<void>> {
-  await delay(150);
+  const supabase = createClient();
 
-  const trackIndex = mockTracks.findIndex((t) => t.id === id);
-  if (trackIndex === -1) {
-    return error("Track not found", undefined);
+  const { error: dbError } = await supabase
+    .from("tracks")
+    .delete()
+    .eq("id", id);
+
+  if (dbError) {
+    return error(dbError.message, undefined);
   }
 
-  mockTracks.splice(trackIndex, 1);
   return success(undefined);
 }
 

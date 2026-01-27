@@ -3,14 +3,11 @@
  * Handles cohort CRUD and queries
  */
 
-import {
-  mockCohorts,
-  getCohortBySlug as mockGetCohortBySlug,
-  getCohortById as mockGetCohortById,
-} from "@/data/mock-data";
-import type { Cohort } from "@/types";
+import { createClient } from "@/lib/supabase/client";
+import type { TablesInsert, TablesUpdate } from "@/lib/supabase/database.types";
+import type { Cohort, Prize } from "@/types";
 import type { ServiceResponse, QueryOptions, PaginatedResponse } from "./types";
-import { success, error, paginated, delay, generateId } from "./types";
+import { success, error, paginated } from "./types";
 
 export interface CohortsService {
   getById(id: string): Promise<ServiceResponse<Cohort | null>>;
@@ -22,108 +19,185 @@ export interface CohortsService {
   updateStatus(id: string, status: Cohort["status"]): Promise<ServiceResponse<Cohort>>;
 }
 
+// Convert database row to Cohort type
+function toCohort(row: Record<string, unknown>): Cohort {
+  return {
+    id: row.id as string,
+    slug: row.slug as string,
+    name: row.name as string,
+    description: row.description as string,
+    tagline: row.tagline as string | undefined,
+    bannerImage: row.banner_image as string | undefined,
+    startDate: new Date(row.start_date as string),
+    endDate: new Date(row.end_date as string),
+    submissionDeadline: new Date(row.submission_deadline as string),
+    judgingStart: new Date(row.judging_start as string),
+    judgingEnd: new Date(row.judging_end as string),
+    status: row.status as Cohort["status"],
+    isPublic: row.is_public as boolean,
+    maxTeamSize: row.max_team_size as number,
+    prizes: (row.prizes as Prize[]) || [],
+  };
+}
+
+// Convert Cohort to database format
+function toDbCohort(data: Partial<Cohort>): Record<string, unknown> {
+  const dbData: Record<string, unknown> = {};
+
+  if (data.slug !== undefined) dbData.slug = data.slug;
+  if (data.name !== undefined) dbData.name = data.name;
+  if (data.description !== undefined) dbData.description = data.description;
+  if (data.tagline !== undefined) dbData.tagline = data.tagline;
+  if (data.bannerImage !== undefined) dbData.banner_image = data.bannerImage;
+  if (data.startDate !== undefined) dbData.start_date = data.startDate.toISOString();
+  if (data.endDate !== undefined) dbData.end_date = data.endDate.toISOString();
+  if (data.submissionDeadline !== undefined) dbData.submission_deadline = data.submissionDeadline.toISOString();
+  if (data.judgingStart !== undefined) dbData.judging_start = data.judgingStart.toISOString();
+  if (data.judgingEnd !== undefined) dbData.judging_end = data.judgingEnd.toISOString();
+  if (data.status !== undefined) dbData.status = data.status;
+  if (data.isPublic !== undefined) dbData.is_public = data.isPublic;
+  if (data.maxTeamSize !== undefined) dbData.max_team_size = data.maxTeamSize;
+  if (data.prizes !== undefined) dbData.prizes = data.prizes;
+
+  return dbData;
+}
+
 async function getById(id: string): Promise<ServiceResponse<Cohort | null>> {
-  await delay();
-  const cohort = mockGetCohortById(id) || null;
-  return success(cohort);
+  const supabase = createClient();
+  const { data, error: dbError } = await supabase
+    .from("cohorts")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (dbError) {
+    if (dbError.code === "PGRST116") {
+      return success(null);
+    }
+    return error(dbError.message, null);
+  }
+
+  return success(toCohort(data));
 }
 
 async function getBySlug(slug: string): Promise<ServiceResponse<Cohort | null>> {
-  await delay();
-  const cohort = mockGetCohortBySlug(slug) || null;
-  return success(cohort);
+  const supabase = createClient();
+  const { data, error: dbError } = await supabase
+    .from("cohorts")
+    .select("*")
+    .eq("slug", slug)
+    .single();
+
+  if (dbError) {
+    if (dbError.code === "PGRST116") {
+      return success(null);
+    }
+    return error(dbError.message, null);
+  }
+
+  return success(toCohort(data));
 }
 
 async function list(
   options?: QueryOptions & { status?: Cohort["status"]; isPublic?: boolean }
 ): Promise<PaginatedResponse<Cohort>> {
-  await delay();
+  const supabase = createClient();
+  const page = options?.page || 1;
+  const pageSize = options?.pageSize || 20;
+  const offset = (page - 1) * pageSize;
 
-  let cohorts = [...mockCohorts];
+  let query = supabase.from("cohorts").select("*", { count: "exact" });
 
   // Filter by status
   if (options?.status) {
-    cohorts = cohorts.filter((c) => c.status === options.status);
+    query = query.eq("status", options.status);
   }
 
   // Filter by public/private
   if (options?.isPublic !== undefined) {
-    cohorts = cohorts.filter((c) => c.isPublic === options.isPublic);
+    query = query.eq("is_public", options.isPublic);
   }
 
   // Sort by start date by default (newest first)
-  cohorts.sort((a, b) => {
-    if (options?.sortBy) {
-      const aVal = a[options.sortBy as keyof Cohort];
-      const bVal = b[options.sortBy as keyof Cohort];
-      if (aVal instanceof Date && bVal instanceof Date) {
-        return options.sortOrder === "asc"
-          ? aVal.getTime() - bVal.getTime()
-          : bVal.getTime() - aVal.getTime();
-      }
-      const comparison = String(aVal).localeCompare(String(bVal));
-      return options.sortOrder === "desc" ? -comparison : comparison;
-    }
-    return b.startDate.getTime() - a.startDate.getTime();
-  });
+  if (options?.sortBy) {
+    const columnMap: Record<string, string> = {
+      startDate: "start_date",
+      endDate: "end_date",
+      createdAt: "created_at",
+    };
+    const column = columnMap[options.sortBy] || options.sortBy;
+    query = query.order(column, { ascending: options.sortOrder === "asc" });
+  } else {
+    query = query.order("start_date", { ascending: false });
+  }
 
   // Paginate
-  const page = options?.page || 1;
-  const pageSize = options?.pageSize || 20;
-  const start = (page - 1) * pageSize;
-  const paginatedCohorts = cohorts.slice(start, start + pageSize);
+  query = query.range(offset, offset + pageSize - 1);
 
-  return paginated(paginatedCohorts, cohorts.length, page, pageSize);
+  const { data, error: dbError, count } = await query;
+
+  if (dbError) {
+    return { data: [], success: false, error: dbError.message, total: 0, page, pageSize, hasMore: false };
+  }
+
+  const cohorts = (data || []).map(toCohort);
+  return paginated(cohorts, count || 0, page, pageSize);
 }
 
 async function create(data: Omit<Cohort, "id">): Promise<ServiceResponse<Cohort>> {
-  await delay(200);
+  const supabase = createClient();
 
-  const newCohort: Cohort = {
-    ...data,
-    id: generateId("cohort"),
-  };
+  const dbData = toDbCohort(data) as TablesInsert<"cohorts">;
 
-  mockCohorts.push(newCohort);
-  return success(newCohort);
+  const { data: created, error: dbError } = await supabase
+    .from("cohorts")
+    .insert(dbData)
+    .select()
+    .single();
+
+  if (dbError) {
+    return error(dbError.message, null as unknown as Cohort);
+  }
+
+  return success(toCohort(created));
 }
 
 async function update(id: string, data: Partial<Cohort>): Promise<ServiceResponse<Cohort>> {
-  await delay(150);
+  const supabase = createClient();
 
-  const cohortIndex = mockCohorts.findIndex((c) => c.id === id);
-  if (cohortIndex === -1) {
-    return error("Cohort not found", null as unknown as Cohort);
+  const dbData = toDbCohort(data) as TablesUpdate<"cohorts">;
+
+  const { data: updated, error: dbError } = await supabase
+    .from("cohorts")
+    .update(dbData)
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (dbError) {
+    return error(dbError.message, null as unknown as Cohort);
   }
 
-  const updatedCohort = { ...mockCohorts[cohortIndex], ...data };
-  mockCohorts[cohortIndex] = updatedCohort;
-
-  return success(updatedCohort);
+  return success(toCohort(updated));
 }
 
 async function deleteCohort(id: string): Promise<ServiceResponse<void>> {
-  await delay(150);
+  const supabase = createClient();
 
-  const cohortIndex = mockCohorts.findIndex((c) => c.id === id);
-  if (cohortIndex === -1) {
-    return error("Cohort not found", undefined);
+  const { error: dbError } = await supabase
+    .from("cohorts")
+    .delete()
+    .eq("id", id);
+
+  if (dbError) {
+    return error(dbError.message, undefined);
   }
 
-  mockCohorts.splice(cohortIndex, 1);
   return success(undefined);
 }
 
 async function updateStatus(id: string, status: Cohort["status"]): Promise<ServiceResponse<Cohort>> {
-  await delay(150);
-
-  const cohortIndex = mockCohorts.findIndex((c) => c.id === id);
-  if (cohortIndex === -1) {
-    return error("Cohort not found", null as unknown as Cohort);
-  }
-
-  mockCohorts[cohortIndex].status = status;
-  return success(mockCohorts[cohortIndex]);
+  return update(id, { status });
 }
 
 export const cohortsService: CohortsService = {

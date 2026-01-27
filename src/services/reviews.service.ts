@@ -3,10 +3,10 @@
  * Handles review CRUD and queries
  */
 
-import { mockReviews, getReviewsByJudge as mockGetReviewsByJudge } from "@/data/mock-data";
-import type { Review } from "@/types";
+import { createClient } from "@/lib/supabase/client";
+import type { Review, User, Submission } from "@/types";
 import type { ServiceResponse, QueryOptions, PaginatedResponse } from "./types";
-import { success, error, paginated, delay, generateId } from "./types";
+import { success, error, paginated } from "./types";
 
 export interface ReviewScores {
   innovationScore: number;
@@ -37,124 +37,245 @@ export interface ReviewsService {
   submitReview(id: string, data: SubmitReviewData): Promise<ServiceResponse<Review>>;
 }
 
+// Convert user row to User type
+function toUser(row: Record<string, unknown>): User {
+  return {
+    id: row.id as string,
+    email: row.email as string,
+    name: row.name as string,
+    role: row.role as User["role"],
+    avatar: row.avatar as string | undefined,
+    createdAt: new Date(row.created_at as string),
+  };
+}
+
+// Convert database row to Review type
+function toReview(row: Record<string, unknown>, judge?: User, submission?: Submission): Review {
+  return {
+    id: row.id as string,
+    submissionId: row.submission_id as string,
+    submission,
+    judgeId: row.judge_id as string,
+    judge,
+    innovationScore: row.innovation_score as number | undefined,
+    executionScore: row.execution_score as number | undefined,
+    designScore: row.design_score as number | undefined,
+    impactScore: row.impact_score as number | undefined,
+    presentationScore: row.presentation_score as number | undefined,
+    overallScore: row.overall_score as number | undefined,
+    feedback: row.feedback as string | undefined,
+    internalNotes: row.internal_notes as string | undefined,
+    status: row.status as Review["status"],
+    completedAt: row.completed_at ? new Date(row.completed_at as string) : undefined,
+    createdAt: new Date(row.created_at as string),
+  };
+}
+
 // CRUD
 
 async function getById(id: string): Promise<ServiceResponse<Review | null>> {
-  await delay();
-  const review = mockReviews.find((r) => r.id === id) || null;
-  return success(review);
+  const supabase = createClient();
+  const { data, error: dbError } = await supabase
+    .from("reviews")
+    .select(`
+      *,
+      users!reviews_judge_id_fkey (*)
+    `)
+    .eq("id", id)
+    .single();
+
+  if (dbError) {
+    if (dbError.code === "PGRST116") {
+      return success(null);
+    }
+    return error(dbError.message, null);
+  }
+
+  const judge = data.users ? toUser(data.users as Record<string, unknown>) : undefined;
+  return success(toReview(data, judge));
 }
 
 async function create(data: { submissionId: string; judgeId: string }): Promise<ServiceResponse<Review>> {
-  await delay(200);
+  const supabase = createClient();
 
-  const newReview: Review = {
-    id: generateId("review"),
-    submissionId: data.submissionId,
-    judgeId: data.judgeId,
-    status: "pending",
-    createdAt: new Date(),
-  };
+  const { data: created, error: dbError } = await supabase
+    .from("reviews")
+    .insert({
+      submission_id: data.submissionId,
+      judge_id: data.judgeId,
+      status: "pending",
+    })
+    .select(`
+      *,
+      users!reviews_judge_id_fkey (*)
+    `)
+    .single();
 
-  mockReviews.push(newReview);
-  return success(newReview);
+  if (dbError) {
+    return error(dbError.message, null as unknown as Review);
+  }
+
+  const judge = created.users ? toUser(created.users as Record<string, unknown>) : undefined;
+  return success(toReview(created, judge));
 }
 
 async function update(id: string, data: Partial<Review>): Promise<ServiceResponse<Review>> {
-  await delay(150);
+  const supabase = createClient();
 
-  const reviewIndex = mockReviews.findIndex((r) => r.id === id);
-  if (reviewIndex === -1) {
-    return error("Review not found", null as unknown as Review);
+  const dbData: Record<string, unknown> = {};
+  if (data.innovationScore !== undefined) dbData.innovation_score = data.innovationScore;
+  if (data.executionScore !== undefined) dbData.execution_score = data.executionScore;
+  if (data.designScore !== undefined) dbData.design_score = data.designScore;
+  if (data.impactScore !== undefined) dbData.impact_score = data.impactScore;
+  if (data.presentationScore !== undefined) dbData.presentation_score = data.presentationScore;
+  if (data.overallScore !== undefined) dbData.overall_score = data.overallScore;
+  if (data.feedback !== undefined) dbData.feedback = data.feedback;
+  if (data.internalNotes !== undefined) dbData.internal_notes = data.internalNotes;
+  if (data.status !== undefined) dbData.status = data.status;
+  if (data.completedAt !== undefined) dbData.completed_at = data.completedAt?.toISOString();
+
+  const { data: updated, error: dbError } = await supabase
+    .from("reviews")
+    .update(dbData)
+    .eq("id", id)
+    .select(`
+      *,
+      users!reviews_judge_id_fkey (*)
+    `)
+    .single();
+
+  if (dbError) {
+    return error(dbError.message, null as unknown as Review);
   }
 
-  const updatedReview: Review = {
-    ...mockReviews[reviewIndex],
-    ...data,
-  };
-
-  mockReviews[reviewIndex] = updatedReview;
-  return success(updatedReview);
+  const judge = updated.users ? toUser(updated.users as Record<string, unknown>) : undefined;
+  return success(toReview(updated, judge));
 }
 
 async function deleteReview(id: string): Promise<ServiceResponse<void>> {
-  await delay(150);
+  const supabase = createClient();
 
-  const reviewIndex = mockReviews.findIndex((r) => r.id === id);
-  if (reviewIndex === -1) {
-    return error("Review not found", undefined);
+  const { error: dbError } = await supabase
+    .from("reviews")
+    .delete()
+    .eq("id", id);
+
+  if (dbError) {
+    return error(dbError.message, undefined);
   }
 
-  mockReviews.splice(reviewIndex, 1);
   return success(undefined);
 }
 
 // Queries
 
 async function getByJudge(judgeId: string): Promise<ServiceResponse<Review[]>> {
-  await delay();
-  const reviews = mockGetReviewsByJudge(judgeId);
+  const supabase = createClient();
+
+  const { data, error: dbError } = await supabase
+    .from("reviews")
+    .select(`
+      *,
+      users!reviews_judge_id_fkey (*),
+      submissions (*)
+    `)
+    .eq("judge_id", judgeId)
+    .order("created_at", { ascending: false });
+
+  if (dbError) {
+    return error(dbError.message, []);
+  }
+
+  const reviews = (data || []).map((row) => {
+    const judge = row.users ? toUser(row.users as Record<string, unknown>) : undefined;
+    // Note: We're not fully populating submission here for simplicity
+    return toReview(row, judge);
+  });
+
   return success(reviews);
 }
 
 async function getBySubmission(submissionId: string): Promise<ServiceResponse<Review[]>> {
-  await delay();
-  const reviews = mockReviews.filter((r) => r.submissionId === submissionId);
+  const supabase = createClient();
+
+  const { data, error: dbError } = await supabase
+    .from("reviews")
+    .select(`
+      *,
+      users!reviews_judge_id_fkey (*)
+    `)
+    .eq("submission_id", submissionId)
+    .order("created_at", { ascending: false });
+
+  if (dbError) {
+    return error(dbError.message, []);
+  }
+
+  const reviews = (data || []).map((row) => {
+    const judge = row.users ? toUser(row.users as Record<string, unknown>) : undefined;
+    return toReview(row, judge);
+  });
+
   return success(reviews);
 }
 
 async function list(
   options?: QueryOptions & { status?: Review["status"]; cohortId?: string }
 ): Promise<PaginatedResponse<Review>> {
-  await delay();
-
-  let reviews = [...mockReviews];
-
-  // Filter by status
-  if (options?.status) {
-    reviews = reviews.filter((r) => r.status === options.status);
-  }
-
-  // Filter by cohort (through submission)
-  if (options?.cohortId) {
-    reviews = reviews.filter((r) => r.submission?.cohortId === options.cohortId);
-  }
-
-  // Sort
-  if (options?.sortBy) {
-    reviews.sort((a, b) => {
-      const aVal = a[options.sortBy as keyof Review];
-      const bVal = b[options.sortBy as keyof Review];
-      if (aVal instanceof Date && bVal instanceof Date) {
-        return options.sortOrder === "asc"
-          ? aVal.getTime() - bVal.getTime()
-          : bVal.getTime() - aVal.getTime();
-      }
-      const comparison = String(aVal || "").localeCompare(String(bVal || ""));
-      return options.sortOrder === "desc" ? -comparison : comparison;
-    });
-  }
-
-  // Paginate
+  const supabase = createClient();
   const page = options?.page || 1;
   const pageSize = options?.pageSize || 20;
-  const start = (page - 1) * pageSize;
-  const paginatedReviews = reviews.slice(start, start + pageSize);
+  const offset = (page - 1) * pageSize;
 
-  return paginated(paginatedReviews, reviews.length, page, pageSize);
+  let query = supabase
+    .from("reviews")
+    .select(`
+      *,
+      users!reviews_judge_id_fkey (*),
+      submissions!inner (cohort_id)
+    `, { count: "exact" });
+
+  if (options?.status) {
+    query = query.eq("status", options.status);
+  }
+
+  if (options?.cohortId) {
+    query = query.eq("submissions.cohort_id", options.cohortId);
+  }
+
+  if (options?.sortBy) {
+    const columnMap: Record<string, string> = {
+      createdAt: "created_at",
+      completedAt: "completed_at",
+    };
+    const column = columnMap[options.sortBy] || options.sortBy;
+    query = query.order(column, { ascending: options.sortOrder === "asc" });
+  } else {
+    query = query.order("created_at", { ascending: false });
+  }
+
+  query = query.range(offset, offset + pageSize - 1);
+
+  const { data, error: dbError, count } = await query;
+
+  if (dbError) {
+    return { data: [], success: false, error: dbError.message, total: 0, page, pageSize, hasMore: false };
+  }
+
+  const reviews = (data || []).map((row) => {
+    const judge = row.users ? toUser(row.users as Record<string, unknown>) : undefined;
+    return toReview(row, judge);
+  });
+
+  return paginated(reviews, count || 0, page, pageSize);
 }
 
 // Actions
 
 async function submitReview(id: string, data: SubmitReviewData): Promise<ServiceResponse<Review>> {
-  await delay(500);
+  const supabase = createClient();
 
-  const reviewIndex = mockReviews.findIndex((r) => r.id === id);
-  if (reviewIndex === -1) {
-    return error("Review not found", null as unknown as Review);
-  }
-
-  // Calculate overall score
+  // Calculate overall score (the database trigger should also do this)
   const overallScore =
     (data.innovationScore +
       data.executionScore +
@@ -163,16 +284,33 @@ async function submitReview(id: string, data: SubmitReviewData): Promise<Service
       data.presentationScore) /
     5;
 
-  const updatedReview: Review = {
-    ...mockReviews[reviewIndex],
-    ...data,
-    overallScore,
-    status: "completed",
-    completedAt: new Date(),
-  };
+  const { data: updated, error: dbError } = await supabase
+    .from("reviews")
+    .update({
+      innovation_score: data.innovationScore,
+      execution_score: data.executionScore,
+      design_score: data.designScore,
+      impact_score: data.impactScore,
+      presentation_score: data.presentationScore,
+      overall_score: overallScore,
+      feedback: data.feedback,
+      internal_notes: data.internalNotes,
+      status: "completed",
+      completed_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .select(`
+      *,
+      users!reviews_judge_id_fkey (*)
+    `)
+    .single();
 
-  mockReviews[reviewIndex] = updatedReview;
-  return success(updatedReview);
+  if (dbError) {
+    return error(dbError.message, null as unknown as Review);
+  }
+
+  const judge = updated.users ? toUser(updated.users as Record<string, unknown>) : undefined;
+  return success(toReview(updated, judge));
 }
 
 export const reviewsService: ReviewsService = {

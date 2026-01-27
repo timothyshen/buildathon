@@ -3,12 +3,10 @@
  * Handles authentication and session management
  */
 
-import { mockUsers, getUserByEmail } from "@/data/mock-data";
+import { createClient } from "@/lib/supabase/client";
 import type { User } from "@/types";
 import type { ServiceResponse } from "./types";
-import { success, error, delay, generateId } from "./types";
-
-const STORAGE_KEY = "swa-user";
+import { success, error } from "./types";
 
 export interface OnboardingData {
   name: string;
@@ -26,153 +24,216 @@ export interface AuthService {
   updateProfile(data: Partial<User>): Promise<ServiceResponse<User>>;
 }
 
-// Internal state for current user (mirrors what auth-context does)
-let currentUser: User | null = null;
+// Convert database row to User type
+function toUser(row: Record<string, unknown>): User {
+  return {
+    id: row.id as string,
+    email: row.email as string,
+    name: row.name as string,
+    role: row.role as User["role"],
+    avatar: row.avatar as string | undefined,
+    walletAddress: row.wallet_address as string | undefined,
+    bio: row.bio as string | undefined,
+    twitter: row.twitter as string | undefined,
+    github: row.github as string | undefined,
+    sponsorOrgId: row.sponsor_org_id as string | undefined,
+    hasCompletedOnboarding: row.has_completed_onboarding as boolean | undefined,
+    createdAt: new Date(row.created_at as string),
+  };
+}
 
-async function login(email: string, _password: string): Promise<ServiceResponse<User>> {
-  await delay(300);
+async function login(email: string, password: string): Promise<ServiceResponse<User>> {
+  const supabase = createClient();
 
-  const foundUser = getUserByEmail(email);
+  // Try to sign in with existing account
+  const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
 
-  if (!foundUser) {
-    // Create new participant account for unknown emails
-    const newUser: User = {
-      id: generateId("user"),
-      email: email.toLowerCase(),
-      name: email.split("@")[0],
-      role: "participant",
-      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
-      hasCompletedOnboarding: false,
-      createdAt: new Date(),
-    };
+  if (authError) {
+    // If user not found, try to create account
+    if (authError.message.includes("Invalid login credentials")) {
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name: email.split("@")[0],
+            role: "participant",
+          },
+        },
+      });
 
-    // Add to mock users for future lookups
-    mockUsers.push(newUser);
-    currentUser = newUser;
+      if (signUpError) {
+        return error(signUpError.message, null as unknown as User);
+      }
 
-    if (typeof window !== "undefined") {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newUser));
+      if (!signUpData.user) {
+        return error("Failed to create account", null as unknown as User);
+      }
+
+      // Fetch the user profile (created by trigger)
+      const { data: userData, error: userError } = await supabase
+        .from("users")
+        .select("*")
+        .eq("id", signUpData.user.id)
+        .single();
+
+      if (userError) {
+        return error(userError.message, null as unknown as User);
+      }
+
+      return success(toUser(userData));
     }
 
-    return success(newUser);
+    return error(authError.message, null as unknown as User);
   }
 
-  currentUser = foundUser;
-
-  if (typeof window !== "undefined") {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(foundUser));
+  if (!authData.user) {
+    return error("Login failed", null as unknown as User);
   }
 
-  return success(foundUser);
+  // Fetch user profile
+  const { data: userData, error: userError } = await supabase
+    .from("users")
+    .select("*")
+    .eq("id", authData.user.id)
+    .single();
+
+  if (userError) {
+    return error(userError.message, null as unknown as User);
+  }
+
+  return success(toUser(userData));
 }
 
 async function logout(): Promise<ServiceResponse<void>> {
-  await delay(100);
+  const supabase = createClient();
 
-  currentUser = null;
+  const { error: authError } = await supabase.auth.signOut();
 
-  if (typeof window !== "undefined") {
-    localStorage.removeItem(STORAGE_KEY);
+  if (authError) {
+    return error(authError.message, undefined);
   }
 
   return success(undefined);
 }
 
 async function getCurrentUser(): Promise<ServiceResponse<User | null>> {
-  await delay();
+  const supabase = createClient();
 
-  if (currentUser) {
-    return success(currentUser);
+  const { data: { user: authUser } } = await supabase.auth.getUser();
+
+  if (!authUser) {
+    return success(null);
   }
 
-  if (typeof window !== "undefined") {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        const user = JSON.parse(stored) as User;
-        // Refresh from mock data to get latest state
-        const freshUser = mockUsers.find((u) => u.id === user.id);
-        currentUser = freshUser || user;
-        return success(currentUser);
-      } catch {
-        return success(null);
-      }
+  // Fetch user profile
+  const { data: userData, error: userError } = await supabase
+    .from("users")
+    .select("*")
+    .eq("id", authUser.id)
+    .single();
+
+  if (userError) {
+    if (userError.code === "PGRST116") {
+      return success(null);
     }
+    return error(userError.message, null);
   }
 
-  return success(null);
+  return success(toUser(userData));
 }
 
 async function switchRole(role: User["role"]): Promise<ServiceResponse<User>> {
-  await delay();
+  const supabase = createClient();
 
-  if (!currentUser) {
+  const { data: { user: authUser } } = await supabase.auth.getUser();
+
+  if (!authUser) {
     return error("No user logged in", null as unknown as User);
   }
 
-  const updatedUser = { ...currentUser, role };
-  currentUser = updatedUser;
+  // Update role in users table
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: userData, error: userError } = await (supabase as any)
+    .from("users")
+    .update({ role })
+    .eq("id", authUser.id)
+    .select()
+    .single();
 
-  if (typeof window !== "undefined") {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedUser));
+  if (userError) {
+    return error(userError.message, null as unknown as User);
   }
 
-  return success(updatedUser);
+  return success(toUser(userData));
 }
 
 async function completeOnboarding(data: OnboardingData): Promise<ServiceResponse<User>> {
-  await delay(300);
+  const supabase = createClient();
 
-  if (!currentUser) {
+  const { data: { user: authUser } } = await supabase.auth.getUser();
+
+  if (!authUser) {
     return error("No user logged in", null as unknown as User);
   }
 
-  const updatedUser: User = {
-    ...currentUser,
+  const dbData: Record<string, unknown> = {
     name: data.name,
-    bio: data.bio,
-    twitter: data.twitter,
-    github: data.github,
-    hasCompletedOnboarding: true,
+    has_completed_onboarding: true,
   };
+  if (data.bio !== undefined) dbData.bio = data.bio;
+  if (data.twitter !== undefined) dbData.twitter = data.twitter;
+  if (data.github !== undefined) dbData.github = data.github;
 
-  // Update in mock data
-  const userIndex = mockUsers.findIndex((u) => u.id === currentUser!.id);
-  if (userIndex !== -1) {
-    mockUsers[userIndex] = updatedUser;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: userData, error: userError } = await (supabase as any)
+    .from("users")
+    .update(dbData)
+    .eq("id", authUser.id)
+    .select()
+    .single();
+
+  if (userError) {
+    return error(userError.message, null as unknown as User);
   }
 
-  currentUser = updatedUser;
-
-  if (typeof window !== "undefined") {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedUser));
-  }
-
-  return success(updatedUser);
+  return success(toUser(userData));
 }
 
 async function updateProfile(data: Partial<User>): Promise<ServiceResponse<User>> {
-  await delay(200);
+  const supabase = createClient();
 
-  if (!currentUser) {
+  const { data: { user: authUser } } = await supabase.auth.getUser();
+
+  if (!authUser) {
     return error("No user logged in", null as unknown as User);
   }
 
-  const updatedUser = { ...currentUser, ...data };
+  const dbData: Record<string, unknown> = {};
+  if (data.name !== undefined) dbData.name = data.name;
+  if (data.avatar !== undefined) dbData.avatar = data.avatar;
+  if (data.bio !== undefined) dbData.bio = data.bio;
+  if (data.twitter !== undefined) dbData.twitter = data.twitter;
+  if (data.github !== undefined) dbData.github = data.github;
+  if (data.walletAddress !== undefined) dbData.wallet_address = data.walletAddress;
+  if (data.hasCompletedOnboarding !== undefined) dbData.has_completed_onboarding = data.hasCompletedOnboarding;
 
-  // Update in mock data
-  const userIndex = mockUsers.findIndex((u) => u.id === currentUser!.id);
-  if (userIndex !== -1) {
-    mockUsers[userIndex] = updatedUser;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: userData, error: userError } = await (supabase as any)
+    .from("users")
+    .update(dbData)
+    .eq("id", authUser.id)
+    .select()
+    .single();
+
+  if (userError) {
+    return error(userError.message, null as unknown as User);
   }
 
-  currentUser = updatedUser;
-
-  if (typeof window !== "undefined") {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedUser));
-  }
-
-  return success(updatedUser);
+  return success(toUser(userData));
 }
 
 export const authService: AuthService = {

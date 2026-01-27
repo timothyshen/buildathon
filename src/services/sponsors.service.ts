@@ -3,17 +3,10 @@
  * Handles SponsorOrg and CohortSponsor operations
  */
 
-import {
-  mockSponsorOrgs,
-  mockCohortSponsors,
-  getSponsorByUser as mockGetSponsorByUser,
-  getSponsorOrgById as mockGetSponsorOrgById,
-  getSponsorsByCohort as mockGetSponsorsByCohort,
-  getCohortSponsor as mockGetCohortSponsor,
-} from "@/data/mock-data";
+import { createClient } from "@/lib/supabase/client";
 import type { SponsorOrg, CohortSponsor, SponsorTier } from "@/types";
 import type { ServiceResponse } from "./types";
-import { success, error, delay, generateId } from "./types";
+import { success, error } from "./types";
 
 // Type for sponsor with cohort-specific data
 export type CohortSponsorWithOrg = SponsorOrg & {
@@ -41,77 +34,161 @@ export interface SponsorsService {
   deleteCohortSponsor(id: string): Promise<ServiceResponse<void>>;
 }
 
+// Convert database row to SponsorOrg type
+function toSponsorOrg(row: Record<string, unknown>): SponsorOrg {
+  return {
+    id: row.id as string,
+    name: row.name as string,
+    logo: row.logo as string,
+    website: row.website as string,
+    description: row.description as string,
+    contactName: row.contact_name as string,
+    contactEmail: row.contact_email as string,
+    createdAt: new Date(row.created_at as string),
+    updatedAt: new Date(row.updated_at as string),
+  };
+}
+
+// Convert database row to CohortSponsor type
+function toCohortSponsor(row: Record<string, unknown>): CohortSponsor {
+  return {
+    id: row.id as string,
+    cohortId: row.cohort_id as string,
+    sponsorOrgId: row.sponsor_org_id as string,
+    tier: row.tier as SponsorTier,
+    prizePoolContribution: row.prize_pool_contribution as number,
+    hasDedicatedTrack: row.has_dedicated_track as boolean,
+    description: row.description as string | undefined,
+  };
+}
+
 // SponsorOrg operations
 
 async function getOrgById(id: string): Promise<ServiceResponse<SponsorOrg | null>> {
-  await delay();
-  const org = mockGetSponsorOrgById(id) || null;
-  return success(org);
+  const supabase = createClient();
+  const { data, error: dbError } = await supabase
+    .from("sponsor_orgs")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (dbError) {
+    if (dbError.code === "PGRST116") {
+      return success(null);
+    }
+    return error(dbError.message, null);
+  }
+
+  return success(toSponsorOrg(data));
 }
 
 async function getOrgByUser(userId: string): Promise<ServiceResponse<SponsorOrg | null>> {
-  await delay();
-  const org = mockGetSponsorByUser(userId) || null;
-  return success(org);
+  const supabase = createClient();
+
+  // First get the user's sponsor_org_id
+  const { data: userData, error: userError } = await supabase
+    .from("users")
+    .select("sponsor_org_id")
+    .eq("id", userId)
+    .single();
+
+  if (userError || !userData?.sponsor_org_id) {
+    return success(null);
+  }
+
+  // Then get the sponsor org
+  const { data, error: dbError } = await supabase
+    .from("sponsor_orgs")
+    .select("*")
+    .eq("id", userData.sponsor_org_id)
+    .single();
+
+  if (dbError) {
+    if (dbError.code === "PGRST116") {
+      return success(null);
+    }
+    return error(dbError.message, null);
+  }
+
+  return success(toSponsorOrg(data));
 }
 
 async function listOrgs(): Promise<ServiceResponse<SponsorOrg[]>> {
-  await delay();
-  return success([...mockSponsorOrgs]);
+  const supabase = createClient();
+  const { data, error: dbError } = await supabase
+    .from("sponsor_orgs")
+    .select("*")
+    .order("name", { ascending: true });
+
+  if (dbError) {
+    return error(dbError.message, []);
+  }
+
+  return success((data || []).map(toSponsorOrg));
 }
 
 async function createOrg(
   data: Omit<SponsorOrg, "id" | "createdAt" | "updatedAt">
 ): Promise<ServiceResponse<SponsorOrg>> {
-  await delay(200);
+  const supabase = createClient();
 
-  const newOrg: SponsorOrg = {
-    ...data,
-    id: generateId("sponsor"),
-    createdAt: new Date(),
-    updatedAt: new Date(),
+  const dbData = {
+    name: data.name,
+    logo: data.logo,
+    website: data.website,
+    description: data.description,
+    contact_name: data.contactName,
+    contact_email: data.contactEmail,
   };
 
-  mockSponsorOrgs.push(newOrg);
-  return success(newOrg);
+  const { data: created, error: dbError } = await supabase
+    .from("sponsor_orgs")
+    .insert(dbData)
+    .select()
+    .single();
+
+  if (dbError) {
+    return error(dbError.message, null as unknown as SponsorOrg);
+  }
+
+  return success(toSponsorOrg(created));
 }
 
 async function updateOrg(id: string, data: Partial<SponsorOrg>): Promise<ServiceResponse<SponsorOrg>> {
-  await delay(150);
+  const supabase = createClient();
 
-  const orgIndex = mockSponsorOrgs.findIndex((o) => o.id === id);
-  if (orgIndex === -1) {
-    return error("Sponsor organization not found", null as unknown as SponsorOrg);
+  const dbData: Record<string, unknown> = {};
+  if (data.name !== undefined) dbData.name = data.name;
+  if (data.logo !== undefined) dbData.logo = data.logo;
+  if (data.website !== undefined) dbData.website = data.website;
+  if (data.description !== undefined) dbData.description = data.description;
+  if (data.contactName !== undefined) dbData.contact_name = data.contactName;
+  if (data.contactEmail !== undefined) dbData.contact_email = data.contactEmail;
+
+  const { data: updated, error: dbError } = await supabase
+    .from("sponsor_orgs")
+    .update(dbData)
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (dbError) {
+    return error(dbError.message, null as unknown as SponsorOrg);
   }
 
-  const updatedOrg = {
-    ...mockSponsorOrgs[orgIndex],
-    ...data,
-    updatedAt: new Date(),
-  };
-
-  mockSponsorOrgs[orgIndex] = updatedOrg;
-  return success(updatedOrg);
+  return success(toSponsorOrg(updated));
 }
 
 async function deleteOrg(id: string): Promise<ServiceResponse<void>> {
-  await delay(150);
+  const supabase = createClient();
 
-  const orgIndex = mockSponsorOrgs.findIndex((o) => o.id === id);
-  if (orgIndex === -1) {
-    return error("Sponsor organization not found", undefined);
-  }
+  const { error: dbError } = await supabase
+    .from("sponsor_orgs")
+    .delete()
+    .eq("id", id);
 
-  mockSponsorOrgs.splice(orgIndex, 1);
-
-  // Also remove cohort sponsorships
-  const sponsorshipIndicesToRemove = mockCohortSponsors
-    .map((cs, index) => (cs.sponsorOrgId === id ? index : -1))
-    .filter((i) => i !== -1)
-    .reverse();
-
-  for (const index of sponsorshipIndicesToRemove) {
-    mockCohortSponsors.splice(index, 1);
+  if (dbError) {
+    return error(dbError.message, undefined);
   }
 
   return success(undefined);
@@ -120,77 +197,147 @@ async function deleteOrg(id: string): Promise<ServiceResponse<void>> {
 // CohortSponsor operations
 
 async function listCohortSponsors(): Promise<ServiceResponse<CohortSponsor[]>> {
-  await delay();
-  return success([...mockCohortSponsors]);
+  const supabase = createClient();
+  const { data, error: dbError } = await supabase
+    .from("cohort_sponsors")
+    .select("*");
+
+  if (dbError) {
+    return error(dbError.message, []);
+  }
+
+  return success((data || []).map(toCohortSponsor));
 }
 
 async function getCohortSponsors(cohortId: string): Promise<ServiceResponse<CohortSponsorWithOrg[]>> {
-  await delay();
-  const sponsors = mockGetSponsorsByCohort(cohortId);
+  const supabase = createClient();
+  const { data, error: dbError } = await supabase
+    .from("cohort_sponsors")
+    .select(`
+      *,
+      sponsor_orgs (*)
+    `)
+    .eq("cohort_id", cohortId);
+
+  if (dbError) {
+    return error(dbError.message, []);
+  }
+
+  const sponsors = (data || []).map((row) => {
+    const org = row.sponsor_orgs as Record<string, unknown>;
+    return {
+      ...toSponsorOrg(org),
+      tier: row.tier as SponsorTier,
+      prizePoolContribution: row.prize_pool_contribution as number,
+      hasDedicatedTrack: row.has_dedicated_track as boolean,
+    };
+  });
+
   return success(sponsors);
 }
 
 async function getSponsorCohorts(sponsorOrgId: string): Promise<ServiceResponse<CohortSponsor[]>> {
-  await delay();
-  const cohortSponsors = mockCohortSponsors.filter((cs) => cs.sponsorOrgId === sponsorOrgId);
-  return success(cohortSponsors);
+  const supabase = createClient();
+  const { data, error: dbError } = await supabase
+    .from("cohort_sponsors")
+    .select("*")
+    .eq("sponsor_org_id", sponsorOrgId);
+
+  if (dbError) {
+    return error(dbError.message, []);
+  }
+
+  return success((data || []).map(toCohortSponsor));
 }
 
 async function getCohortSponsor(
   cohortId: string,
   sponsorOrgId: string
 ): Promise<ServiceResponse<CohortSponsor | null>> {
-  await delay();
-  const cohortSponsor = mockGetCohortSponsor(cohortId, sponsorOrgId) || null;
-  return success(cohortSponsor);
+  const supabase = createClient();
+  const { data, error: dbError } = await supabase
+    .from("cohort_sponsors")
+    .select("*")
+    .eq("cohort_id", cohortId)
+    .eq("sponsor_org_id", sponsorOrgId)
+    .single();
+
+  if (dbError) {
+    if (dbError.code === "PGRST116") {
+      return success(null);
+    }
+    return error(dbError.message, null);
+  }
+
+  return success(toCohortSponsor(data));
 }
 
 async function createCohortSponsor(data: Omit<CohortSponsor, "id">): Promise<ServiceResponse<CohortSponsor>> {
-  await delay(200);
+  const supabase = createClient();
 
-  // Check if already exists
-  const existing = mockCohortSponsors.find(
-    (cs) => cs.cohortId === data.cohortId && cs.sponsorOrgId === data.sponsorOrgId
-  );
-  if (existing) {
-    return error("Sponsorship already exists for this cohort", existing);
-  }
-
-  const newCohortSponsor: CohortSponsor = {
-    ...data,
-    id: generateId("cs"),
+  const dbData = {
+    cohort_id: data.cohortId,
+    sponsor_org_id: data.sponsorOrgId,
+    tier: data.tier,
+    prize_pool_contribution: data.prizePoolContribution,
+    has_dedicated_track: data.hasDedicatedTrack,
+    description: data.description,
   };
 
-  mockCohortSponsors.push(newCohortSponsor);
-  return success(newCohortSponsor);
+  const { data: created, error: dbError } = await supabase
+    .from("cohort_sponsors")
+    .insert(dbData)
+    .select()
+    .single();
+
+  if (dbError) {
+    if (dbError.code === "23505") {
+      return error("Sponsorship already exists for this cohort", null as unknown as CohortSponsor);
+    }
+    return error(dbError.message, null as unknown as CohortSponsor);
+  }
+
+  return success(toCohortSponsor(created));
 }
 
 async function updateCohortSponsor(
   id: string,
   data: Partial<CohortSponsor>
 ): Promise<ServiceResponse<CohortSponsor>> {
-  await delay(150);
+  const supabase = createClient();
 
-  const csIndex = mockCohortSponsors.findIndex((cs) => cs.id === id);
-  if (csIndex === -1) {
-    return error("Cohort sponsorship not found", null as unknown as CohortSponsor);
+  const dbData: Record<string, unknown> = {};
+  if (data.tier !== undefined) dbData.tier = data.tier;
+  if (data.prizePoolContribution !== undefined) dbData.prize_pool_contribution = data.prizePoolContribution;
+  if (data.hasDedicatedTrack !== undefined) dbData.has_dedicated_track = data.hasDedicatedTrack;
+  if (data.description !== undefined) dbData.description = data.description;
+
+  const { data: updated, error: dbError } = await supabase
+    .from("cohort_sponsors")
+    .update(dbData)
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (dbError) {
+    return error(dbError.message, null as unknown as CohortSponsor);
   }
 
-  const updatedCS = { ...mockCohortSponsors[csIndex], ...data };
-  mockCohortSponsors[csIndex] = updatedCS;
-
-  return success(updatedCS);
+  return success(toCohortSponsor(updated));
 }
 
 async function deleteCohortSponsor(id: string): Promise<ServiceResponse<void>> {
-  await delay(150);
+  const supabase = createClient();
 
-  const csIndex = mockCohortSponsors.findIndex((cs) => cs.id === id);
-  if (csIndex === -1) {
-    return error("Cohort sponsorship not found", undefined);
+  const { error: dbError } = await supabase
+    .from("cohort_sponsors")
+    .delete()
+    .eq("id", id);
+
+  if (dbError) {
+    return error(dbError.message, undefined);
   }
 
-  mockCohortSponsors.splice(csIndex, 1);
   return success(undefined);
 }
 

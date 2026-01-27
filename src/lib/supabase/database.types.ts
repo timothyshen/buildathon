@@ -59,6 +59,15 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "users_sponsor_org_id_fkey";
+            columns: ["sponsor_org_id"];
+            isOneToOne: false;
+            referencedRelation: "sponsor_orgs";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       cohorts: {
         Row: {
@@ -118,6 +127,7 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       sponsor_orgs: {
         Row: {
@@ -153,6 +163,7 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       cohort_sponsors: {
         Row: {
@@ -185,6 +196,22 @@ export type Database = {
           description?: string | null;
           created_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "cohort_sponsors_cohort_id_fkey";
+            columns: ["cohort_id"];
+            isOneToOne: false;
+            referencedRelation: "cohorts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "cohort_sponsors_sponsor_org_id_fkey";
+            columns: ["sponsor_org_id"];
+            isOneToOne: false;
+            referencedRelation: "sponsor_orgs";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       tracks: {
         Row: {
@@ -220,6 +247,22 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "tracks_cohort_id_fkey";
+            columns: ["cohort_id"];
+            isOneToOne: false;
+            referencedRelation: "cohorts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tracks_sponsor_org_id_fkey";
+            columns: ["sponsor_org_id"];
+            isOneToOne: false;
+            referencedRelation: "sponsor_orgs";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       teams: {
         Row: {
@@ -252,6 +295,15 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "teams_cohort_id_fkey";
+            columns: ["cohort_id"];
+            isOneToOne: false;
+            referencedRelation: "cohorts";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       team_members: {
         Row: {
@@ -275,6 +327,22 @@ export type Database = {
           role?: "lead" | "member";
           joined_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "team_members_team_id_fkey";
+            columns: ["team_id"];
+            isOneToOne: false;
+            referencedRelation: "teams";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "team_members_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       team_invites: {
         Row: {
@@ -304,6 +372,22 @@ export type Database = {
           created_at?: string;
           expires_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "team_invites_team_id_fkey";
+            columns: ["team_id"];
+            isOneToOne: false;
+            referencedRelation: "teams";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "team_invites_invited_by_fkey";
+            columns: ["invited_by"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       submissions: {
         Row: {
@@ -372,6 +456,22 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "submissions_cohort_id_fkey";
+            columns: ["cohort_id"];
+            isOneToOne: false;
+            referencedRelation: "cohorts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "submissions_team_id_fkey";
+            columns: ["team_id"];
+            isOneToOne: false;
+            referencedRelation: "teams";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       submission_tracks: {
         Row: {
@@ -389,6 +489,22 @@ export type Database = {
           submission_id?: string;
           track_id?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "submission_tracks_submission_id_fkey";
+            columns: ["submission_id"];
+            isOneToOne: false;
+            referencedRelation: "submissions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "submission_tracks_track_id_fkey";
+            columns: ["track_id"];
+            isOneToOne: false;
+            referencedRelation: "tracks";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       reviews: {
         Row: {
@@ -442,6 +558,22 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "reviews_submission_id_fkey";
+            columns: ["submission_id"];
+            isOneToOne: false;
+            referencedRelation: "submissions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "reviews_judge_id_fkey";
+            columns: ["judge_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       workshops: {
         Row: {
@@ -454,9 +586,9 @@ export type Database = {
           partner_name: string | null;
           partner_logo: string | null;
           sponsor_org_id: string | null;
-          created_by: string | null;
+          host_id: string | null;
           category: string;
-          duration: string | null;
+          duration: number | null;
           status: "draft" | "published" | "archived";
           published_at: string | null;
           is_evergreen: boolean;
@@ -467,6 +599,7 @@ export type Database = {
           max_attendees: number | null;
           location: string | null;
           meeting_url: string | null;
+          recording_url: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -480,9 +613,9 @@ export type Database = {
           partner_name?: string | null;
           partner_logo?: string | null;
           sponsor_org_id?: string | null;
-          created_by?: string | null;
+          host_id?: string | null;
           category: string;
-          duration?: string | null;
+          duration?: number | null;
           status?: "draft" | "published" | "archived";
           published_at?: string | null;
           is_evergreen?: boolean;
@@ -493,6 +626,7 @@ export type Database = {
           max_attendees?: number | null;
           location?: string | null;
           meeting_url?: string | null;
+          recording_url?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -506,9 +640,9 @@ export type Database = {
           partner_name?: string | null;
           partner_logo?: string | null;
           sponsor_org_id?: string | null;
-          created_by?: string | null;
+          host_id?: string | null;
           category?: string;
-          duration?: string | null;
+          duration?: number | null;
           status?: "draft" | "published" | "archived";
           published_at?: string | null;
           is_evergreen?: boolean;
@@ -519,9 +653,26 @@ export type Database = {
           max_attendees?: number | null;
           location?: string | null;
           meeting_url?: string | null;
+          recording_url?: string | null;
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "workshops_sponsor_org_id_fkey";
+            columns: ["sponsor_org_id"];
+            isOneToOne: false;
+            referencedRelation: "sponsor_orgs";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "workshops_host_id_fkey";
+            columns: ["host_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       workshop_cohorts: {
         Row: {
@@ -539,6 +690,22 @@ export type Database = {
           workshop_id?: string;
           cohort_id?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "workshop_cohorts_workshop_id_fkey";
+            columns: ["workshop_id"];
+            isOneToOne: false;
+            referencedRelation: "workshops";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "workshop_cohorts_cohort_id_fkey";
+            columns: ["cohort_id"];
+            isOneToOne: false;
+            referencedRelation: "cohorts";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       workshop_rsvps: {
         Row: {
@@ -565,6 +732,22 @@ export type Database = {
           registered_at?: string;
           attended_at?: string | null;
         };
+        Relationships: [
+          {
+            foreignKeyName: "workshop_rsvps_workshop_id_fkey";
+            columns: ["workshop_id"];
+            isOneToOne: false;
+            referencedRelation: "workshops";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "workshop_rsvps_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       workshop_versions: {
         Row: {
@@ -594,6 +777,22 @@ export type Database = {
           change_note?: string | null;
           created_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "workshop_versions_workshop_id_fkey";
+            columns: ["workshop_id"];
+            isOneToOne: false;
+            referencedRelation: "workshops";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "workshop_versions_author_id_fkey";
+            columns: ["author_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       media_assets: {
         Row: {
@@ -623,6 +822,15 @@ export type Database = {
           uploaded_by?: string;
           created_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "media_assets_uploaded_by_fkey";
+            columns: ["uploaded_by"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       templates: {
         Row: {
@@ -661,9 +869,18 @@ export type Database = {
           is_featured?: boolean;
           created_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "templates_submission_id_fkey";
+            columns: ["submission_id"];
+            isOneToOne: false;
+            referencedRelation: "submissions";
+            referencedColumns: ["id"];
+          }
+        ];
       };
     };
-    Views: {};
+    Views: Record<string, never>;
     Functions: {
       user_role: {
         Args: Record<PropertyKey, never>;
@@ -706,5 +923,85 @@ export type Database = {
       rsvp_status: "registered" | "attended" | "cancelled";
       ip_license_type: "non-commercial" | "commercial-use" | "commercial-remix";
     };
+    CompositeTypes: Record<string, never>;
   };
 };
+
+// Type helpers for common operations
+type PublicSchema = Database["public"];
+
+export type Tables<
+  PublicTableNameOrOptions extends
+    | keyof PublicSchema["Tables"]
+    | { schema: keyof Database },
+  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
+    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
+    : never = never
+> = PublicTableNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Row: infer R;
+    }
+    ? R
+    : never
+  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
+  ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+      Row: infer R;
+    }
+    ? R
+    : never
+  : never;
+
+export type TablesInsert<
+  PublicTableNameOrOptions extends
+    | keyof PublicSchema["Tables"]
+    | { schema: keyof Database },
+  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
+    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
+    : never = never
+> = PublicTableNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I;
+    }
+    ? I
+    : never
+  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
+  ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+      Insert: infer I;
+    }
+    ? I
+    : never
+  : never;
+
+export type TablesUpdate<
+  PublicTableNameOrOptions extends
+    | keyof PublicSchema["Tables"]
+    | { schema: keyof Database },
+  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
+    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
+    : never = never
+> = PublicTableNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U;
+    }
+    ? U
+    : never
+  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
+  ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+      Update: infer U;
+    }
+    ? U
+    : never
+  : never;
+
+export type Enums<
+  PublicEnumNameOrOptions extends
+    | keyof PublicSchema["Enums"]
+    | { schema: keyof Database },
+  EnumName extends PublicEnumNameOrOptions extends { schema: keyof Database }
+    ? keyof Database[PublicEnumNameOrOptions["schema"]]["Enums"]
+    : never = never
+> = PublicEnumNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : PublicEnumNameOrOptions extends keyof PublicSchema["Enums"]
+  ? PublicSchema["Enums"][PublicEnumNameOrOptions]
+  : never;

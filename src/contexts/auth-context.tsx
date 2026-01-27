@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useCallback, useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
 import type { User } from "@/types";
 import { authService, type OnboardingData } from "@/services";
 
@@ -11,6 +12,7 @@ interface AuthContextType {
   logout: () => void;
   switchRole: (role: User["role"]) => void;
   completeOnboarding: (data: OnboardingData) => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -19,17 +21,60 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load user from localStorage on mount
-  useEffect(() => {
-    async function loadUser() {
-      const { data } = await authService.getCurrentUser();
-      if (data) {
-        setUser(data);
-      }
-      setIsLoading(false);
-    }
-    loadUser();
+  // Function to fetch user profile from database
+  const fetchUserProfile = useCallback(async () => {
+    const { data } = await authService.getCurrentUser();
+    return data;
   }, []);
+
+  // Refresh user data from database
+  const refreshUser = useCallback(async () => {
+    const profile = await fetchUserProfile();
+    setUser(profile);
+  }, [fetchUserProfile]);
+
+  // Set up Supabase auth listener
+  useEffect(() => {
+    const supabase = createClient();
+
+    // Initial load
+    async function loadUser() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (session?.user) {
+          const profile = await fetchUserProfile();
+          setUser(profile);
+        }
+      } catch (error) {
+        console.error("Error loading user:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadUser();
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === "SIGNED_IN" && session?.user) {
+          const profile = await fetchUserProfile();
+          setUser(profile);
+        } else if (event === "SIGNED_OUT") {
+          setUser(null);
+        } else if (event === "TOKEN_REFRESHED" && session?.user) {
+          // Optionally refresh user profile on token refresh
+          const profile = await fetchUserProfile();
+          setUser(profile);
+        }
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [fetchUserProfile]);
 
   const login = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     const { data, success, error } = await authService.login(email, password);
@@ -68,7 +113,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [user]);
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout, switchRole, completeOnboarding }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout, switchRole, completeOnboarding, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

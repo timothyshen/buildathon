@@ -3,20 +3,10 @@
  * Handles team CRUD, member management, and invitations
  */
 
-import {
-  mockTeams,
-  mockTeamInvites,
-  mockUsers,
-  mockCohorts,
-  getUserTeams as mockGetUserTeams,
-  getUserTeamForCohort as mockGetUserTeamForCohort,
-  getPendingInvitesForUser as mockGetPendingInvitesForUser,
-  getTeamInvites as mockGetTeamInvites,
-  isTeamLead as mockIsTeamLead,
-} from "@/data/mock-data";
+import { createClient } from "@/lib/supabase/client";
 import type { Team, TeamMember, TeamInvite, User } from "@/types";
 import type { ServiceResponse } from "./types";
-import { success, error, delay, generateId } from "./types";
+import { success, error } from "./types";
 
 export interface CreateTeamData {
   cohortId: string;
@@ -54,17 +44,119 @@ export interface TeamsService {
   declineInvite(inviteId: string): Promise<ServiceResponse<void>>;
 }
 
+// Convert user row to User type
+function toUser(row: Record<string, unknown>): User {
+  return {
+    id: row.id as string,
+    email: row.email as string,
+    name: row.name as string,
+    role: row.role as User["role"],
+    avatar: row.avatar as string | undefined,
+    walletAddress: row.wallet_address as string | undefined,
+    bio: row.bio as string | undefined,
+    twitter: row.twitter as string | undefined,
+    github: row.github as string | undefined,
+    createdAt: new Date(row.created_at as string),
+  };
+}
+
+// Convert database rows to Team type with members
+function toTeam(
+  teamRow: Record<string, unknown>,
+  members: Array<{ user: Record<string, unknown>; role: string; joined_at: string }>
+): Team {
+  return {
+    id: teamRow.id as string,
+    cohortId: teamRow.cohort_id as string,
+    name: teamRow.name as string,
+    slug: teamRow.slug as string,
+    description: teamRow.description as string | undefined,
+    logoUrl: teamRow.logo_url as string | undefined,
+    members: members.map((m) => ({
+      userId: m.user.id as string,
+      user: toUser(m.user),
+      role: m.role as "lead" | "member",
+      joinedAt: new Date(m.joined_at),
+    })),
+  };
+}
+
+// Convert database row to TeamInvite type
+function toTeamInvite(row: Record<string, unknown>, team?: Team, inviter?: User): TeamInvite {
+  return {
+    id: row.id as string,
+    teamId: row.team_id as string,
+    team,
+    email: row.email as string,
+    invitedBy: row.invited_by as string,
+    inviter,
+    status: row.status as TeamInvite["status"],
+    createdAt: new Date(row.created_at as string),
+    expiresAt: new Date(row.expires_at as string),
+  };
+}
+
+// Helper to fetch team with members
+async function fetchTeamWithMembers(supabase: ReturnType<typeof createClient>, teamId: string): Promise<Team | null> {
+  const { data: teamData, error: teamError } = await supabase
+    .from("teams")
+    .select("*")
+    .eq("id", teamId)
+    .single();
+
+  if (teamError) return null;
+
+  const { data: membersData } = await supabase
+    .from("team_members")
+    .select(`
+      role,
+      joined_at,
+      users (*)
+    `)
+    .eq("team_id", teamId);
+
+  const members = (membersData || []).map((m) => ({
+    user: m.users as Record<string, unknown>,
+    role: m.role as string,
+    joined_at: m.joined_at as string,
+  }));
+
+  return toTeam(teamData, members);
+}
+
 // Team CRUD
 
 async function getById(id: string): Promise<ServiceResponse<Team | null>> {
-  await delay();
-  const team = mockTeams.find((t) => t.id === id) || null;
+  const supabase = createClient();
+  const team = await fetchTeamWithMembers(supabase, id);
   return success(team);
 }
 
 async function getByUser(userId: string): Promise<ServiceResponse<Team[]>> {
-  await delay();
-  const teams = mockGetUserTeams(userId);
+  const supabase = createClient();
+
+  // Get all team IDs the user is a member of
+  const { data: memberData, error: memberError } = await supabase
+    .from("team_members")
+    .select("team_id")
+    .eq("user_id", userId);
+
+  if (memberError) {
+    return error(memberError.message, []);
+  }
+
+  if (!memberData || memberData.length === 0) {
+    return success([]);
+  }
+
+  const teamIds = memberData.map((m) => m.team_id);
+  const teams: Team[] = [];
+
+  for (const teamId of teamIds) {
+    const team = await fetchTeamWithMembers(supabase, teamId);
+    if (team) teams.push(team);
+  }
+
   return success(teams);
 }
 
@@ -72,85 +164,113 @@ async function getByUserAndCohort(
   userId: string,
   cohortId: string
 ): Promise<ServiceResponse<Team | null>> {
-  await delay();
-  const team = mockGetUserTeamForCohort(userId, cohortId) || null;
+  const supabase = createClient();
+
+  // Get team IDs for the user
+  const { data: memberData } = await supabase
+    .from("team_members")
+    .select("team_id")
+    .eq("user_id", userId);
+
+  if (!memberData || memberData.length === 0) {
+    return success(null);
+  }
+
+  const teamIds = memberData.map((m) => m.team_id);
+
+  // Find team in the specified cohort
+  const { data: teamData } = await supabase
+    .from("teams")
+    .select("id")
+    .eq("cohort_id", cohortId)
+    .in("id", teamIds)
+    .single();
+
+  if (!teamData) {
+    return success(null);
+  }
+
+  const team = await fetchTeamWithMembers(supabase, teamData.id);
   return success(team);
 }
 
 async function create(data: CreateTeamData): Promise<ServiceResponse<Team>> {
-  await delay(200);
+  const supabase = createClient();
 
-  const leadUser = mockUsers.find((u) => u.id === data.leadUserId);
-  if (!leadUser) {
-    return error("Lead user not found", null as unknown as Team);
+  const slug = data.name.trim().toLowerCase().replace(/\s+/g, "-");
+
+  // Create team
+  const { data: teamData, error: teamError } = await supabase
+    .from("teams")
+    .insert({
+      cohort_id: data.cohortId,
+      name: data.name.trim(),
+      slug,
+      description: data.description?.trim(),
+    })
+    .select()
+    .single();
+
+  if (teamError) {
+    return error(teamError.message, null as unknown as Team);
   }
 
-  const cohort = mockCohorts.find((c) => c.id === data.cohortId);
-  if (!cohort) {
-    return error("Cohort not found", null as unknown as Team);
+  // Add lead member
+  const { error: memberError } = await supabase
+    .from("team_members")
+    .insert({
+      team_id: teamData.id,
+      user_id: data.leadUserId,
+      role: "lead",
+    });
+
+  if (memberError) {
+    // Rollback team creation
+    await supabase.from("teams").delete().eq("id", teamData.id);
+    return error(memberError.message, null as unknown as Team);
   }
 
-  const newTeam: Team = {
-    id: generateId("team"),
-    cohortId: data.cohortId,
-    name: data.name.trim(),
-    slug: data.name.trim().toLowerCase().replace(/\s+/g, "-"),
-    description: data.description?.trim(),
-    members: [
-      {
-        userId: data.leadUserId,
-        user: leadUser,
-        role: "lead",
-        joinedAt: new Date(),
-      },
-    ],
-  };
-
-  mockTeams.push(newTeam);
-  return success(newTeam);
+  const team = await fetchTeamWithMembers(supabase, teamData.id);
+  return success(team!);
 }
 
 async function update(
   id: string,
   data: Partial<Pick<Team, "name" | "description" | "logoUrl">>
 ): Promise<ServiceResponse<Team>> {
-  await delay(150);
+  const supabase = createClient();
 
-  const teamIndex = mockTeams.findIndex((t) => t.id === id);
-  if (teamIndex === -1) {
-    return error("Team not found", null as unknown as Team);
+  const dbData: Record<string, unknown> = {};
+  if (data.name !== undefined) {
+    dbData.name = data.name.trim();
+    dbData.slug = data.name.trim().toLowerCase().replace(/\s+/g, "-");
+  }
+  if (data.description !== undefined) dbData.description = data.description;
+  if (data.logoUrl !== undefined) dbData.logo_url = data.logoUrl;
+
+  const { error: dbError } = await supabase
+    .from("teams")
+    .update(dbData)
+    .eq("id", id);
+
+  if (dbError) {
+    return error(dbError.message, null as unknown as Team);
   }
 
-  const updatedTeam = {
-    ...mockTeams[teamIndex],
-    ...data,
-    slug: data.name
-      ? data.name.trim().toLowerCase().replace(/\s+/g, "-")
-      : mockTeams[teamIndex].slug,
-  };
-
-  mockTeams[teamIndex] = updatedTeam;
-  return success(updatedTeam);
+  const team = await fetchTeamWithMembers(supabase, id);
+  return success(team!);
 }
 
 async function deleteTeam(id: string): Promise<ServiceResponse<void>> {
-  await delay(150);
+  const supabase = createClient();
 
-  const teamIndex = mockTeams.findIndex((t) => t.id === id);
-  if (teamIndex === -1) {
-    return error("Team not found", undefined);
-  }
+  const { error: dbError } = await supabase
+    .from("teams")
+    .delete()
+    .eq("id", id);
 
-  mockTeams.splice(teamIndex, 1);
-
-  // Also remove any pending invites for this team
-  const inviteIndicesToRemove = mockTeamInvites
-    .map((invite, index) => (invite.teamId === id ? index : -1))
-    .filter((i) => i !== -1)
-    .reverse();
-
-  for (const index of inviteIndicesToRemove) {
-    mockTeamInvites.splice(index, 1);
+  if (dbError) {
+    return error(dbError.message, undefined);
   }
 
   return success(undefined);
@@ -163,147 +283,192 @@ async function addMember(
   userId: string,
   role: "lead" | "member" = "member"
 ): Promise<ServiceResponse<Team>> {
-  await delay(150);
+  const supabase = createClient();
 
-  const team = mockTeams.find((t) => t.id === teamId);
-  if (!team) {
-    return error("Team not found", null as unknown as Team);
+  const { error: dbError } = await supabase
+    .from("team_members")
+    .insert({
+      team_id: teamId,
+      user_id: userId,
+      role,
+    });
+
+  if (dbError) {
+    if (dbError.code === "23505") {
+      return error("User is already a member", null as unknown as Team);
+    }
+    return error(dbError.message, null as unknown as Team);
   }
 
-  const user = mockUsers.find((u) => u.id === userId);
-  if (!user) {
-    return error("User not found", null as unknown as Team);
-  }
-
-  // Check if already a member
-  if (team.members.some((m) => m.userId === userId)) {
-    return error("User is already a member", team);
-  }
-
-  const newMember: TeamMember = {
-    userId,
-    user,
-    role,
-    joinedAt: new Date(),
-  };
-
-  team.members.push(newMember);
-  return success(team);
+  const team = await fetchTeamWithMembers(supabase, teamId);
+  return success(team!);
 }
 
 async function removeMember(teamId: string, userId: string): Promise<ServiceResponse<Team>> {
-  await delay(150);
+  const supabase = createClient();
 
-  const team = mockTeams.find((t) => t.id === teamId);
-  if (!team) {
-    return error("Team not found", null as unknown as Team);
+  const { error: dbError } = await supabase
+    .from("team_members")
+    .delete()
+    .eq("team_id", teamId)
+    .eq("user_id", userId);
+
+  if (dbError) {
+    return error(dbError.message, null as unknown as Team);
   }
 
-  const memberIndex = team.members.findIndex((m) => m.userId === userId);
-  if (memberIndex === -1) {
-    return error("User is not a member of this team", team);
-  }
-
-  team.members.splice(memberIndex, 1);
-  return success(team);
+  const team = await fetchTeamWithMembers(supabase, teamId);
+  return success(team!);
 }
 
 async function transferLead(teamId: string, newLeadUserId: string): Promise<ServiceResponse<Team>> {
-  await delay(150);
+  const supabase = createClient();
 
-  const team = mockTeams.find((t) => t.id === teamId);
-  if (!team) {
-    return error("Team not found", null as unknown as Team);
-  }
-
-  const newLead = team.members.find((m) => m.userId === newLeadUserId);
-  if (!newLead) {
-    return error("User is not a member of this team", team);
-  }
-
-  // Demote current lead(s)
-  team.members.forEach((m) => {
-    if (m.role === "lead") {
-      m.role = "member";
-    }
-  });
+  // Demote all current leads to members
+  await supabase
+    .from("team_members")
+    .update({ role: "member" })
+    .eq("team_id", teamId)
+    .eq("role", "lead");
 
   // Promote new lead
-  newLead.role = "lead";
+  const { error: dbError } = await supabase
+    .from("team_members")
+    .update({ role: "lead" })
+    .eq("team_id", teamId)
+    .eq("user_id", newLeadUserId);
 
-  return success(team);
+  if (dbError) {
+    return error(dbError.message, null as unknown as Team);
+  }
+
+  const team = await fetchTeamWithMembers(supabase, teamId);
+  return success(team!);
 }
 
 async function isLead(userId: string, teamId: string): Promise<ServiceResponse<boolean>> {
-  await delay();
-  const result = mockIsTeamLead(userId, teamId);
-  return success(result);
+  const supabase = createClient();
+
+  const { data } = await supabase
+    .from("team_members")
+    .select("role")
+    .eq("team_id", teamId)
+    .eq("user_id", userId)
+    .single();
+
+  return success(data?.role === "lead");
 }
 
 // Invites
 
 async function getInvites(teamId: string): Promise<ServiceResponse<TeamInvite[]>> {
-  await delay();
-  const invites = mockGetTeamInvites(teamId);
+  const supabase = createClient();
+
+  const { data, error: dbError } = await supabase
+    .from("team_invites")
+    .select(`
+      *,
+      users!team_invites_invited_by_fkey (*)
+    `)
+    .eq("team_id", teamId)
+    .eq("status", "pending");
+
+  if (dbError) {
+    return error(dbError.message, []);
+  }
+
+  const team = await fetchTeamWithMembers(supabase, teamId);
+
+  const invites = (data || []).map((row) => {
+    const inviter = row.users ? toUser(row.users as Record<string, unknown>) : undefined;
+    return toTeamInvite(row, team || undefined, inviter);
+  });
+
   return success(invites);
 }
 
 async function getPendingInvitesForUser(email: string): Promise<ServiceResponse<TeamInvite[]>> {
-  await delay();
-  const invites = mockGetPendingInvitesForUser(email);
+  const supabase = createClient();
+
+  const { data, error: dbError } = await supabase
+    .from("team_invites")
+    .select(`
+      *,
+      teams (*),
+      users!team_invites_invited_by_fkey (*)
+    `)
+    .eq("email", email.toLowerCase())
+    .eq("status", "pending")
+    .gt("expires_at", new Date().toISOString());
+
+  if (dbError) {
+    return error(dbError.message, []);
+  }
+
+  const invites: TeamInvite[] = [];
+  for (const row of data || []) {
+    const teamData = row.teams as Record<string, unknown>;
+    const team = teamData ? await fetchTeamWithMembers(supabase, teamData.id as string) : undefined;
+    const inviter = row.users ? toUser(row.users as Record<string, unknown>) : undefined;
+    invites.push(toTeamInvite(row, team || undefined, inviter));
+  }
+
   return success(invites);
 }
 
 async function createInvite(data: CreateInviteData): Promise<ServiceResponse<TeamInvite>> {
-  await delay(200);
+  const supabase = createClient();
 
-  const team = mockTeams.find((t) => t.id === data.teamId);
-  if (!team) {
-    return error("Team not found", null as unknown as TeamInvite);
+  // Check for existing pending invite
+  const { data: existing } = await supabase
+    .from("team_invites")
+    .select("id")
+    .eq("team_id", data.teamId)
+    .eq("email", data.email.toLowerCase())
+    .eq("status", "pending")
+    .single();
+
+  if (existing) {
+    return error("User already has a pending invite", null as unknown as TeamInvite);
   }
 
-  const inviter = mockUsers.find((u) => u.id === data.invitedBy);
-  if (!inviter) {
-    return error("Inviter not found", null as unknown as TeamInvite);
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+  const { data: created, error: dbError } = await supabase
+    .from("team_invites")
+    .insert({
+      team_id: data.teamId,
+      email: data.email.toLowerCase(),
+      invited_by: data.invitedBy,
+      expires_at: expiresAt.toISOString(),
+    })
+    .select(`
+      *,
+      users!team_invites_invited_by_fkey (*)
+    `)
+    .single();
+
+  if (dbError) {
+    return error(dbError.message, null as unknown as TeamInvite);
   }
 
-  // Check if already invited
-  const existingInvite = mockTeamInvites.find(
-    (i) => i.teamId === data.teamId && i.email.toLowerCase() === data.email.toLowerCase() && i.status === "pending"
-  );
-  if (existingInvite) {
-    return error("User already has a pending invite", existingInvite);
-  }
+  const team = await fetchTeamWithMembers(supabase, data.teamId);
+  const inviter = created.users ? toUser(created.users as Record<string, unknown>) : undefined;
 
-  // Check if already a member
-  const existingMember = team.members.find(
-    (m) => m.user.email.toLowerCase() === data.email.toLowerCase()
-  );
-  if (existingMember) {
-    return error("User is already a team member", null as unknown as TeamInvite);
-  }
-
-  const newInvite: TeamInvite = {
-    id: generateId("invite"),
-    teamId: data.teamId,
-    team,
-    email: data.email.toLowerCase(),
-    invitedBy: data.invitedBy,
-    inviter,
-    status: "pending",
-    createdAt: new Date(),
-    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-  };
-
-  mockTeamInvites.push(newInvite);
-  return success(newInvite);
+  return success(toTeamInvite(created, team || undefined, inviter));
 }
 
 async function acceptInvite(inviteId: string, userId: string): Promise<ServiceResponse<Team>> {
-  await delay(200);
+  const supabase = createClient();
 
-  const invite = mockTeamInvites.find((i) => i.id === inviteId);
-  if (!invite) {
+  // Get invite
+  const { data: invite, error: inviteError } = await supabase
+    .from("team_invites")
+    .select("*")
+    .eq("id", inviteId)
+    .single();
+
+  if (inviteError || !invite) {
     return error("Invite not found", null as unknown as Team);
   }
 
@@ -311,40 +476,41 @@ async function acceptInvite(inviteId: string, userId: string): Promise<ServiceRe
     return error("Invite is no longer pending", null as unknown as Team);
   }
 
-  const team = mockTeams.find((t) => t.id === invite.teamId);
-  if (!team) {
-    return error("Team not found", null as unknown as Team);
-  }
-
-  const user = mockUsers.find((u) => u.id === userId);
-  if (!user) {
-    return error("User not found", null as unknown as Team);
-  }
-
   // Update invite status
-  invite.status = "accepted";
+  await supabase
+    .from("team_invites")
+    .update({ status: "accepted" })
+    .eq("id", inviteId);
 
   // Add user to team
-  const newMember: TeamMember = {
-    userId,
-    user,
-    role: "member",
-    joinedAt: new Date(),
-  };
-  team.members.push(newMember);
+  const { error: memberError } = await supabase
+    .from("team_members")
+    .insert({
+      team_id: invite.team_id,
+      user_id: userId,
+      role: "member",
+    });
 
-  return success(team);
+  if (memberError) {
+    return error(memberError.message, null as unknown as Team);
+  }
+
+  const team = await fetchTeamWithMembers(supabase, invite.team_id);
+  return success(team!);
 }
 
 async function declineInvite(inviteId: string): Promise<ServiceResponse<void>> {
-  await delay(150);
+  const supabase = createClient();
 
-  const invite = mockTeamInvites.find((i) => i.id === inviteId);
-  if (!invite) {
-    return error("Invite not found", undefined);
+  const { error: dbError } = await supabase
+    .from("team_invites")
+    .update({ status: "declined" })
+    .eq("id", inviteId);
+
+  if (dbError) {
+    return error(dbError.message, undefined);
   }
 
-  invite.status = "declined";
   return success(undefined);
 }
 
