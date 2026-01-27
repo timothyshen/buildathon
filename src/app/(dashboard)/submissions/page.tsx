@@ -3,17 +3,23 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
-import { submissionsService } from "@/services";
-import type { Submission } from "@/types";
+import { submissionsService, tracksService, cohortsService } from "@/services";
+import type { Submission, Track, Cohort } from "@/types";
 import { getSubmissionStatusColor } from "@/lib/utils/status";
+import { getSubmissionPrizes, type PrizeInfo } from "@/lib/prize-utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { PrizeBadges } from "@/components/ui/prize-badges";
 import { PlusCircle, FileText, ExternalLink, Github, Loader2 } from "lucide-react";
+
+interface EnrichedSubmission extends Submission {
+  prizes: PrizeInfo[];
+}
 
 export default function SubmissionsPage() {
   const { user } = useAuth();
-  const [userSubmissions, setUserSubmissions] = useState<Submission[]>([]);
+  const [userSubmissions, setUserSubmissions] = useState<EnrichedSubmission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -24,7 +30,40 @@ export default function SubmissionsPage() {
       }
 
       const { data, success } = await submissionsService.getByUser(user.id);
-      if (success) setUserSubmissions(data);
+      if (!success) {
+        setIsLoading(false);
+        return;
+      }
+
+      // Load cohorts and tracks to compute prizes
+      const cohortIds = [...new Set(data.map((s: Submission) => s.cohortId).filter(Boolean))];
+      const [cohortsResult, ...trackResults] = await Promise.all([
+        cohortsService.list(),
+        ...cohortIds.map((id) => tracksService.getByCohort(id as string)),
+      ]);
+
+      const cohortMap = new Map<string, Cohort>(
+        cohortsResult.data.map((c: Cohort) => [c.id, c])
+      );
+      const trackMap = new Map<string, Track[]>();
+      cohortIds.forEach((id, index) => {
+        trackMap.set(id as string, trackResults[index].data);
+      });
+
+      // Enrich submissions with prizes
+      const enriched: EnrichedSubmission[] = data.map((submission: Submission) => {
+        const cohort = submission.cohortId ? cohortMap.get(submission.cohortId) : undefined;
+        const tracks = submission.cohortId ? (trackMap.get(submission.cohortId) || []) : [];
+        const track = tracks.find((t) => t.id === submission.trackId);
+        const prizes = getSubmissionPrizes(submission, cohort, track);
+
+        return {
+          ...submission,
+          prizes,
+        };
+      });
+
+      setUserSubmissions(enriched);
       setIsLoading(false);
     }
     loadData();
@@ -76,11 +115,14 @@ export default function SubmissionsPage() {
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <CardTitle>{submission.title}</CardTitle>
                       <Badge className={getSubmissionStatusColor(submission.status)}>
                         {submission.status}
                       </Badge>
+                      {submission.prizes.length > 0 && (
+                        <PrizeBadges prizes={submission.prizes} maxVisible={3} size="sm" />
+                      )}
                     </div>
                     <CardDescription className="mt-1">
                       {submission.tagline}

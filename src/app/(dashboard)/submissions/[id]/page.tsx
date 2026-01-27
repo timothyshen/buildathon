@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
 import { submissionsService, reviewsService, tracksService } from "@/services";
 import type { Submission, Review, Track } from "@/types";
+import { getSubmissionPrizes, type PrizeInfo } from "@/lib/prize-utils";
 import { ProjectGallery } from "@/components/projects/project-gallery";
 import { ProjectTeam } from "@/components/projects/project-team";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
@@ -13,6 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { PrizeBadges } from "@/components/ui/prize-badges";
 import {
   Shield,
   FileCheck,
@@ -111,6 +113,7 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
   const [submission, setSubmission] = useState<Submission | null>(null);
   const [completedReviews, setCompletedReviews] = useState<Review[]>([]);
   const [tracks, setTracks] = useState<Track[]>([]);
+  const [prizes, setPrizes] = useState<PrizeInfo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -136,6 +139,10 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
       }
       if (tracksResult.success) {
         setTracks(tracksResult.data);
+        // Compute prizes
+        const track = tracksResult.data.find((t: Track) => t.id === submissionData.trackId);
+        const submissionPrizes = getSubmissionPrizes(submissionData, submissionData.cohort, track);
+        setPrizes(submissionPrizes);
       }
 
       setIsLoading(false);
@@ -189,7 +196,12 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-bold">{submission.title}</h1>
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1 className="text-3xl font-bold">{submission.title}</h1>
+            {prizes.length > 0 && (
+              <PrizeBadges prizes={prizes} maxVisible={5} size="md" />
+            )}
+          </div>
           {submission.tagline && (
             <p className="mt-2 text-lg text-muted-foreground">
               {submission.tagline}

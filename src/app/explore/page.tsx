@@ -4,13 +4,10 @@ import { useState, useMemo, useCallback, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { submissionsService, tracksService, cohortsService } from "@/services";
 import type { Submission, Track, Cohort } from "@/types";
-import { Filter, Loader2 } from "lucide-react";
-import {
-  AdvancedSearchInput,
-  ProjectCardExplore,
-  QuickFilters,
-  SearchFilterChips,
-} from "@/components/explore";
+import { Filter, Loader2, Search, X } from "lucide-react";
+import { ProjectCardExplore } from "@/components/explore/project-card-explore";
+import { SearchFilterChips } from "@/components/explore/search-filter-chips";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import {
   parseSearchQuery,
   buildSearchQuery,
@@ -22,6 +19,13 @@ import {
 } from "@/lib/search-utils";
 import { getSubmissionPrizes } from "@/lib/prize-utils";
 
+const filterOptions = [
+  { label: "All", value: "all" },
+  { label: "Winners", value: "winners" },
+  { label: "AI Projects", value: "ai" },
+  { label: "Story Protocol", value: "story" },
+];
+
 function ExploreContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -29,6 +33,9 @@ function ExploreContent() {
   // Data loading state
   const [enrichedSubmissions, setEnrichedSubmissions] = useState<EnrichedSubmission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Filter state
+  const [activeFilter, setActiveFilter] = useState("all");
 
   // Initialize search from URL
   const [searchQuery, setSearchQuery] = useState(() => {
@@ -41,24 +48,19 @@ function ExploreContent() {
   // Load and enrich submissions
   useEffect(() => {
     async function loadData() {
-      // Load all submissions
       const { data: allSubmissions } = await submissionsService.list();
 
-      // Only show submitted/winner/accepted projects
       const publicSubmissions = allSubmissions.filter(
         (s: Submission) => s.status === "submitted" || s.status === "winner" || s.status === "accepted"
       );
 
-      // Get unique cohort IDs
       const cohortIds = [...new Set(publicSubmissions.map((s: Submission) => s.cohortId).filter(Boolean))];
 
-      // Load cohorts and tracks in parallel
       const [cohortsResult, ...trackResults] = await Promise.all([
         cohortsService.list(),
         ...cohortIds.map((id) => tracksService.getByCohort(id as string)),
       ]);
 
-      // Build lookup maps
       const cohortMap = new Map<string, Cohort>(
         cohortsResult.data.map((c: Cohort) => [c.id, c])
       );
@@ -67,7 +69,6 @@ function ExploreContent() {
         trackMap.set(id as string, trackResults[index].data);
       });
 
-      // Enrich submissions
       const enriched: EnrichedSubmission[] = publicSubmissions.map((submission: Submission) => {
         const cohort = submission.cohortId ? cohortMap.get(submission.cohortId) : undefined;
         const tracks = submission.cohortId ? (trackMap.get(submission.cohortId) || []) : [];
@@ -88,23 +89,35 @@ function ExploreContent() {
     loadData();
   }, []);
 
-  // Filter submissions based on parsed query
+  // Filter submissions based on parsed query and active filter
   const filteredSubmissions = useMemo(() => {
-    if (!hasActiveFilters(parsedQuery)) {
-      return enrichedSubmissions;
-    }
-    return enrichedSubmissions.filter((submission) =>
-      matchesQuery(submission, parsedQuery)
-    );
-  }, [enrichedSubmissions, parsedQuery]);
+    let results = enrichedSubmissions;
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
+    // Apply segmented control filter
+    if (activeFilter === "winners") {
+      results = results.filter((s) => s.status === "winner");
+    } else if (activeFilter === "ai") {
+      results = results.filter((s) =>
+        s.techStack.some((t) =>
+          t.toLowerCase().includes("ai") ||
+          t.toLowerCase().includes("openai") ||
+          t.toLowerCase().includes("ml") ||
+          t.toLowerCase().includes("gpt")
+        )
+      );
+    } else if (activeFilter === "story") {
+      results = results.filter((s) =>
+        s.techStack.some((t) => t.toLowerCase().includes("story"))
+      );
+    }
+
+    // Apply search query filters
+    if (hasActiveFilters(parsedQuery)) {
+      results = results.filter((submission) => matchesQuery(submission, parsedQuery));
+    }
+
+    return results;
+  }, [enrichedSubmissions, parsedQuery, activeFilter]);
 
   // Update URL when search changes (debounced)
   useEffect(() => {
@@ -134,62 +147,60 @@ function ExploreContent() {
     [parsedQuery]
   );
 
-  // Handle quick filter toggle
-  const handleQuickFilterToggle = useCallback(
-    (filterQuery: string) => {
-      const isActive = searchQuery.toLowerCase().includes(filterQuery.toLowerCase());
-
-      if (isActive) {
-        // Remove filter
-        const newQuery = searchQuery
-          .replace(new RegExp(filterQuery, "gi"), "")
-          .replace(/\s+/g, " ")
-          .trim();
-        setSearchQuery(newQuery);
-      } else {
-        // Add filter
-        setSearchQuery((prev) => (prev ? `${prev} ${filterQuery}` : filterQuery));
-      }
-    },
-    [searchQuery]
-  );
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-neutral-950 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-neutral-400" />
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
-      {/* Hero Section */}
-      <div className="bg-gradient-to-b from-white to-slate-50 dark:from-slate-900 dark:to-slate-950 border-b">
-        <div className="mx-auto max-w-6xl px-4 py-12 sm:py-16">
-          <div className="text-center">
-            <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-slate-900 dark:text-white">
-              Explore Projects
-            </h1>
-            <p className="mt-4 text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-              Discover award-winning projects from our buildathons. Use advanced search to find projects by tech stack, cohort, or prizes.
-            </p>
-          </div>
+    <div className="min-h-screen bg-white dark:bg-neutral-950">
+      {/* Header */}
+      <header className="border-b border-neutral-200 dark:border-neutral-800">
+        <div className="mx-auto max-w-6xl px-6 py-16">
+          <h1 className="text-4xl font-bold tracking-tight text-black dark:text-white">
+            Explore Projects
+          </h1>
+          <p className="mt-3 text-lg text-neutral-500 dark:text-neutral-400 max-w-xl">
+            Discover award-winning projects from our buildathons.
+          </p>
 
-          {/* Advanced Search */}
-          <div className="mt-8 max-w-2xl mx-auto">
-            <AdvancedSearchInput
+          {/* Search */}
+          <div className="mt-8 relative max-w-xl">
+            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+            <input
+              type="text"
               value={searchQuery}
-              onChange={setSearchQuery}
-              onClear={handleClearSearch}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search projects..."
+              className="w-full pl-11 pr-10 py-3 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-md text-sm focus:outline-none focus:border-black dark:focus:border-white transition-colors"
             />
+            {searchQuery && (
+              <button
+                onClick={handleClearSearch}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-neutral-400 hover:text-black dark:hover:text-white transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
 
-          {/* Quick Filters */}
-          <div className="mt-4 flex justify-center">
-            <QuickFilters
-              currentQuery={searchQuery}
-              onFilterToggle={handleQuickFilterToggle}
+          {/* Segmented Control Filters */}
+          <div className="mt-6">
+            <SegmentedControl
+              options={filterOptions}
+              value={activeFilter}
+              onChange={setActiveFilter}
             />
           </div>
         </div>
-      </div>
+      </header>
 
       {/* Main Content */}
-      <div className="mx-auto max-w-6xl px-4 py-8">
-        {/* Active Filters */}
+      <main className="mx-auto max-w-6xl px-6 py-8">
+        {/* Active Search Filters */}
         {hasActiveFilters(parsedQuery) && (
           <SearchFilterChips
             query={parsedQuery}
@@ -201,10 +212,10 @@ function ExploreContent() {
 
         {/* Results Count */}
         <div className="flex items-center justify-between mb-6">
-          <p className="text-sm text-muted-foreground">
-            Showing {filteredSubmissions.length} project
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">
+            {filteredSubmissions.length} project
             {filteredSubmissions.length !== 1 ? "s" : ""}
-            {hasActiveFilters(parsedQuery) && (
+            {(activeFilter !== "all" || hasActiveFilters(parsedQuery)) && (
               <span> matching your filters</span>
             )}
           </p>
@@ -212,36 +223,36 @@ function ExploreContent() {
 
         {/* Project Grid */}
         {filteredSubmissions.length > 0 ? (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filteredSubmissions.map((submission) => (
               <ProjectCardExplore key={submission.id} submission={submission} />
             ))}
           </div>
         ) : (
           <div className="text-center py-16">
-            <Filter className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-semibold">No projects found</h3>
-            <p className="mt-2 text-sm text-muted-foreground max-w-md mx-auto">
-              Try adjusting your search. Use{" "}
-              <code className="text-xs bg-muted px-1 py-0.5 rounded">tech:react</code> to
-              filter by technology or{" "}
-              <code className="text-xs bg-muted px-1 py-0.5 rounded">!winner</code> to
-              find winners.
+            <Filter className="mx-auto h-12 w-12 text-neutral-300 dark:text-neutral-700" />
+            <h3 className="mt-4 text-lg font-semibold text-black dark:text-white">
+              No projects found
+            </h3>
+            <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400 max-w-md mx-auto">
+              Try adjusting your filters or search query.
             </p>
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 }
 
 export default function ExplorePage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
-        <div className="text-muted-foreground">Loading...</div>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-white dark:bg-neutral-950 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-neutral-400" />
+        </div>
+      }
+    >
       <ExploreContent />
     </Suspense>
   );

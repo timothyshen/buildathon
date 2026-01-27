@@ -5,6 +5,8 @@
  */
 
 import type { Submission, Cohort, Track, Team } from "@/types";
+import type { PrizeInfo } from "@/lib/prize-utils";
+export type { PrizeInfo } from "@/lib/prize-utils";
 
 export interface ParsedQuery {
   text: string;           // Plain text search terms
@@ -19,11 +21,6 @@ export interface EnrichedSubmission extends Submission {
   cohort?: Cohort;
   track?: Track;
   prizes: PrizeInfo[];
-}
-
-export interface PrizeInfo {
-  type: "grand-prize" | "runner-up" | "track-winner" | "honorable";
-  label: string;
 }
 
 // Symbol to prefix mapping
