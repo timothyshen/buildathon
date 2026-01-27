@@ -89,26 +89,6 @@ export default function WorkshopsPage() {
     return workshops.filter((w) => w.status === "published" && w.scheduledAt);
   }, [workshops]);
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
-        <div className="text-destructive text-lg">Failed to load workshops</div>
-        <p className="text-muted-foreground text-sm">{error}</p>
-        <Button variant="outline" onClick={() => window.location.reload()}>
-          Try Again
-        </Button>
-      </div>
-    );
-  }
-
   // Get upcoming workshops (next 5)
   const upcomingWorkshops = useMemo(() => {
     const now = new Date();
@@ -132,6 +112,33 @@ export default function WorkshopsPage() {
     if (!user) return [];
     return localRsvps.filter((r) => r.userId === user.id && r.status === "registered");
   }, [user, localRsvps]);
+
+  // Get workshops the user has RSVPed to
+  const rsvpedWorkshops = useMemo(() => {
+    if (!user) return [];
+    const rsvpWorkshopIds = userRsvps.map((r) => r.workshopId);
+    return publishedWorkshops.filter((w) => rsvpWorkshopIds.includes(w.id));
+  }, [user, userRsvps, publishedWorkshops]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+        <div className="text-destructive text-lg">Failed to load workshops</div>
+        <p className="text-muted-foreground text-sm">{error}</p>
+        <Button variant="outline" onClick={() => window.location.reload()}>
+          Try Again
+        </Button>
+      </div>
+    );
+  }
 
   // Get user's RSVP for a specific workshop
   const getUserRsvpForWorkshop = (workshopId: string): WorkshopRSVP | undefined => {
@@ -194,13 +201,6 @@ export default function WorkshopsPage() {
     }
   };
 
-  // Get workshops the user has RSVPed to
-  const rsvpedWorkshops = useMemo(() => {
-    if (!user) return [];
-    const rsvpWorkshopIds = userRsvps.map((r) => r.workshopId);
-    return publishedWorkshops.filter((w) => rsvpWorkshopIds.includes(w.id));
-  }, [user, userRsvps, publishedWorkshops]);
-
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       {/* Hero Section */}
@@ -233,7 +233,7 @@ export default function WorkshopsPage() {
       </section>
 
       {/* Main Content */}
-      <section className="py-8">
+      <section className="py-8 min-h-[50vh]">
         <div className="max-w-6xl mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
             {/* Main Calendar Area (3 columns) */}

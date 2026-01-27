@@ -7,7 +7,8 @@ import { reviewsService, cohortsService } from "@/services";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Star, CheckCircle, Clock, FileText, Loader2 } from "lucide-react";
+import { Star, CheckCircle, Clock, FileText } from "lucide-react";
+import { Loading } from "@/components/ui/loading";
 import type { Review, Cohort } from "@/types";
 
 export function JudgeDashboard() {
@@ -18,7 +19,10 @@ export function JudgeDashboard() {
 
   useEffect(() => {
     async function loadData() {
-      if (!user?.id) return;
+      if (!user?.id) {
+        setIsLoading(false);
+        return;
+      }
 
       const [reviewsResult, cohortsResult] = await Promise.all([
         reviewsService.getByJudge(user.id),
@@ -34,11 +38,7 @@ export function JudgeDashboard() {
   }, [user?.id]);
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <Loading />;
   }
 
   // Get judge's reviews

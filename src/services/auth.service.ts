@@ -73,15 +73,29 @@ async function login(email: string, password: string): Promise<ServiceResponse<U
         return error("Failed to create account", null as unknown as User);
       }
 
+      // Wait a moment for trigger to create user profile
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
       // Fetch the user profile (created by trigger)
       const { data: userData, error: userError } = await supabase
         .from("users")
         .select("*")
         .eq("id", signUpData.user.id)
-        .single();
+        .maybeSingle();
 
       if (userError) {
         return error(userError.message, null as unknown as User);
+      }
+
+      if (!userData) {
+        // Profile not created yet - create minimal user object from auth data
+        return success({
+          id: signUpData.user.id,
+          email: signUpData.user.email || email,
+          name: email.split("@")[0],
+          role: "participant",
+          createdAt: new Date(),
+        });
       }
 
       return success(toUser(userData));
@@ -99,10 +113,21 @@ async function login(email: string, password: string): Promise<ServiceResponse<U
     .from("users")
     .select("*")
     .eq("id", authData.user.id)
-    .single();
+    .maybeSingle();
 
   if (userError) {
     return error(userError.message, null as unknown as User);
+  }
+
+  if (!userData) {
+    // User profile doesn't exist - return minimal user from auth
+    return success({
+      id: authData.user.id,
+      email: authData.user.email || email,
+      name: authData.user.user_metadata?.name || email.split("@")[0],
+      role: (authData.user.user_metadata?.role as User["role"]) || "participant",
+      createdAt: new Date(authData.user.created_at),
+    });
   }
 
   return success(toUser(userData));
@@ -134,13 +159,23 @@ async function getCurrentUser(): Promise<ServiceResponse<User | null>> {
     .from("users")
     .select("*")
     .eq("id", authUser.id)
-    .single();
+    .maybeSingle();
 
   if (userError) {
-    if (userError.code === "PGRST116") {
-      return success(null);
-    }
     return error(userError.message, null);
+  }
+
+  // If no profile exists but auth user does, return minimal user object
+  // This allows users to proceed to onboarding even if trigger failed
+  if (!userData) {
+    return success({
+      id: authUser.id,
+      email: authUser.email || "",
+      name: authUser.user_metadata?.name || authUser.email?.split("@")[0] || "User",
+      role: (authUser.user_metadata?.role as User["role"]) || "participant",
+      hasCompletedOnboarding: false,
+      createdAt: new Date(authUser.created_at),
+    });
   }
 
   return success(toUser(userData));
@@ -181,18 +216,21 @@ async function completeOnboarding(data: OnboardingData): Promise<ServiceResponse
   }
 
   const dbData: Record<string, unknown> = {
+    id: authUser.id,
+    email: authUser.email,
     name: data.name,
+    role: "participant",
     has_completed_onboarding: true,
   };
   if (data.bio !== undefined) dbData.bio = data.bio;
   if (data.twitter !== undefined) dbData.twitter = data.twitter;
   if (data.github !== undefined) dbData.github = data.github;
 
+  // Use upsert to create profile if it doesn't exist
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: userData, error: userError } = await (supabase as any)
     .from("users")
-    .update(dbData)
-    .eq("id", authUser.id)
+    .upsert(dbData, { onConflict: "id" })
     .select()
     .single();
 

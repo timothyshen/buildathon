@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useState, useEffect, use } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
 import { teamsService, cohortsService } from "@/services";
@@ -24,12 +24,14 @@ import { TeamMemberList, InviteForm } from "@/components/teams";
 import { toast } from "sonner";
 import type { Team, Cohort, TeamInvite } from "@/types";
 
-export default function TeamDetailPage() {
-  const params = useParams();
+interface TeamDetailPageProps {
+  params: Promise<{ id: string }>;
+}
+
+export default function TeamDetailPage({ params }: TeamDetailPageProps) {
+  const { id: teamId } = use(params);
   const router = useRouter();
   const { user } = useAuth();
-
-  const teamId = params.id as string;
 
   const [team, setTeam] = useState<Team | null>(null);
   const [cohort, setCohort] = useState<Cohort | null>(null);

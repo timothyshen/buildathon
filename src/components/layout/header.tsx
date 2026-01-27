@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Menu, X, LogOut, User, LayoutDashboard, Sparkles, ChevronRight } from "lucide-react";
+import { Menu, X, LogOut, User, LayoutDashboard, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/auth-context";
@@ -20,9 +20,9 @@ import {
 const navLinks = [
   { href: "/", label: "Home" },
   { href: "/cohorts", label: "Cohorts" },
-  { href: "/about", label: "About" },
   { href: "/explore", label: "Explore" },
   { href: "/workshops", label: "Workshops" },
+  { href: "/about", label: "About" },
 ];
 
 export function Header() {
@@ -33,25 +33,26 @@ export function Header() {
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
       case "admin":
-        return "bg-red-500/10 text-red-600 border-red-500/20";
+        return "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900";
       case "judge":
-        return "bg-blue-500/10 text-blue-600 border-blue-500/20";
+        return "bg-neutral-200 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-200";
+      case "sponsor":
+        return "bg-neutral-200 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-200";
       case "participant":
-        return "bg-green-500/10 text-green-600 border-green-500/20";
+        return "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400";
       default:
-        return "";
+        return "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400";
     }
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 bg-white/80 backdrop-blur-lg dark:border-slate-800 dark:bg-slate-950/80">
-      <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-50 w-full border-b border-neutral-200 bg-white/80 backdrop-blur-lg dark:border-neutral-800 dark:bg-neutral-950/80">
+      <nav className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 shadow-lg shadow-violet-500/25">
-            <Sparkles className="h-5 w-5 text-white" />
-          </div>
-          <span className="text-xl font-bold tracking-tight">SWA.XYZ</span>
+        <Link href="/" className="flex items-center gap-2">
+          <span className="text-lg font-bold tracking-tight text-black dark:text-white">
+            SWA.XYZ
+          </span>
         </Link>
 
         {/* Desktop Navigation */}
@@ -63,10 +64,10 @@ export function Header() {
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  "rounded-lg px-4 py-2 text-sm font-medium transition-all",
+                  "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
                   isActive
-                    ? "bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-white"
-                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/50 dark:hover:text-white"
+                    ? "bg-neutral-100 text-black dark:bg-neutral-800 dark:text-white"
+                    : "text-neutral-600 hover:text-black dark:text-neutral-400 dark:hover:text-white"
                 )}
               >
                 {link.label}
@@ -81,7 +82,8 @@ export function Header() {
             <>
               <Button
                 asChild
-                className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40"
+                size="sm"
+                className="bg-black text-white hover:bg-neutral-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
               >
                 <Link href="/dashboard">
                   <LayoutDashboard className="mr-2 h-4 w-4" />
@@ -90,34 +92,33 @@ export function Header() {
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-2 rounded-xl p-1.5 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800">
+                  <button className="flex items-center gap-2 rounded-md p-1 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800">
                     <div className="relative">
                       <img
                         src={user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`}
                         alt={user.name}
-                        className="h-9 w-9 rounded-xl object-cover ring-2 ring-slate-200 dark:ring-slate-700"
+                        className="h-8 w-8 rounded-md object-cover border border-neutral-200 dark:border-neutral-700"
                       />
-                      <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white bg-green-500 dark:border-slate-950" />
+                      <div className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500 dark:border-neutral-950" />
                     </div>
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-64 p-2">
+                <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuLabel className="p-3">
                     <div className="flex items-center gap-3">
                       <img
                         src={user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`}
                         alt={user.name}
-                        className="h-10 w-10 rounded-xl"
+                        className="h-9 w-9 rounded-md"
                       />
                       <div className="flex-1 overflow-hidden">
-                        <p className="truncate font-semibold">{user.name}</p>
-                        <p className="truncate text-xs font-normal text-muted-foreground">
+                        <p className="truncate font-semibold text-sm">{user.name}</p>
+                        <p className="truncate text-xs font-normal text-neutral-500">
                           {user.email}
                         </p>
                         <Badge
-                          variant="outline"
                           className={cn(
-                            "mt-1 h-5 rounded-md px-1.5 text-[10px] font-semibold capitalize",
+                            "mt-1 h-5 rounded px-1.5 text-[10px] font-medium capitalize border-0",
                             getRoleBadgeColor(user.role)
                           )}
                         >
@@ -128,23 +129,23 @@ export function Header() {
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link href="/dashboard" className="cursor-pointer rounded-lg">
+                    <Link href="/dashboard" className="cursor-pointer">
                       <LayoutDashboard className="mr-2 h-4 w-4" />
                       Dashboard
-                      <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground" />
+                      <ChevronRight className="ml-auto h-4 w-4 text-neutral-400" />
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/settings" className="cursor-pointer rounded-lg">
+                    <Link href="/settings" className="cursor-pointer">
                       <User className="mr-2 h-4 w-4" />
                       Settings
-                      <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground" />
+                      <ChevronRight className="ml-auto h-4 w-4 text-neutral-400" />
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={logout}
-                    className="cursor-pointer rounded-lg text-red-600 focus:bg-red-50 focus:text-red-600 dark:focus:bg-red-950"
+                    className="cursor-pointer text-red-600 focus:bg-red-50 focus:text-red-600 dark:focus:bg-red-950"
                   >
                     <LogOut className="mr-2 h-4 w-4" />
                     Sign Out
@@ -154,12 +155,16 @@ export function Header() {
             </>
           ) : (
             <>
-              <Button variant="ghost" asChild className="text-slate-600 hover:text-slate-900">
-                <Link href="/login">Sign In</Link>
-              </Button>
+              <Link
+                href="/login"
+                className="text-sm font-medium text-neutral-600 hover:text-black dark:text-neutral-400 dark:hover:text-white transition-colors"
+              >
+                Sign In
+              </Link>
               <Button
                 asChild
-                className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40"
+                size="sm"
+                className="bg-black text-white hover:bg-neutral-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
               >
                 <Link href="/#waitlist">Join Waitlist</Link>
               </Button>
@@ -170,21 +175,21 @@ export function Header() {
         {/* Mobile Menu Button */}
         <button
           type="button"
-          className="inline-flex items-center justify-center rounded-xl p-2 text-slate-600 transition-colors hover:bg-slate-100 md:hidden dark:hover:bg-slate-800"
+          className="inline-flex items-center justify-center rounded-md p-2 text-neutral-600 transition-colors hover:bg-neutral-100 md:hidden dark:text-neutral-400 dark:hover:bg-neutral-800"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
         >
           <span className="sr-only">Open main menu</span>
           {mobileMenuOpen ? (
-            <X className="h-6 w-6" aria-hidden="true" />
+            <X className="h-5 w-5" aria-hidden="true" />
           ) : (
-            <Menu className="h-6 w-6" aria-hidden="true" />
+            <Menu className="h-5 w-5" aria-hidden="true" />
           )}
         </button>
       </nav>
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="border-t border-slate-200/80 bg-white md:hidden dark:border-slate-800 dark:bg-slate-950">
+        <div className="border-t border-neutral-200 bg-white md:hidden dark:border-neutral-800 dark:bg-neutral-950">
           <div className="space-y-1 px-4 py-4">
             {navLinks.map((link) => {
               const isActive = pathname === link.href;
@@ -193,10 +198,10 @@ export function Header() {
                   key={link.href}
                   href={link.href}
                   className={cn(
-                    "block rounded-xl px-4 py-3 text-base font-medium transition-colors",
+                    "block rounded-md px-4 py-2.5 text-sm font-medium transition-colors",
                     isActive
-                      ? "bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-white"
-                      : "text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800/50"
+                      ? "bg-neutral-100 text-black dark:bg-neutral-800 dark:text-white"
+                      : "text-neutral-600 hover:bg-neutral-50 dark:text-neutral-400 dark:hover:bg-neutral-800/50"
                   )}
                   onClick={() => setMobileMenuOpen(false)}
                 >
@@ -205,23 +210,22 @@ export function Header() {
               );
             })}
 
-            <div className="my-4 border-t border-slate-200/80 dark:border-slate-800" />
+            <div className="my-4 border-t border-neutral-200 dark:border-neutral-800" />
 
             {user ? (
               <>
                 {/* User info */}
-                <div className="flex items-center gap-3 rounded-xl bg-slate-50 p-3 dark:bg-slate-800/50">
+                <div className="flex items-center gap-3 rounded-md bg-neutral-50 p-3 dark:bg-neutral-800/50">
                   <img
                     src={user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`}
                     alt={user.name}
-                    className="h-10 w-10 rounded-xl"
+                    className="h-10 w-10 rounded-md"
                   />
                   <div className="flex-1 overflow-hidden">
-                    <p className="truncate font-semibold">{user.name}</p>
+                    <p className="truncate font-semibold text-sm">{user.name}</p>
                     <Badge
-                      variant="outline"
                       className={cn(
-                        "mt-0.5 h-5 rounded-md px-1.5 text-[10px] font-semibold capitalize",
+                        "mt-0.5 h-5 rounded px-1.5 text-[10px] font-medium capitalize border-0",
                         getRoleBadgeColor(user.role)
                       )}
                     >
@@ -232,10 +236,10 @@ export function Header() {
 
                 <Link
                   href="/dashboard"
-                  className="mt-2 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-4 py-3 text-base font-medium text-white shadow-lg shadow-violet-500/25"
+                  className="mt-3 flex items-center justify-center gap-2 rounded-md bg-black px-4 py-2.5 text-sm font-medium text-white dark:bg-white dark:text-black"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  <LayoutDashboard className="h-5 w-5" />
+                  <LayoutDashboard className="h-4 w-4" />
                   Go to Dashboard
                 </Link>
 
@@ -244,27 +248,28 @@ export function Header() {
                     logout();
                     setMobileMenuOpen(false);
                   }}
-                  className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 px-4 py-3 text-base font-medium text-red-600 transition-colors hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-950"
+                  className="mt-2 flex w-full items-center justify-center gap-2 rounded-md border border-neutral-200 px-4 py-2.5 text-sm font-medium text-neutral-600 transition-colors hover:border-neutral-300 hover:text-black dark:border-neutral-700 dark:text-neutral-400 dark:hover:border-neutral-600 dark:hover:text-white"
                 >
-                  <LogOut className="h-5 w-5" />
+                  <LogOut className="h-4 w-4" />
                   Sign Out
                 </button>
               </>
             ) : (
               <div className="space-y-2">
-                <Button variant="outline" asChild className="w-full rounded-xl py-6 text-base">
-                  <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
-                    Sign In
-                  </Link>
-                </Button>
-                <Button
-                  asChild
-                  className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 py-6 text-base shadow-lg shadow-violet-500/25"
+                <Link
+                  href="/login"
+                  className="block rounded-md border border-neutral-200 px-4 py-2.5 text-center text-sm font-medium text-neutral-600 transition-colors hover:border-black hover:text-black dark:border-neutral-700 dark:text-neutral-400 dark:hover:border-white dark:hover:text-white"
+                  onClick={() => setMobileMenuOpen(false)}
                 >
-                  <Link href="/#waitlist" onClick={() => setMobileMenuOpen(false)}>
-                    Join Waitlist
-                  </Link>
-                </Button>
+                  Sign In
+                </Link>
+                <Link
+                  href="/#waitlist"
+                  className="block rounded-md bg-black px-4 py-2.5 text-center text-sm font-medium text-white dark:bg-white dark:text-black"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Join Waitlist
+                </Link>
               </div>
             )}
           </div>

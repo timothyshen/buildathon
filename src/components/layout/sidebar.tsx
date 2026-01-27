@@ -15,7 +15,6 @@ import {
   GraduationCap,
   LogOut,
   ChevronRight,
-  Sparkles,
   Home,
   Compass,
   BookOpen,
@@ -164,7 +163,7 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
       items: [
         { href: "/cohorts", label: "Cohorts", icon: GraduationCap },
         { href: "/workshops", label: "Workshops", icon: BookOpen },
-        { href: "/explore", label: "Templates", icon: Compass },
+        { href: "/explore", label: "Projects", icon: Compass },
       ],
     },
   ];
@@ -192,15 +191,15 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
       case "admin":
-        return "bg-red-500/10 text-red-600 border-red-500/20";
+        return "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900";
       case "sponsor":
-        return "bg-purple-500/10 text-purple-600 border-purple-500/20";
+        return "bg-neutral-200 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-200";
       case "judge":
-        return "bg-blue-500/10 text-blue-600 border-blue-500/20";
+        return "bg-neutral-200 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-200";
       case "participant":
-        return "bg-green-500/10 text-green-600 border-green-500/20";
+        return "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400";
       default:
-        return "";
+        return "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400";
     }
   };
 
@@ -209,33 +208,25 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
   };
 
   return (
-    <div className="flex h-full flex-col bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-900">
+    <div className="flex h-full flex-col bg-white dark:bg-neutral-950">
       {/* Logo Section */}
-      <div className="flex h-16 items-center gap-3 border-b border-slate-200/80 px-6 dark:border-slate-800">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 shadow-lg shadow-violet-500/25">
-          <Sparkles className="h-5 w-5 text-white" />
-        </div>
-        <div className="flex flex-col">
-          <Link href="/" className="text-lg font-bold tracking-tight" onClick={handleNavClick}>
-            SWA.XYZ
-          </Link>
-          <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-            Buildathon Portal
-          </span>
-        </div>
+      <div className="flex h-14 items-center gap-3 border-b border-neutral-200 px-6 dark:border-neutral-800">
+        <Link href="/" className="text-lg font-bold tracking-tight text-black dark:text-white" onClick={handleNavClick}>
+          SWA.XYZ
+        </Link>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-4 py-6">
+      <nav className="flex-1 overflow-y-auto px-3 py-4">
         <div className="space-y-6">
           {filteredSections.map((section, sectionIndex) => (
             <div key={sectionIndex}>
               {section.title && (
-                <h3 className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                <h3 className="mb-2 px-3 text-xs font-medium uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
                   {section.title}
                 </h3>
               )}
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 {section.items.map((item) => {
                   const isActive =
                     pathname === item.href ||
@@ -246,16 +237,18 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
                       href={item.href}
                       onClick={handleNavClick}
                       className={cn(
-                        "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                        "group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                         isActive
-                          ? "bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-500/25"
-                          : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800/50"
+                          ? "bg-neutral-100 text-black dark:bg-neutral-800 dark:text-white"
+                          : "text-neutral-600 hover:bg-neutral-50 hover:text-black dark:text-neutral-400 dark:hover:bg-neutral-800/50 dark:hover:text-white"
                       )}
                     >
                       <item.icon
                         className={cn(
-                          "h-5 w-5 transition-transform group-hover:scale-110",
-                          isActive ? "text-white" : "text-slate-400"
+                          "h-4 w-4",
+                          isActive
+                            ? "text-black dark:text-white"
+                            : "text-neutral-400 group-hover:text-neutral-600 dark:group-hover:text-neutral-300"
                         )}
                       />
                       <span className="flex-1">{item.label}</span>
@@ -263,10 +256,10 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
                         <Badge
                           variant="secondary"
                           className={cn(
-                            "ml-auto h-5 min-w-[20px] justify-center rounded-full px-1.5 text-[10px] font-semibold",
+                            "ml-auto h-5 min-w-[20px] justify-center rounded px-1.5 text-[10px] font-medium",
                             isActive
-                              ? "bg-white/20 text-white"
-                              : "bg-slate-200/80 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
+                              ? "bg-neutral-200 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-200"
+                              : "bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400"
                           )}
                         >
                           {item.badge}
@@ -275,8 +268,10 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
                       {!item.badge && (
                         <ChevronRight
                           className={cn(
-                            "h-4 w-4 opacity-0 transition-all group-hover:opacity-100 group-hover:translate-x-0.5",
-                            isActive ? "text-white/60" : "text-slate-400"
+                            "h-4 w-4 opacity-0 transition-opacity group-hover:opacity-100",
+                            isActive
+                              ? "text-neutral-400 dark:text-neutral-500"
+                              : "text-neutral-300 dark:text-neutral-600"
                           )}
                         />
                       )}
@@ -290,11 +285,11 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
       </nav>
 
       {/* Quick Actions */}
-      <div className="border-t border-slate-200/80 p-4 dark:border-slate-800">
+      <div className="border-t border-neutral-200 p-3 dark:border-neutral-800">
         <Link
           href="/"
           onClick={handleNavClick}
-          className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800"
+          className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-black dark:hover:bg-neutral-800 dark:hover:text-white"
         >
           <Home className="h-4 w-4" />
           <span>Back to Home</span>
@@ -303,21 +298,21 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
 
       {/* Role Switcher (Dev Tool) */}
       {user && (
-        <div className="border-t border-slate-200/80 p-4 dark:border-slate-800">
-          <div className="rounded-xl bg-slate-100/80 p-3 dark:bg-slate-800/50">
-            <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-              Dev Mode: Switch Role
+        <div className="border-t border-neutral-200 p-3 dark:border-neutral-800">
+          <div className="rounded-md bg-neutral-50 p-3 dark:bg-neutral-900">
+            <p className="mb-2 text-[10px] font-medium uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+              Dev Mode
             </p>
-            <div className="flex gap-1.5 flex-wrap">
+            <div className="grid grid-cols-2 gap-1.5">
               {(["participant", "judge", "sponsor", "admin"] as const).map((role) => (
                 <button
                   key={role}
                   onClick={() => switchRole(role)}
                   className={cn(
-                    "flex-1 rounded-lg px-2 py-1.5 text-[11px] font-semibold transition-all",
+                    "rounded px-2 py-1.5 text-xs font-medium transition-colors",
                     user.role === role
-                      ? "bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md"
-                      : "bg-white text-slate-500 hover:bg-slate-50 dark:bg-slate-700 dark:text-slate-400 dark:hover:bg-slate-600"
+                      ? "bg-black text-white dark:bg-white dark:text-black"
+                      : "bg-white text-neutral-600 hover:bg-neutral-100 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-700"
                   )}
                 >
                   {role.charAt(0).toUpperCase() + role.slice(1)}
@@ -330,7 +325,7 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
 
       {/* User Profile */}
       {user && (
-        <div className="border-t border-slate-200/80 p-4 dark:border-slate-800">
+        <div className="border-t border-neutral-200 p-3 dark:border-neutral-800">
           <div className="flex items-center gap-3">
             <div className="relative">
               <img
@@ -339,32 +334,29 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
                   `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`
                 }
                 alt={user.name}
-                className="h-11 w-11 rounded-xl object-cover ring-2 ring-slate-200 dark:ring-slate-700"
+                className="h-9 w-9 rounded-md object-cover border border-neutral-200 dark:border-neutral-700"
               />
-              <div className="absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full border-2 border-white bg-green-500 dark:border-slate-900" />
+              <div className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500 dark:border-neutral-950" />
             </div>
             <div className="flex-1 overflow-hidden">
-              <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">
+              <p className="truncate text-sm font-medium text-black dark:text-white">
                 {user.name}
               </p>
-              <div className="mt-0.5 flex items-center gap-1.5">
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    "h-5 rounded-md px-1.5 text-[10px] font-semibold capitalize",
-                    getRoleBadgeColor(user.role)
-                  )}
-                >
-                  {user.role}
-                </Badge>
-              </div>
+              <Badge
+                className={cn(
+                  "mt-0.5 h-5 rounded px-1.5 text-[10px] font-medium capitalize border-0",
+                  getRoleBadgeColor(user.role)
+                )}
+              >
+                {user.role}
+              </Badge>
             </div>
             <Button
               variant="ghost"
               size="icon"
               onClick={handleLogout}
               aria-label="Log out"
-              className="h-9 w-9 rounded-xl text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950"
+              className="h-8 w-8 rounded-md text-neutral-400 hover:bg-neutral-100 hover:text-red-600 dark:hover:bg-neutral-800"
             >
               <LogOut className="h-4 w-4" />
             </Button>
@@ -377,7 +369,7 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
 
 export function Sidebar() {
   return (
-    <aside className="hidden md:flex h-full w-72 flex-col">
+    <aside className="hidden md:flex h-full w-64 flex-col border-r border-neutral-200 dark:border-neutral-800">
       <SidebarContent />
     </aside>
   );

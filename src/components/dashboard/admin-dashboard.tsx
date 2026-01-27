@@ -13,8 +13,8 @@ import {
   Star,
   PlusCircle,
   ArrowRight,
-  Loader2,
 } from "lucide-react";
+import { Loading } from "@/components/ui/loading";
 import type { Cohort, Submission, Review, User } from "@/types";
 import { getCohortStatusColor } from "@/lib/utils/status";
 
@@ -45,11 +45,7 @@ export function AdminDashboard() {
   }, []);
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <Loading />;
   }
 
   const activeCohorts = cohorts.filter((c) => c.status === "active");

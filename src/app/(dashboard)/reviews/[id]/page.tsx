@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useState, useEffect, use } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { reviewsService } from "@/services";
 import type { Review } from "@/types";
@@ -29,8 +29,12 @@ const scoreCategories = [
   { key: "presentation", label: "Presentation", description: "How well is it presented?" },
 ];
 
-export default function ReviewDetailPage() {
-  const params = useParams();
+interface ReviewDetailPageProps {
+  params: Promise<{ id: string }>;
+}
+
+export default function ReviewDetailPage({ params }: ReviewDetailPageProps) {
+  const { id } = use(params);
   const router = useRouter();
 
   const [review, setReview] = useState<Review | null>(null);
@@ -48,7 +52,7 @@ export default function ReviewDetailPage() {
 
   useEffect(() => {
     async function loadData() {
-      const { data, success } = await reviewsService.getById(params.id as string);
+      const { data, success } = await reviewsService.getById(id);
       if (success && data) {
         setReview(data);
         setScores({
@@ -64,7 +68,7 @@ export default function ReviewDetailPage() {
       setIsLoading(false);
     }
     loadData();
-  }, [params.id]);
+  }, [id]);
 
   if (isLoading) {
     return (

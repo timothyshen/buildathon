@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { Sidebar } from "@/components/layout/sidebar";
 import { MobileHeader } from "@/components/layout/mobile-header";
-import { Loader2 } from "lucide-react";
+import { Loading } from "@/components/ui/loading";
 
 export default function DashboardLayout({
   children,
@@ -30,14 +30,7 @@ export default function DashboardLayout({
   }, [user, isLoading, pathname, router]);
 
   if (isLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-slate-50 dark:bg-slate-950">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
-          <p className="text-sm text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    );
+    return <Loading fullScreen label="Loading..." />;
   }
 
   if (!user) {
@@ -45,12 +38,12 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="flex h-screen flex-col md:flex-row bg-slate-100/50 dark:bg-slate-950">
+    <div className="flex h-screen flex-col md:flex-row bg-neutral-50 dark:bg-neutral-950">
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
         <MobileHeader />
         <main className="flex-1 overflow-y-auto">
-          <div className="min-h-full bg-white dark:bg-slate-900">
+          <div className="min-h-full bg-white dark:bg-neutral-900">
             <div className="mx-auto max-w-6xl px-4 py-6 md:px-6 md:py-8 lg:px-8">
               {children}
             </div>

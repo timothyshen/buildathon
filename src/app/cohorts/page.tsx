@@ -315,7 +315,7 @@ export default function CohortsPage() {
       )}
 
       {/* Filter & List */}
-      <div className="mx-auto max-w-6xl px-4 pb-16">
+      <div className="mx-auto max-w-6xl px-4 pb-16 min-h-[50vh]">
         <div className="flex items-center justify-between mb-8">
           <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
             {filter === "all" ? "All Buildathons" : `${filter.charAt(0).toUpperCase() + filter.slice(1)} Buildathons`}

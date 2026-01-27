@@ -1,179 +1,370 @@
-# Design Implementation Plan: Brand System Refresh
+# SWA.XYZ Brand Guide
 
-## Summary
-- **Scope:** Full brand system applied to Explore page
-- **Style:** "Linear Precision" - minimal, clean, developer-focused
-- **Winner variant:** A (with segmented control filters)
-- **Key improvements:** Modern B/W palette, clearer hierarchy, technical aesthetic
+## Brand Overview
 
-## Design Tokens
+**Brand Name:** SWA.XYZ (Story Web3 Accelerator)
+**Tagline:** Building the future of programmable IP
+**Style:** Linear Precision — minimal, clean, developer-focused
 
-### Colors
-Update `src/app/globals.css` to use these tokens:
+## Design Principles
 
-```css
-:root {
-  /* Core palette - keep neutral grays */
-  --background: oklch(1 0 0);           /* Pure white */
-  --foreground: oklch(0 0 0);           /* Pure black */
-
-  /* Primary = black for this theme */
-  --primary: oklch(0 0 0);
-  --primary-foreground: oklch(1 0 0);
-
-  /* Muted backgrounds */
-  --muted: oklch(0.97 0 0);             /* neutral-100 equivalent */
-  --muted-foreground: oklch(0.45 0 0);  /* neutral-500 */
-
-  /* Borders - subtle by default */
-  --border: oklch(0.9 0 0);             /* neutral-200 */
-  --border-hover: oklch(0 0 0);         /* Black on hover */
-
-  /* Winner accent */
-  --winner: oklch(0.55 0.15 145);       /* Green-600 */
-  --winner-light: oklch(0.9 0.05 145);  /* Green-100 */
-}
-```
-
-### Typography
-- **Headings:** System sans-serif, bold (700), tight tracking
-- **Body:** System sans-serif, normal (400)
-- **Tech tags:** Monospace font for technical authenticity
-
-### Spacing
-- **Card padding:** 20px (p-5)
-- **Section gaps:** 32px (gap-8)
-- **Element gaps:** 16px (gap-4)
-
-### Border Radius
-- **Buttons/inputs:** 6px (rounded-md)
-- **Cards:** 6px (rounded-md)
-- **Tags:** 4px (rounded)
-
-## Files to Change
-
-### Core Updates
-- [ ] `src/app/globals.css` - Update color tokens
-- [ ] `src/components/ui/button.tsx` - Ensure B/W variants work
-- [ ] `src/components/ui/card.tsx` - Add hover:border-black pattern
-
-### New Components
-- [ ] `src/components/ui/segmented-control.tsx` - New filter component
-
-### Explore Page
-- [ ] `src/app/explore/page.tsx` - Apply new design
-- [ ] `src/components/explore/project-card-explore.tsx` - Update card design
-- [ ] `src/components/explore/quick-filters.tsx` - Replace with SegmentedControl
-- [ ] `src/components/explore/advanced-search-input.tsx` - Update styling
-
-## Implementation Steps
-
-### 1. Create SegmentedControl Component
-```tsx
-// src/components/ui/segmented-control.tsx
-"use client";
-
-import { cn } from "@/lib/utils";
-
-interface SegmentedControlProps {
-  options: string[];
-  value: string;
-  onChange: (value: string) => void;
-  className?: string;
-}
-
-export function SegmentedControl({
-  options,
-  value,
-  onChange,
-  className,
-}: SegmentedControlProps) {
-  return (
-    <div className={cn("inline-flex p-1 bg-muted rounded-md", className)}>
-      {options.map((option) => (
-        <button
-          key={option}
-          onClick={() => onChange(option)}
-          className={cn(
-            "px-3 py-1.5 text-sm font-medium rounded transition-all",
-            value === option
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          )}
-        >
-          {option}
-        </button>
-      ))}
-    </div>
-  );
-}
-```
-
-### 2. Update Card Hover Pattern
-Add hover border transition to cards:
-```tsx
-className="border border-border transition-colors hover:border-foreground"
-```
-
-### 3. Update Project Card
-Key changes:
-- Add winner indicator line at top: `absolute -top-px left-4 right-4 h-0.5 bg-winner`
-- Use monospace for tech stack badges
-- Add border-t for footer section
-- Use solid black button for primary action (Demo)
-- Use outline button for secondary action (Code)
-
-### 4. Replace Quick Filters
-Replace the current pill-style QuickFilters with SegmentedControl:
-```tsx
-<SegmentedControl
-  options={["All", "Winners", "AI Projects", "Story Protocol"]}
-  value={activeFilter}
-  onChange={setActiveFilter}
-/>
-```
-
-### 5. Update Search Input
-- Keep current structure
-- Ensure border transitions to black on focus
-- Maintain icon placement
-
-## Required UI States
-
-### Cards
-- **Default:** Subtle border (--border)
-- **Hover:** Black border (--foreground)
-- **Winner:** Green top accent line
-
-### Buttons
-- **Primary (Demo):** Black bg, white text
-- **Secondary (Code):** White bg, black border, hover border-black
-- **Disabled:** 50% opacity
-
-### Segmented Control
-- **Inactive:** Muted background, muted text
-- **Active:** White background, black text, subtle shadow
-- **Hover (inactive):** Text darkens
-
-## Accessibility Checklist
-- [ ] Focus states visible on all interactive elements
-- [ ] Color contrast meets WCAG AA (black/white = excellent)
-- [ ] Keyboard navigation works for segmented control
-- [ ] Winner indicator has text alternative (badge)
-
-## Testing Checklist
-- [ ] Verify dark mode still works (update .dark tokens if needed)
-- [ ] Test responsive behavior on mobile
-- [ ] Verify hover states work correctly
-- [ ] Test filter functionality
-
-## Design Memory Updates
-After implementation, update these brand guidelines:
-- **Color approach:** Monochrome with green accent for success states
-- **Border pattern:** Subtle → black on hover
-- **Filter UI:** Segmented controls for small option sets
-- **Tech display:** Always use monospace for technical terms
+1. **Clarity over decoration** — Every element serves a purpose
+2. **Typography-first** — Let the content speak through clear hierarchy
+3. **Subtle interactivity** — Hover states and transitions that feel intentional
+4. **Technical authenticity** — Monospace for code/tech, system fonts for content
+5. **Accessible by default** — High contrast, clear focus states, keyboard-friendly
 
 ---
 
-*Generated by Design Lab*
+## Color System
+
+### Primary Palette (Light Mode)
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| `--background` | `#ffffff` (white) | Page backgrounds |
+| `--foreground` | `#000000` (black) | Primary text |
+| `--muted` | `#f5f5f5` (neutral-100) | Muted backgrounds, inputs |
+| `--muted-foreground` | `#737373` (neutral-500) | Secondary text |
+| `--border` | `#e5e5e5` (neutral-200) | Default borders |
+| `--border-hover` | `#000000` (black) | Borders on hover/focus |
+
+### Primary Palette (Dark Mode)
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| `--background` | `#0a0a0a` (neutral-950) | Page backgrounds |
+| `--foreground` | `#ffffff` (white) | Primary text |
+| `--muted` | `#262626` (neutral-800) | Muted backgrounds |
+| `--muted-foreground` | `#a3a3a3` (neutral-400) | Secondary text |
+| `--border` | `#262626` (neutral-800) | Default borders |
+| `--border-hover` | `#ffffff` (white) | Borders on hover/focus |
+
+### Semantic Colors
+
+| Type | Light | Dark | Usage |
+|------|-------|------|-------|
+| Success | `emerald-500` | `emerald-400` | Active states, wins |
+| Warning | `amber-500` | `amber-400` | Grand prizes, attention |
+| Info | `blue-500` | `blue-400` | Informational badges |
+| Error | `red-500` | `red-400` | Errors, destructive |
+
+### Prize Badge Colors
+
+| Prize Type | Background | Text | Icon |
+|------------|------------|------|------|
+| Grand Prize | `amber-100/900` | `amber-700/400` | Trophy |
+| Runner Up | `slate-100/800` | `slate-700/300` | Medal |
+| Track Winner | `violet-100/900` | `violet-700/400` | Award |
+| Honorable | `blue-100/900` | `blue-700/400` | Star |
+
+---
+
+## Typography
+
+### Font Stack
+
+```css
+--font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+--font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+```
+
+### Type Scale
+
+| Level | Size | Weight | Line Height | Usage |
+|-------|------|--------|-------------|-------|
+| Display | 4xl-6xl | Bold (700) | Tight (1.1) | Page titles, hero |
+| H1 | 3xl (30px) | Bold (700) | Tight (1.2) | Section headers |
+| H2 | 2xl (24px) | Bold (700) | Snug (1.3) | Card titles |
+| H3 | xl (20px) | Semibold (600) | Snug (1.3) | Subsections |
+| Body | base (16px) | Normal (400) | Normal (1.5) | Paragraphs |
+| Small | sm (14px) | Normal (400) | Normal (1.5) | Meta info, labels |
+| Caption | xs (12px) | Medium (500) | Normal (1.5) | Tags, badges |
+
+### Typography Patterns
+
+- **Headings:** Tight tracking (`tracking-tight`), bold weight
+- **Overlines:** Uppercase, wider tracking (`tracking-widest`), muted color
+- **Tech terms:** Monospace font (`font-mono`)
+- **Links:** Underline on hover, not by default
+
+---
+
+## Spacing
+
+### Base Scale
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| `space-1` | 4px | Tight gaps, inline spacing |
+| `space-2` | 8px | Between related elements |
+| `space-3` | 12px | Input padding, small gaps |
+| `space-4` | 16px | Component gaps |
+| `space-5` | 20px | Card padding |
+| `space-6` | 24px | Section padding (small) |
+| `space-8` | 32px | Section gaps |
+| `space-12` | 48px | Large section spacing |
+| `space-16` | 64px | Page section padding |
+
+### Layout Patterns
+
+- **Max width:** `max-w-6xl` (72rem / 1152px) for content
+- **Max width:** `max-w-7xl` (80rem / 1280px) for full-width sections
+- **Page padding:** `px-4 sm:px-6 lg:px-8`
+- **Section padding:** `py-16` for major sections
+
+---
+
+## Components
+
+### Cards
+
+```
+Default: border border-neutral-200 dark:border-neutral-800
+         rounded-md bg-white dark:bg-neutral-900
+
+Hover:   border-black dark:border-white (transition-colors)
+
+Winner:  Colored top line (absolute, h-0.5, left-4 right-4)
+```
+
+### Buttons
+
+**Primary (solid):**
+```
+bg-black dark:bg-white
+text-white dark:text-black
+hover:bg-neutral-800 dark:hover:bg-neutral-200
+rounded-md px-4 py-2
+```
+
+**Secondary (outline):**
+```
+border border-neutral-200 dark:border-neutral-700
+hover:border-black dark:hover:border-white
+rounded-md px-4 py-2
+```
+
+**Ghost:**
+```
+text-neutral-600 dark:text-neutral-400
+hover:text-black dark:hover:text-white
+hover:bg-neutral-100 dark:hover:bg-neutral-800
+```
+
+### Segmented Control
+
+```
+Container: p-1 bg-neutral-100 dark:bg-neutral-800 rounded-md
+
+Inactive:  text-neutral-600 dark:text-neutral-400
+           hover:text-black dark:hover:text-white
+
+Active:    bg-white dark:bg-neutral-900
+           text-black dark:text-white
+           shadow-sm rounded
+```
+
+### Badges
+
+**Status badges:**
+```
+px-2 py-0.5 text-xs rounded
++ semantic color classes
+```
+
+**Tech stack badges:**
+```
+px-2 py-0.5 text-xs font-mono rounded
+bg-neutral-100 dark:bg-neutral-800
+text-neutral-600 dark:text-neutral-400
+```
+
+### Inputs
+
+```
+w-full px-4 py-3 text-sm
+bg-white dark:bg-neutral-900
+border border-neutral-200 dark:border-neutral-800
+rounded-md
+
+Focus: outline-none border-black dark:border-white
+       transition-colors
+```
+
+---
+
+## Icons
+
+- **Library:** Lucide React
+- **Size:** 16px (h-4 w-4) for inline, 20px (h-5 w-5) for buttons
+- **Stroke width:** Default (2px)
+- **Color:** Inherit from text color
+
+### Common Icons
+
+| Purpose | Icon |
+|---------|------|
+| External link | `ExternalLink` |
+| GitHub | `Github` |
+| Search | `Search` |
+| Filter | `Filter` |
+| Close | `X` |
+| Menu | `Menu` |
+| Loading | `Loader2` (with animate-spin) |
+| Calendar | `Calendar` |
+| Users | `Users` |
+| Trophy | `Trophy` |
+| Award | `Award` |
+| Star | `Star` |
+| Medal | `Medal` |
+
+---
+
+## Motion
+
+### Timing
+
+| Type | Duration | Usage |
+|------|----------|-------|
+| Micro | 150ms | Button states, focus rings |
+| Default | 200ms | Hover states, color changes |
+| Emphasis | 300ms | Card transforms, slides |
+| Page | 500ms | Hero animations, reveals |
+
+### Easing
+
+- **Enter:** `ease-out` — Quick start, smooth end
+- **Exit:** `ease-in` — Smooth start, quick end
+- **Movement:** `ease-in-out` — Smooth both ends
+
+### Common Patterns
+
+```css
+/* Color transitions */
+transition-colors
+
+/* All property transitions */
+transition-all
+
+/* Transform transitions */
+transition-transform duration-500
+
+/* Spring-like effect */
+transition-all duration-300 ease-out
+```
+
+---
+
+## Layout Patterns
+
+### Page Header
+
+```tsx
+<header className="border-b border-neutral-200 dark:border-neutral-800">
+  <div className="mx-auto max-w-6xl px-6 py-16">
+    <h1 className="text-4xl font-bold tracking-tight text-black dark:text-white">
+      Page Title
+    </h1>
+    <p className="mt-3 text-lg text-neutral-500 dark:text-neutral-400 max-w-xl">
+      Description text
+    </p>
+  </div>
+</header>
+```
+
+### Content Grid
+
+```tsx
+<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+  {/* Cards */}
+</div>
+```
+
+### Empty State
+
+```tsx
+<div className="text-center py-16">
+  <Icon className="mx-auto h-12 w-12 text-neutral-300 dark:text-neutral-700" />
+  <h3 className="mt-4 text-lg font-semibold text-black dark:text-white">
+    Title
+  </h3>
+  <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400 max-w-md mx-auto">
+    Description
+  </p>
+</div>
+```
+
+---
+
+## Header Navigation
+
+### Style
+
+- Sticky with backdrop blur
+- Minimal B/W color scheme
+- Logo: Text-based "SWA.XYZ" in bold
+- Navigation: Ghost-style links, active state with subtle bg
+- CTAs: Primary button style for main action
+
+### Structure
+
+```
+[Logo] .............. [Nav Links] .............. [CTA / User Menu]
+```
+
+---
+
+## Responsive Breakpoints
+
+| Breakpoint | Width | Usage |
+|------------|-------|-------|
+| `sm` | 640px | Larger phones |
+| `md` | 768px | Tablets, show desktop nav |
+| `lg` | 1024px | Small laptops |
+| `xl` | 1280px | Standard desktops |
+| `2xl` | 1536px | Large displays |
+
+### Mobile Patterns
+
+- Hide complex elements below `md:`
+- Use `hidden md:block` for desktop-only
+- Use `md:hidden` for mobile-only
+- Stack layouts: `flex-col md:flex-row`
+
+---
+
+## Accessibility
+
+### Focus States
+
+```css
+focus:outline-none focus-visible:ring-2 focus-visible:ring-black
+dark:focus-visible:ring-white focus-visible:ring-offset-2
+```
+
+### Color Contrast
+
+- Text on light: minimum 4.5:1 ratio (black on white = 21:1 ✓)
+- Large text: minimum 3:1 ratio
+- UI elements: minimum 3:1 ratio
+
+### Interactive Elements
+
+- Minimum touch target: 44x44px
+- Keyboard navigable
+- Visible focus indicators
+- Descriptive link text
+
+---
+
+## File Naming
+
+- Components: `kebab-case.tsx` (e.g., `project-card-explore.tsx`)
+- Pages: `page.tsx` in route folders
+- Utils: `kebab-case.ts` (e.g., `prize-utils.ts`)
+- Types: Defined in `src/types/index.ts`
+
+---
+
+*Last updated: Brand refresh implementation*

@@ -23,8 +23,8 @@ import {
   Eye,
   Building2,
   TrendingUp,
-  Loader2,
 } from "lucide-react";
+import { Loading } from "@/components/ui/loading";
 import type { SponsorOrg, CohortSponsor, Cohort, Track, Submission, Workshop } from "@/types";
 
 export function SponsorDashboard() {
@@ -39,7 +39,10 @@ export function SponsorDashboard() {
 
   useEffect(() => {
     async function loadData() {
-      if (!user?.id) return;
+      if (!user?.id) {
+        setIsLoading(false);
+        return;
+      }
 
       // First, get the sponsor org for this user
       const sponsorResult = await sponsorsService.getOrgByUser(user.id);
@@ -79,11 +82,7 @@ export function SponsorDashboard() {
   }, [user?.id]);
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <Loading />;
   }
 
   if (!sponsor) {
