@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PlusCircle, FileText, Trophy, Clock, Loader2 } from "lucide-react";
 import type { Cohort, Submission } from "@/types";
+import { getSubmissionStatusColor } from "@/lib/utils/status";
 
 export function ParticipantDashboard() {
   const { user } = useAuth();
@@ -48,20 +49,6 @@ export function ParticipantDashboard() {
   const activeCohorts = cohorts.filter((c) => c.status === "active" && c.isPublic);
   const upcomingCohorts = cohorts.filter((c) => c.status === "upcoming" && c.isPublic);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "winner":
-        return "bg-yellow-100 text-yellow-800";
-      case "submitted":
-        return "bg-blue-100 text-blue-800";
-      case "draft":
-        return "bg-gray-100 text-gray-800";
-      case "under_review":
-        return "bg-purple-100 text-purple-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
 
   return (
     <div className="space-y-8">
@@ -182,7 +169,7 @@ export function ParticipantDashboard() {
                   <div>
                     <div className="flex items-center gap-2">
                       <h3 className="font-semibold">{submission.title}</h3>
-                      <Badge className={getStatusColor(submission.status)}>
+                      <Badge className={getSubmissionStatusColor(submission.status)}>
                         {submission.status}
                       </Badge>
                     </div>

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
 import { submissionsService } from "@/services";
 import type { Submission } from "@/types";
+import { getSubmissionStatusColor } from "@/lib/utils/status";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -37,22 +38,6 @@ export default function SubmissionsPage() {
     );
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "winner":
-        return "bg-yellow-100 text-yellow-800";
-      case "submitted":
-        return "bg-blue-100 text-blue-800";
-      case "draft":
-        return "bg-gray-100 text-gray-800";
-      case "under_review":
-        return "bg-purple-100 text-purple-800";
-      case "accepted":
-        return "bg-green-100 text-green-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
 
   return (
     <div className="space-y-8">
@@ -93,7 +78,7 @@ export default function SubmissionsPage() {
                   <div>
                     <div className="flex items-center gap-2">
                       <CardTitle>{submission.title}</CardTitle>
-                      <Badge className={getStatusColor(submission.status)}>
+                      <Badge className={getSubmissionStatusColor(submission.status)}>
                         {submission.status}
                       </Badge>
                     </div>

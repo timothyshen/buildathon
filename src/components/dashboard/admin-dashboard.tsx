@@ -16,6 +16,7 @@ import {
   Loader2,
 } from "lucide-react";
 import type { Cohort, Submission, Review, User } from "@/types";
+import { getCohortStatusColor } from "@/lib/utils/status";
 
 export function AdminDashboard() {
   const [cohorts, setCohorts] = useState<Cohort[]>([]);
@@ -56,20 +57,6 @@ export function AdminDashboard() {
   const pendingReviews = reviews.filter((r) => r.status === "pending").length;
   const totalJudges = judges.length;
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "active":
-        return "bg-green-100 text-green-800";
-      case "upcoming":
-        return "bg-blue-100 text-blue-800";
-      case "judging":
-        return "bg-purple-100 text-purple-800";
-      case "completed":
-        return "bg-gray-100 text-gray-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
 
   return (
     <div className="space-y-8">
@@ -169,7 +156,7 @@ export function AdminDashboard() {
                   <div>
                     <div className="flex items-center gap-2">
                       <h3 className="font-semibold">{cohort.name}</h3>
-                      <Badge className={getStatusColor(cohort.status)}>
+                      <Badge className={getCohortStatusColor(cohort.status)}>
                         {cohort.status}
                       </Badge>
                     </div>

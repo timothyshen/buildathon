@@ -30,6 +30,7 @@ export default function WorkshopsPage() {
   // Data loading state
   const [workshops, setWorkshops] = useState<Workshop[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // State management
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
@@ -43,31 +44,42 @@ export default function WorkshopsPage() {
   // Load workshops and RSVPs
   useEffect(() => {
     async function loadData() {
-      const { data: workshopList } = await workshopsService.list();
-      setWorkshops(workshopList);
+      try {
+        const { data: workshopList, success, error: workshopsError } = await workshopsService.list();
+        if (!success) {
+          setError(workshopsError || "Failed to load workshops");
+          setIsLoading(false);
+          return;
+        }
 
-      // Load RSVPs for all published workshops
-      const publishedIds = workshopList
-        .filter((w) => w.status === "published" && w.scheduledAt)
-        .map((w) => w.id);
+        setWorkshops(workshopList);
 
-      const rsvpPromises = publishedIds.map(async (id) => {
-        const { data } = await workshopsService.getRSVPs(id);
-        return { id, rsvps: data };
-      });
+        // Load RSVPs for all published workshops
+        const publishedIds = workshopList
+          .filter((w) => w.status === "published" && w.scheduledAt)
+          .map((w) => w.id);
 
-      const rsvpResults = await Promise.all(rsvpPromises);
+        const rsvpPromises = publishedIds.map(async (id) => {
+          const { data } = await workshopsService.getRSVPs(id);
+          return { id, rsvps: data };
+        });
 
-      const counts: Record<string, number> = {};
-      const allRsvps: WorkshopRSVP[] = [];
-      for (const { id, rsvps } of rsvpResults) {
-        counts[id] = rsvps.length;
-        allRsvps.push(...rsvps);
+        const rsvpResults = await Promise.all(rsvpPromises);
+
+        const counts: Record<string, number> = {};
+        const allRsvps: WorkshopRSVP[] = [];
+        for (const { id, rsvps } of rsvpResults) {
+          counts[id] = rsvps.length;
+          allRsvps.push(...rsvps);
+        }
+
+        setRsvpCounts(counts);
+        setLocalRsvps(allRsvps);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "An unexpected error occurred");
+      } finally {
+        setIsLoading(false);
       }
-
-      setRsvpCounts(counts);
-      setLocalRsvps(allRsvps);
-      setIsLoading(false);
     }
     loadData();
   }, []);
@@ -81,6 +93,18 @@ export default function WorkshopsPage() {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+        <div className="text-destructive text-lg">Failed to load workshops</div>
+        <p className="text-muted-foreground text-sm">{error}</p>
+        <Button variant="outline" onClick={() => window.location.reload()}>
+          Try Again
+        </Button>
       </div>
     );
   }

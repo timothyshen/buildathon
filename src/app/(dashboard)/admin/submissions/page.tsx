@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/table";
 import { Search, ExternalLink, Eye, Loader2 } from "lucide-react";
 import type { Submission, Cohort } from "@/types";
+import { getSubmissionStatusColor } from "@/lib/utils/status";
 
 export default function AdminSubmissionsPage() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
@@ -73,22 +74,6 @@ export default function AdminSubmissionsPage() {
     return matchesSearch && matchesCohort && matchesStatus;
   });
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "winner":
-        return "bg-yellow-100 text-yellow-800";
-      case "submitted":
-        return "bg-blue-100 text-blue-800";
-      case "draft":
-        return "bg-gray-100 text-gray-800";
-      case "under_review":
-        return "bg-purple-100 text-purple-800";
-      case "accepted":
-        return "bg-green-100 text-green-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -180,7 +165,7 @@ export default function AdminSubmissionsPage() {
                   </TableCell>
                   <TableCell className="hidden md:table-cell">{submission.track?.name || "Open"}</TableCell>
                   <TableCell>
-                    <Badge className={getStatusColor(submission.status)}>
+                    <Badge className={getSubmissionStatusColor(submission.status)}>
                       {submission.status}
                     </Badge>
                   </TableCell>

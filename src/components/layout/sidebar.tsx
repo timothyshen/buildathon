@@ -55,28 +55,44 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
   const [pendingReviews, setPendingReviews] = useState(0);
   const [totalSubmissions, setTotalSubmissions] = useState(0);
 
-  // Load badge counts
+  // Load badge counts - using targeted queries for efficiency
   useEffect(() => {
     async function loadCounts() {
       if (!user) return;
 
-      const [submissionsRes, reviewsRes] = await Promise.all([
-        submissionsService.list(),
-        reviewsService.list(),
-      ]);
+      // Only fetch what's needed based on user role
+      const promises: Promise<unknown>[] = [];
 
-      const submissions = submissionsRes.data;
-      const reviews = reviewsRes.data;
+      // Participants need their own submissions for draft count
+      if (user.role === "participant") {
+        promises.push(
+          submissionsService.getByUser(user.id).then((res) => {
+            const drafts = res.data.filter((s) => s.status === "draft").length;
+            setDraftCount(drafts);
+          })
+        );
+      }
 
-      // Calculate dynamic badges
-      const userSubmissions = submissions.filter((s) =>
-        s.team?.members.some((m) => m.userId === user.id)
-      );
-      setDraftCount(userSubmissions.filter((s) => s.status === "draft").length);
-      setPendingReviews(
-        reviews.filter((r) => r.judgeId === user.id && r.status === "pending").length
-      );
-      setTotalSubmissions(submissions.length);
+      // Judges need their pending reviews
+      if (user.role === "judge") {
+        promises.push(
+          reviewsService.getByJudge(user.id).then((res) => {
+            const pending = res.data.filter((r) => r.status === "pending").length;
+            setPendingReviews(pending);
+          })
+        );
+      }
+
+      // Admins need total submission count
+      if (user.role === "admin") {
+        promises.push(
+          submissionsService.list({ pageSize: 1 }).then((res) => {
+            setTotalSubmissions(res.total);
+          })
+        );
+      }
+
+      await Promise.all(promises);
     }
     loadCounts();
   }, [user]);

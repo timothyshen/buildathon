@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
 import { submissionsService, reviewsService, tracksService } from "@/services";
 import type { Submission, Review, Track } from "@/types";
+import { getSubmissionStatusColor } from "@/lib/utils/status";
 import { ProjectGallery } from "@/components/projects/project-gallery";
 import { ProjectTeam } from "@/components/projects/project-team";
 import { AdminNav } from "@/components/admin/admin-nav";
@@ -38,22 +39,6 @@ interface AdminSubmissionDetailPageProps {
   params: Promise<{ id: string }>;
 }
 
-function getStatusColor(status: string) {
-  switch (status) {
-    case "winner":
-      return "bg-yellow-100 text-yellow-800";
-    case "submitted":
-      return "bg-blue-100 text-blue-800";
-    case "draft":
-      return "bg-gray-100 text-gray-800";
-    case "under_review":
-      return "bg-purple-100 text-purple-800";
-    case "accepted":
-      return "bg-green-100 text-green-800";
-    default:
-      return "bg-gray-100 text-gray-800";
-  }
-}
 
 function getInitials(name: string): string {
   return name
@@ -181,7 +166,7 @@ export default function AdminSubmissionDetailPage({ params }: AdminSubmissionDet
           )}
         </div>
         <div className="flex items-center gap-3">
-          <Badge className={getStatusColor(currentStatus)}>{currentStatus}</Badge>
+          <Badge className={getSubmissionStatusColor(currentStatus as Submission["status"])}>{currentStatus}</Badge>
           <Select
             value={currentStatus}
             onValueChange={handleStatusChange}

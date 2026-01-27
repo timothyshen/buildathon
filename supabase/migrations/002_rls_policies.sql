@@ -28,37 +28,37 @@ ALTER TABLE templates ENABLE ROW LEVEL SECURITY;
 -- ============================================
 
 -- Get current user's role
-CREATE OR REPLACE FUNCTION auth.user_role()
+CREATE OR REPLACE FUNCTION public.user_role()
 RETURNS user_role AS $$
   SELECT role FROM public.users WHERE id = auth.uid()
 $$ LANGUAGE sql SECURITY DEFINER STABLE;
 
 -- Check if current user is admin
-CREATE OR REPLACE FUNCTION auth.is_admin()
+CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS BOOLEAN AS $$
-  SELECT auth.user_role() = 'admin'
+  SELECT public.user_role() = 'admin'
 $$ LANGUAGE sql SECURITY DEFINER STABLE;
 
 -- Check if current user is sponsor
-CREATE OR REPLACE FUNCTION auth.is_sponsor()
+CREATE OR REPLACE FUNCTION public.is_sponsor()
 RETURNS BOOLEAN AS $$
-  SELECT auth.user_role() = 'sponsor'
+  SELECT public.user_role() = 'sponsor'
 $$ LANGUAGE sql SECURITY DEFINER STABLE;
 
 -- Check if current user is judge
-CREATE OR REPLACE FUNCTION auth.is_judge()
+CREATE OR REPLACE FUNCTION public.is_judge()
 RETURNS BOOLEAN AS $$
-  SELECT auth.user_role() = 'judge'
+  SELECT public.user_role() = 'judge'
 $$ LANGUAGE sql SECURITY DEFINER STABLE;
 
 -- Get current user's sponsor org id
-CREATE OR REPLACE FUNCTION auth.user_sponsor_org_id()
+CREATE OR REPLACE FUNCTION public.user_sponsor_org_id()
 RETURNS UUID AS $$
   SELECT sponsor_org_id FROM public.users WHERE id = auth.uid()
 $$ LANGUAGE sql SECURITY DEFINER STABLE;
 
 -- Check if user is team member
-CREATE OR REPLACE FUNCTION auth.is_team_member(team_id UUID)
+CREATE OR REPLACE FUNCTION public.is_team_member(team_id UUID)
 RETURNS BOOLEAN AS $$
   SELECT EXISTS (
     SELECT 1 FROM public.team_members
@@ -67,7 +67,7 @@ RETURNS BOOLEAN AS $$
 $$ LANGUAGE sql SECURITY DEFINER STABLE;
 
 -- Check if user is team lead
-CREATE OR REPLACE FUNCTION auth.is_team_lead(team_id UUID)
+CREATE OR REPLACE FUNCTION public.is_team_lead(team_id UUID)
 RETURNS BOOLEAN AS $$
   SELECT EXISTS (
     SELECT 1 FROM public.team_members
@@ -93,7 +93,7 @@ CREATE POLICY "Users can update own profile"
 -- Admins can manage all users
 CREATE POLICY "Admins can manage all users"
   ON users FOR ALL
-  USING (auth.is_admin());
+  USING (public.is_admin());
 
 -- ============================================
 -- COHORTS POLICIES
@@ -102,12 +102,12 @@ CREATE POLICY "Admins can manage all users"
 -- Public cohorts viewable by everyone, all cohorts viewable by admins
 CREATE POLICY "Cohorts are viewable"
   ON cohorts FOR SELECT
-  USING (is_public = true OR auth.is_admin());
+  USING (is_public = true OR public.is_admin());
 
 -- Only admins can manage cohorts
 CREATE POLICY "Admins can manage cohorts"
   ON cohorts FOR ALL
-  USING (auth.is_admin());
+  USING (public.is_admin());
 
 -- ============================================
 -- SPONSOR ORGS POLICIES
@@ -121,13 +121,13 @@ CREATE POLICY "Sponsor orgs are viewable by everyone"
 -- Admins can manage sponsor orgs
 CREATE POLICY "Admins can manage sponsor orgs"
   ON sponsor_orgs FOR ALL
-  USING (auth.is_admin());
+  USING (public.is_admin());
 
 -- Sponsors can update their own org
 CREATE POLICY "Sponsors can update own org"
   ON sponsor_orgs FOR UPDATE
-  USING (id = auth.user_sponsor_org_id())
-  WITH CHECK (id = auth.user_sponsor_org_id());
+  USING (id = public.user_sponsor_org_id())
+  WITH CHECK (id = public.user_sponsor_org_id());
 
 -- ============================================
 -- COHORT SPONSORS POLICIES
@@ -141,7 +141,7 @@ CREATE POLICY "Cohort sponsors are viewable by everyone"
 -- Admins can manage cohort sponsors
 CREATE POLICY "Admins can manage cohort sponsors"
   ON cohort_sponsors FOR ALL
-  USING (auth.is_admin());
+  USING (public.is_admin());
 
 -- ============================================
 -- TRACKS POLICIES
@@ -155,12 +155,12 @@ CREATE POLICY "Tracks are viewable by everyone"
 -- Admins can manage all tracks
 CREATE POLICY "Admins can manage tracks"
   ON tracks FOR ALL
-  USING (auth.is_admin());
+  USING (public.is_admin());
 
 -- Sponsors can manage their own tracks
 CREATE POLICY "Sponsors can manage own tracks"
   ON tracks FOR ALL
-  USING (sponsor_org_id = auth.user_sponsor_org_id());
+  USING (sponsor_org_id = public.user_sponsor_org_id());
 
 -- ============================================
 -- TEAMS POLICIES
@@ -179,18 +179,18 @@ CREATE POLICY "Authenticated users can create teams"
 -- Team leads can update team
 CREATE POLICY "Team leads can update team"
   ON teams FOR UPDATE
-  USING (auth.is_team_lead(id))
-  WITH CHECK (auth.is_team_lead(id));
+  USING (public.is_team_lead(id))
+  WITH CHECK (public.is_team_lead(id));
 
 -- Team leads can delete team
 CREATE POLICY "Team leads can delete team"
   ON teams FOR DELETE
-  USING (auth.is_team_lead(id));
+  USING (public.is_team_lead(id));
 
 -- Admins can manage all teams
 CREATE POLICY "Admins can manage all teams"
   ON teams FOR ALL
-  USING (auth.is_admin());
+  USING (public.is_admin());
 
 -- ============================================
 -- TEAM MEMBERS POLICIES
@@ -204,7 +204,7 @@ CREATE POLICY "Team members are viewable by everyone"
 -- Team leads can manage team members
 CREATE POLICY "Team leads can manage members"
   ON team_members FOR ALL
-  USING (auth.is_team_lead(team_id));
+  USING (public.is_team_lead(team_id));
 
 -- Users can remove themselves from team
 CREATE POLICY "Users can leave team"
@@ -214,7 +214,7 @@ CREATE POLICY "Users can leave team"
 -- Admins can manage all team members
 CREATE POLICY "Admins can manage all team members"
   ON team_members FOR ALL
-  USING (auth.is_admin());
+  USING (public.is_admin());
 
 -- ============================================
 -- TEAM INVITES POLICIES
@@ -223,12 +223,12 @@ CREATE POLICY "Admins can manage all team members"
 -- Team members can view invites for their team
 CREATE POLICY "Team members can view invites"
   ON team_invites FOR SELECT
-  USING (auth.is_team_member(team_id) OR email = (SELECT email FROM users WHERE id = auth.uid()));
+  USING (public.is_team_member(team_id) OR email = (SELECT email FROM users WHERE id = auth.uid()));
 
 -- Team leads can manage invites
 CREATE POLICY "Team leads can manage invites"
   ON team_invites FOR ALL
-  USING (auth.is_team_lead(team_id));
+  USING (public.is_team_lead(team_id));
 
 -- Users can update invites sent to them
 CREATE POLICY "Users can respond to their invites"
@@ -239,7 +239,7 @@ CREATE POLICY "Users can respond to their invites"
 -- Admins can manage all invites
 CREATE POLICY "Admins can manage all invites"
   ON team_invites FOR ALL
-  USING (auth.is_admin());
+  USING (public.is_admin());
 
 -- ============================================
 -- SUBMISSIONS POLICIES
@@ -248,28 +248,28 @@ CREATE POLICY "Admins can manage all invites"
 -- Submitted submissions are viewable by everyone
 CREATE POLICY "Submitted submissions are viewable"
   ON submissions FOR SELECT
-  USING (status != 'draft' OR auth.is_team_member(team_id) OR auth.is_admin() OR auth.is_judge());
+  USING (status != 'draft' OR public.is_team_member(team_id) OR public.is_admin() OR public.is_judge());
 
 -- Team members can create submissions
 CREATE POLICY "Team members can create submissions"
   ON submissions FOR INSERT
-  WITH CHECK (auth.is_team_member(team_id));
+  WITH CHECK (public.is_team_member(team_id));
 
 -- Team members can update their submissions
 CREATE POLICY "Team members can update submissions"
   ON submissions FOR UPDATE
-  USING (auth.is_team_member(team_id))
-  WITH CHECK (auth.is_team_member(team_id));
+  USING (public.is_team_member(team_id))
+  WITH CHECK (public.is_team_member(team_id));
 
 -- Team leads can delete draft submissions
 CREATE POLICY "Team leads can delete draft submissions"
   ON submissions FOR DELETE
-  USING (status = 'draft' AND auth.is_team_lead(team_id));
+  USING (status = 'draft' AND public.is_team_lead(team_id));
 
 -- Admins can manage all submissions
 CREATE POLICY "Admins can manage all submissions"
   ON submissions FOR ALL
-  USING (auth.is_admin());
+  USING (public.is_admin());
 
 -- ============================================
 -- SUBMISSION TRACKS POLICIES
@@ -286,14 +286,14 @@ CREATE POLICY "Team members can manage submission tracks"
   USING (
     EXISTS (
       SELECT 1 FROM submissions s
-      WHERE s.id = submission_id AND auth.is_team_member(s.team_id)
+      WHERE s.id = submission_id AND public.is_team_member(s.team_id)
     )
   );
 
 -- Admins can manage all
 CREATE POLICY "Admins can manage submission tracks"
   ON submission_tracks FOR ALL
-  USING (auth.is_admin());
+  USING (public.is_admin());
 
 -- ============================================
 -- REVIEWS POLICIES
@@ -302,7 +302,7 @@ CREATE POLICY "Admins can manage submission tracks"
 -- Judges can view their assigned reviews
 CREATE POLICY "Judges can view assigned reviews"
   ON reviews FOR SELECT
-  USING (judge_id = auth.uid() OR auth.is_admin());
+  USING (judge_id = auth.uid() OR public.is_admin());
 
 -- Judges can update their reviews
 CREATE POLICY "Judges can update own reviews"
@@ -313,7 +313,7 @@ CREATE POLICY "Judges can update own reviews"
 -- Admins can manage all reviews
 CREATE POLICY "Admins can manage all reviews"
   ON reviews FOR ALL
-  USING (auth.is_admin());
+  USING (public.is_admin());
 
 -- ============================================
 -- WORKSHOPS POLICIES
@@ -322,17 +322,17 @@ CREATE POLICY "Admins can manage all reviews"
 -- Published workshops are viewable by everyone
 CREATE POLICY "Published workshops are viewable"
   ON workshops FOR SELECT
-  USING (status = 'published' OR auth.is_admin() OR sponsor_org_id = auth.user_sponsor_org_id());
+  USING (status = 'published' OR public.is_admin() OR sponsor_org_id = public.user_sponsor_org_id());
 
 -- Admins can manage all workshops
 CREATE POLICY "Admins can manage all workshops"
   ON workshops FOR ALL
-  USING (auth.is_admin());
+  USING (public.is_admin());
 
 -- Sponsors can manage their workshops
 CREATE POLICY "Sponsors can manage own workshops"
   ON workshops FOR ALL
-  USING (sponsor_org_id = auth.user_sponsor_org_id());
+  USING (sponsor_org_id = public.user_sponsor_org_id());
 
 -- ============================================
 -- WORKSHOP COHORTS POLICIES
@@ -346,7 +346,7 @@ CREATE POLICY "Workshop cohorts are viewable"
 -- Admins can manage workshop cohorts
 CREATE POLICY "Admins can manage workshop cohorts"
   ON workshop_cohorts FOR ALL
-  USING (auth.is_admin());
+  USING (public.is_admin());
 
 -- ============================================
 -- WORKSHOP RSVPS POLICIES
@@ -365,7 +365,7 @@ CREATE POLICY "Users can manage own RSVPs"
 -- Admins can manage all RSVPs
 CREATE POLICY "Admins can manage all RSVPs"
   ON workshop_rsvps FOR ALL
-  USING (auth.is_admin());
+  USING (public.is_admin());
 
 -- ============================================
 -- WORKSHOP VERSIONS POLICIES
@@ -375,10 +375,10 @@ CREATE POLICY "Admins can manage all RSVPs"
 CREATE POLICY "Workshop versions viewable by admins and sponsors"
   ON workshop_versions FOR SELECT
   USING (
-    auth.is_admin() OR
+    public.is_admin() OR
     EXISTS (
       SELECT 1 FROM workshops w
-      WHERE w.id = workshop_id AND w.sponsor_org_id = auth.user_sponsor_org_id()
+      WHERE w.id = workshop_id AND w.sponsor_org_id = public.user_sponsor_org_id()
     )
   );
 
@@ -386,10 +386,10 @@ CREATE POLICY "Workshop versions viewable by admins and sponsors"
 CREATE POLICY "Admins and sponsors can create versions"
   ON workshop_versions FOR INSERT
   WITH CHECK (
-    auth.is_admin() OR
+    public.is_admin() OR
     EXISTS (
       SELECT 1 FROM workshops w
-      WHERE w.id = workshop_id AND w.sponsor_org_id = auth.user_sponsor_org_id()
+      WHERE w.id = workshop_id AND w.sponsor_org_id = public.user_sponsor_org_id()
     )
   );
 
@@ -415,7 +415,7 @@ CREATE POLICY "Users can delete own media"
 -- Admins can manage all media
 CREATE POLICY "Admins can manage all media"
   ON media_assets FOR ALL
-  USING (auth.is_admin());
+  USING (public.is_admin());
 
 -- ============================================
 -- TEMPLATES POLICIES
@@ -429,4 +429,4 @@ CREATE POLICY "Templates are viewable by everyone"
 -- Admins can manage templates
 CREATE POLICY "Admins can manage templates"
   ON templates FOR ALL
-  USING (auth.is_admin());
+  USING (public.is_admin());

@@ -86,6 +86,7 @@ export function ProjectGallery({ screenshots, videoUrl }: ProjectGalleryProps) {
               size="icon"
               className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white"
               onClick={goToPrevious}
+              aria-label="Previous image"
             >
               <ChevronLeft className="h-6 w-6" />
             </Button>
@@ -94,6 +95,7 @@ export function ProjectGallery({ screenshots, videoUrl }: ProjectGalleryProps) {
               size="icon"
               className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white"
               onClick={goToNext}
+              aria-label="Next image"
             >
               <ChevronRight className="h-6 w-6" />
             </Button>
@@ -108,6 +110,8 @@ export function ProjectGallery({ screenshots, videoUrl }: ProjectGalleryProps) {
             <button
               key={index}
               onClick={() => setCurrentIndex(index)}
+              aria-label={`View ${item.type === "video" ? "video" : "image"} ${index + 1}`}
+              aria-current={index === currentIndex ? "true" : undefined}
               className={`flex-shrink-0 w-20 h-14 rounded-md overflow-hidden border-2 transition-all ${
                 index === currentIndex
                   ? "border-primary ring-2 ring-primary/30"

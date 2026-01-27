@@ -125,7 +125,7 @@ function HeroCard({ cohort }: { cohort: EnrichedCohort }) {
               {featuredProject?.screenshots?.[0] ? (
                 <img
                   src={featuredProject.screenshots[0]}
-                  alt=""
+                  alt={`Screenshot from ${featuredProject.title}`}
                   className="h-full w-full object-cover"
                 />
               ) : (
@@ -159,7 +159,7 @@ function ListCard({ cohort }: { cohort: EnrichedCohort }) {
         {/* Thumbnail */}
         <div className="hidden sm:block h-32 w-32 shrink-0 rounded-xl bg-slate-100 dark:bg-slate-800 overflow-hidden">
           {cohort.bannerImage ? (
-            <img src={cohort.bannerImage} alt="" className="h-full w-full object-cover" />
+            <img src={cohort.bannerImage} alt={`${cohort.name} banner`} className="h-full w-full object-cover" />
           ) : (
             <div className="h-full w-full flex items-center justify-center">
               <Calendar className="h-8 w-8 text-slate-400" />
@@ -206,7 +206,7 @@ function ListCard({ cohort }: { cohort: EnrichedCohort }) {
             {sponsors.length > 0 && (
               <div className="ml-auto flex items-center -space-x-2">
                 {sponsors.slice(0, 3).map((s) => (
-                  <img key={s.id} src={s.logo} alt="" className="h-6 w-6 rounded-full border-2 border-white dark:border-slate-900 bg-white" />
+                  <img key={s.id} src={s.logo} alt={`${s.name} logo`} className="h-6 w-6 rounded-full border-2 border-white dark:border-slate-900 bg-white" />
                 ))}
               </div>
             )}
@@ -221,32 +221,44 @@ export default function CohortsPage() {
   const [filter, setFilter] = useState<string>("all");
   const [enrichedCohorts, setEnrichedCohorts] = useState<EnrichedCohort[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadData() {
-      // Load all cohorts
-      const { data: cohorts } = await cohortsService.list();
-      const publicCohorts = cohorts.filter((c: Cohort) => c.isPublic);
+      try {
+        // Load all cohorts
+        const { data: cohorts, success, error: cohortsError } = await cohortsService.list();
+        if (!success) {
+          setError(cohortsError || "Failed to load cohorts");
+          setIsLoading(false);
+          return;
+        }
 
-      // Load tracks, sponsors, and submissions for each cohort in parallel
-      const enriched = await Promise.all(
-        publicCohorts.map(async (cohort: Cohort) => {
-          const [tracksRes, sponsorsRes, submissionsRes] = await Promise.all([
-            tracksService.getByCohort(cohort.id),
-            sponsorsService.getCohortSponsors(cohort.id),
-            submissionsService.getByCohort(cohort.id),
-          ]);
-          return {
-            ...cohort,
-            tracks: tracksRes.data,
-            sponsors: sponsorsRes.data,
-            submissions: submissionsRes.data,
-          };
-        })
-      );
+        const publicCohorts = cohorts.filter((c: Cohort) => c.isPublic);
 
-      setEnrichedCohorts(enriched);
-      setIsLoading(false);
+        // Load tracks, sponsors, and submissions for each cohort in parallel
+        const enriched = await Promise.all(
+          publicCohorts.map(async (cohort: Cohort) => {
+            const [tracksRes, sponsorsRes, submissionsRes] = await Promise.all([
+              tracksService.getByCohort(cohort.id),
+              sponsorsService.getCohortSponsors(cohort.id),
+              submissionsService.getByCohort(cohort.id),
+            ]);
+            return {
+              ...cohort,
+              tracks: tracksRes.data,
+              sponsors: sponsorsRes.data,
+              submissions: submissionsRes.data,
+            };
+          })
+        );
+
+        setEnrichedCohorts(enriched);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "An unexpected error occurred");
+      } finally {
+        setIsLoading(false);
+      }
     }
     loadData();
   }, []);
@@ -264,6 +276,18 @@ export default function CohortsPage() {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+        <div className="text-destructive text-lg">Failed to load cohorts</div>
+        <p className="text-muted-foreground text-sm">{error}</p>
+        <Button variant="outline" onClick={() => window.location.reload()}>
+          Try Again
+        </Button>
       </div>
     );
   }
