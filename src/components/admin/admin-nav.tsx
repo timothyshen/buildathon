@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Calendar, FileText, Users, Building2, GraduationCap } from "lucide-react";
+import { Calendar, FileText, Users, Building2, GraduationCap, UserCog } from "lucide-react";
 
 const adminNavItems = [
   {
@@ -25,6 +25,11 @@ const adminNavItems = [
     label: "Sponsors",
     href: "/admin/sponsors",
     icon: Building2,
+  },
+  {
+    label: "Users",
+    href: "/admin/users",
+    icon: UserCog,
   },
   {
     label: "Workshops",
