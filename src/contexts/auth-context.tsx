@@ -3,12 +3,13 @@
 import { createContext, useContext, useState, useCallback, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@/types";
-import { authService, type OnboardingData } from "@/services";
+import { authService, type OnboardingData, type RegisterData } from "@/services";
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  register: (data: RegisterData) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   switchRole: (role: User["role"]) => void;
   completeOnboarding: (data: OnboardingData) => void;
@@ -87,6 +88,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { success: false, error: error || "Login failed" };
   }, []);
 
+  const register = useCallback(async (data: RegisterData): Promise<{ success: boolean; error?: string }> => {
+    const { data: userData, success, error } = await authService.register(data);
+
+    if (success && userData) {
+      setUser(userData);
+      return { success: true };
+    }
+
+    return { success: false, error: error || "Registration failed" };
+  }, []);
+
   const logout = useCallback(async () => {
     await authService.logout();
     setUser(null);
@@ -113,7 +125,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [user]);
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout, switchRole, completeOnboarding, refreshUser }}>
+    <AuthContext.Provider value={{ user, isLoading, login, register, logout, switchRole, completeOnboarding, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

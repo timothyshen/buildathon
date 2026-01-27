@@ -15,8 +15,15 @@ export interface OnboardingData {
   github?: string;
 }
 
+export interface RegisterData {
+  email: string;
+  password: string;
+  name: string;
+}
+
 export interface AuthService {
   login(email: string, password: string): Promise<ServiceResponse<User>>;
+  register(data: RegisterData): Promise<ServiceResponse<User>>;
   logout(): Promise<ServiceResponse<void>>;
   getCurrentUser(): Promise<ServiceResponse<User | null>>;
   switchRole(role: User["role"]): Promise<ServiceResponse<User>>;
@@ -45,62 +52,12 @@ function toUser(row: Record<string, unknown>): User {
 async function login(email: string, password: string): Promise<ServiceResponse<User>> {
   const supabase = createClient();
 
-  // Try to sign in with existing account
   const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
 
   if (authError) {
-    // If user not found, try to create account
-    if (authError.message.includes("Invalid login credentials")) {
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            name: email.split("@")[0],
-            role: "participant",
-          },
-        },
-      });
-
-      if (signUpError) {
-        return error(signUpError.message, null as unknown as User);
-      }
-
-      if (!signUpData.user) {
-        return error("Failed to create account", null as unknown as User);
-      }
-
-      // Wait a moment for trigger to create user profile
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      // Fetch the user profile (created by trigger)
-      const { data: userData, error: userError } = await supabase
-        .from("users")
-        .select("*")
-        .eq("id", signUpData.user.id)
-        .maybeSingle();
-
-      if (userError) {
-        return error(userError.message, null as unknown as User);
-      }
-
-      if (!userData) {
-        // Profile not created yet - create minimal user object from auth data
-        return success({
-          id: signUpData.user.id,
-          email: signUpData.user.email || email,
-          name: email.split("@")[0],
-          role: "participant",
-          createdAt: new Date(),
-        });
-      }
-
-      return success(toUser(userData));
-    }
-
     return error(authError.message, null as unknown as User);
   }
 
@@ -127,6 +84,61 @@ async function login(email: string, password: string): Promise<ServiceResponse<U
       name: authData.user.user_metadata?.name || email.split("@")[0],
       role: (authData.user.user_metadata?.role as User["role"]) || "participant",
       createdAt: new Date(authData.user.created_at),
+    });
+  }
+
+  return success(toUser(userData));
+}
+
+async function register(data: RegisterData): Promise<ServiceResponse<User>> {
+  const supabase = createClient();
+
+  const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+    email: data.email,
+    password: data.password,
+    options: {
+      data: {
+        name: data.name,
+        role: "participant",
+      },
+    },
+  });
+
+  if (signUpError) {
+    return error(signUpError.message, null as unknown as User);
+  }
+
+  if (!signUpData.user) {
+    return error("Failed to create account", null as unknown as User);
+  }
+
+  // Check if email confirmation is required
+  if (signUpData.user.identities?.length === 0) {
+    return error("An account with this email already exists", null as unknown as User);
+  }
+
+  // Wait a moment for trigger to create user profile
+  await new Promise((resolve) => setTimeout(resolve, 500));
+
+  // Fetch the user profile (created by trigger)
+  const { data: userData, error: userError } = await supabase
+    .from("users")
+    .select("*")
+    .eq("id", signUpData.user.id)
+    .maybeSingle();
+
+  if (userError) {
+    return error(userError.message, null as unknown as User);
+  }
+
+  if (!userData) {
+    // Profile not created yet - create minimal user object from auth data
+    return success({
+      id: signUpData.user.id,
+      email: signUpData.user.email || data.email,
+      name: data.name,
+      role: "participant",
+      createdAt: new Date(),
     });
   }
 
@@ -276,6 +288,7 @@ async function updateProfile(data: Partial<User>): Promise<ServiceResponse<User>
 
 export const authService: AuthService = {
   login,
+  register,
   logout,
   getCurrentUser,
   switchRole,

@@ -23,7 +23,7 @@ export type { ServiceResponse, PaginatedResponse, QueryOptions } from "./types";
 export { success, error, paginated, delay, generateId } from "./types";
 
 // Export service-specific types
-export type { OnboardingData, AuthService } from "./auth.service";
+export type { OnboardingData, RegisterData, AuthService } from "./auth.service";
 export type { UsersService } from "./users.service";
 export type { CohortsService } from "./cohorts.service";
 export type { TeamsService, CreateTeamData, CreateInviteData } from "./teams.service";
