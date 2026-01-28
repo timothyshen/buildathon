@@ -60,6 +60,26 @@ export default function AdminSponsorsPage() {
     loadData();
   }, []);
 
+  // Get sponsor orgs with their cohort participation info
+  // Must be called before any early returns to respect Rules of Hooks
+  const sponsorsWithCohorts = useMemo(() => {
+    return sponsorOrgs.map(org => {
+      const cohortLinks = cohortSponsors.filter(cs => cs.sponsorOrgId === org.id);
+      return {
+        ...org,
+        cohortIds: cohortLinks.map(cs => cs.cohortId),
+        totalContribution: cohortLinks.reduce((sum, cs) => sum + cs.prizePoolContribution, 0),
+        hasDedicatedTrack: cohortLinks.some(cs => cs.hasDedicatedTrack),
+        highestTier: cohortLinks.length > 0
+          ? cohortLinks.sort((a, b) => {
+              const tierOrder = { platinum: 0, gold: 1, silver: 2, bronze: 3, community: 4 };
+              return tierOrder[a.tier] - tierOrder[b.tier];
+            })[0].tier
+          : null,
+      };
+    });
+  }, [sponsorOrgs, cohortSponsors]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -109,25 +129,6 @@ export default function AdminSponsorsPage() {
     if (!open) setInvitingSponsor(undefined);
   };
 
-  // Get sponsor orgs with their cohort participation info
-  const sponsorsWithCohorts = useMemo(() => {
-    return sponsorOrgs.map(org => {
-      const cohortLinks = cohortSponsors.filter(cs => cs.sponsorOrgId === org.id);
-      return {
-        ...org,
-        cohortIds: cohortLinks.map(cs => cs.cohortId),
-        totalContribution: cohortLinks.reduce((sum, cs) => sum + cs.prizePoolContribution, 0),
-        hasDedicatedTrack: cohortLinks.some(cs => cs.hasDedicatedTrack),
-        highestTier: cohortLinks.length > 0
-          ? cohortLinks.sort((a, b) => {
-              const tierOrder = { platinum: 0, gold: 1, silver: 2, bronze: 3, community: 4 };
-              return tierOrder[a.tier] - tierOrder[b.tier];
-            })[0].tier
-          : null,
-      };
-    });
-  }, [sponsorOrgs, cohortSponsors]);
-
   const filteredSponsors = sponsorsWithCohorts.filter((sponsor) => {
     const matchesSearch =
       sponsor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -143,14 +144,13 @@ export default function AdminSponsorsPage() {
 
   return (
     <div className="space-y-6">
-      <AdminNav />
       <Breadcrumb
         items={[
           { label: "Admin", href: "/dashboard" },
           { label: "Sponsors" }
         ]}
-        className="mb-4"
       />
+      <AdminNav />
 
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>

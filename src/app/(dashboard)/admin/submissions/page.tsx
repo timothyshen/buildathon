@@ -77,14 +77,13 @@ export default function AdminSubmissionsPage() {
 
   return (
     <div className="space-y-6">
-      <AdminNav />
       <Breadcrumb
         items={[
           { label: "Admin", href: "/dashboard" },
           { label: "Submissions" }
         ]}
-        className="mb-4"
       />
+      <AdminNav />
 
       <div>
         <h1 className="text-3xl font-bold">All Submissions</h1>

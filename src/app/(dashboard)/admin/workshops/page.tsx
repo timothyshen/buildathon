@@ -120,14 +120,13 @@ export default function AdminWorkshopPage() {
 
   return (
     <div className="space-y-6">
-      <AdminNav />
       <Breadcrumb
         items={[
           { label: "Admin", href: "/dashboard" },
           { label: "Workshops" }
         ]}
-        className="mb-4"
       />
+      <AdminNav />
 
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>

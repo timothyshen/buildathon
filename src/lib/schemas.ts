@@ -23,9 +23,20 @@ export const cohortSchema = z.object({
 }).refine(data => new Date(data.startDate) < new Date(data.endDate), {
   message: "Start date must be before end date",
   path: ["endDate"],
-}).refine(data => new Date(data.submissionDeadline) <= new Date(data.endDate), {
-  message: "Submission deadline must be before or on end date",
+}).refine(data => {
+  const submissionDate = new Date(data.submissionDeadline);
+  const startDate = new Date(data.startDate);
+  const endDate = new Date(data.endDate);
+  return submissionDate >= startDate && submissionDate <= endDate;
+}, {
+  message: "Submission deadline must be between start and end dates",
   path: ["submissionDeadline"],
+}).refine(data => new Date(data.judgingStart) >= new Date(data.submissionDeadline), {
+  message: "Judging must start after submission deadline",
+  path: ["judgingStart"],
+}).refine(data => new Date(data.judgingEnd) > new Date(data.judgingStart), {
+  message: "Judging end must be after judging start",
+  path: ["judgingEnd"],
 });
 
 export type CohortFormData = z.infer<typeof cohortSchema>;

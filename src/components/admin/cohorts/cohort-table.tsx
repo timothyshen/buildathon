@@ -18,7 +18,6 @@ import { sponsorsService } from "@/services";
 
 interface CohortTableProps {
   cohorts: Cohort[];
-  onEdit: (cohort: Cohort) => void;
 }
 
 const statusColors: Record<Cohort["status"], string> = {
@@ -29,7 +28,7 @@ const statusColors: Record<Cohort["status"], string> = {
   completed: "bg-amber-100 text-amber-700",
 };
 
-export function CohortTable({ cohorts, onEdit }: CohortTableProps) {
+export function CohortTable({ cohorts }: CohortTableProps) {
   const [cohortSponsors, setCohortSponsors] = useState<CohortSponsor[]>([]);
 
   useEffect(() => {
@@ -96,8 +95,10 @@ export function CohortTable({ cohorts, onEdit }: CohortTableProps) {
                     <Eye className="h-4 w-4" />
                   </Link>
                 </Button>
-                <Button variant="ghost" size="icon" onClick={() => onEdit(cohort)}>
-                  <Pencil className="h-4 w-4" />
+                <Button variant="ghost" size="icon" asChild>
+                  <Link href={`/admin/cohorts/${cohort.id}/edit`}>
+                    <Pencil className="h-4 w-4" />
+                  </Link>
                 </Button>
               </div>
             </TableCell>

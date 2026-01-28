@@ -94,6 +94,12 @@ export default function AdminUsersPage() {
   if (loadError) {
     return (
       <div className="space-y-6">
+        <Breadcrumb
+          items={[
+            { label: "Admin", href: "/dashboard" },
+            { label: "Users" },
+          ]}
+        />
         <AdminNav />
         <Card>
           <CardContent className="py-12">
@@ -184,14 +190,13 @@ export default function AdminUsersPage() {
 
   return (
     <div className="space-y-6">
-      <AdminNav />
       <Breadcrumb
         items={[
           { label: "Admin", href: "/dashboard" },
           { label: "Users" },
         ]}
-        className="mb-4"
       />
+      <AdminNav />
 
       <div>
         <h1 className="text-3xl font-bold">User Management</h1>

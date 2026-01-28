@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, useEffect } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@/types";
 import { authService, type OnboardingData, type RegisterData } from "@/services";
@@ -21,36 +21,78 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const isMountedRef = useRef(true);
+  const initRef = useRef(false);
 
-  // Function to fetch user profile from database
-  const fetchUserProfile = useCallback(async () => {
-    const { data } = await authService.getCurrentUser();
-    return data;
+  // Helper to create user from session data
+  const createUserFromSession = useCallback((sessionUser: { id: string; email?: string | null; user_metadata?: Record<string, unknown>; created_at: string }) => ({
+    id: sessionUser.id,
+    email: sessionUser.email || "",
+    name: (sessionUser.user_metadata?.name as string) || sessionUser.email?.split("@")[0] || "User",
+    role: (sessionUser.user_metadata?.role as User["role"]) || "participant",
+    hasCompletedOnboarding: false,
+    createdAt: new Date(sessionUser.created_at),
+  }), []);
+
+  // Function to fetch user profile from database with timeout
+  const fetchUserProfile = useCallback(async (): Promise<User | null> => {
+    try {
+      const timeoutPromise = new Promise<null>((_, reject) =>
+        setTimeout(() => reject(new Error("Profile fetch timeout")), 5000)
+      );
+      const fetchPromise = authService.getCurrentUser().then(res => res.data);
+      return await Promise.race([fetchPromise, timeoutPromise]);
+    } catch (err) {
+      console.warn("fetchUserProfile failed:", err);
+      return null;
+    }
   }, []);
 
   // Refresh user data from database
   const refreshUser = useCallback(async () => {
     const profile = await fetchUserProfile();
-    setUser(profile);
+    if (isMountedRef.current) setUser(profile);
   }, [fetchUserProfile]);
 
   // Set up Supabase auth listener
   useEffect(() => {
+    // Prevent double initialization in React Strict Mode
+    if (initRef.current) return;
+    initRef.current = true;
+    isMountedRef.current = true;
+
     const supabase = createClient();
 
-    // Initial load
+    // Initial load with guaranteed timeout
     async function loadUser() {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        // Race between session fetch and timeout
+        const sessionResult = await Promise.race([
+          supabase.auth.getSession(),
+          new Promise<{ data: { session: null }; error: Error }>((_, reject) =>
+            setTimeout(() => reject(new Error("Session timeout")), 5000)
+          )
+        ]);
 
-        if (session?.user) {
+        const { data: { session }, error: sessionError } = sessionResult;
+
+        if (sessionError) {
+          console.error("Session error:", sessionError);
+          if (isMountedRef.current) setIsLoading(false);
+          return;
+        }
+
+        if (session?.user && isMountedRef.current) {
+          // Try to fetch profile, fall back to session data
           const profile = await fetchUserProfile();
-          setUser(profile);
+          if (isMountedRef.current) {
+            setUser(profile || createUserFromSession(session.user));
+          }
         }
       } catch (error) {
         console.error("Error loading user:", error);
       } finally {
-        setIsLoading(false);
+        if (isMountedRef.current) setIsLoading(false);
       }
     }
 
@@ -59,23 +101,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (event === "SIGNED_IN" && session?.user) {
-          const profile = await fetchUserProfile();
-          setUser(profile);
-        } else if (event === "SIGNED_OUT") {
-          setUser(null);
-        } else if (event === "TOKEN_REFRESHED" && session?.user) {
-          // Optionally refresh user profile on token refresh
-          const profile = await fetchUserProfile();
-          setUser(profile);
+        if (!isMountedRef.current) return;
+
+        try {
+          if (event === "SIGNED_IN" && session?.user) {
+            const profile = await fetchUserProfile();
+            if (isMountedRef.current) {
+              setUser(profile || createUserFromSession(session.user));
+            }
+          } else if (event === "SIGNED_OUT") {
+            if (isMountedRef.current) setUser(null);
+          } else if (event === "TOKEN_REFRESHED" && session?.user) {
+            const profile = await fetchUserProfile();
+            if (isMountedRef.current) {
+              setUser(profile || createUserFromSession(session.user));
+            }
+          }
+        } catch (error) {
+          console.error("Auth state change error:", error);
         }
       }
     );
 
     return () => {
+      isMountedRef.current = false;
       subscription.unsubscribe();
     };
-  }, [fetchUserProfile]);
+  }, [fetchUserProfile, createUserFromSession]);
 
   const login = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     const { data, success, error } = await authService.login(email, password);

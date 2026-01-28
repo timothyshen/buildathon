@@ -39,8 +39,10 @@ import {
   Trophy,
   ExternalLink,
   Eye,
+  Pencil,
   Loader2,
 } from "lucide-react";
+import { RichTextDisplay } from "@/components/ui/rich-text-editor";
 import { toast } from "sonner";
 import type { Cohort, Track, Submission } from "@/types";
 import type { CohortSponsorWithOrg } from "@/services/sponsors.service";
@@ -130,15 +132,14 @@ export default function AdminCohortDetailPage({ params }: AdminCohortDetailPageP
 
   return (
     <div className="space-y-6">
-      <AdminNav />
       <Breadcrumb
         items={[
           { label: "Admin", href: "/dashboard" },
           { label: "Cohorts", href: "/admin/cohorts" },
           { label: cohort.name },
         ]}
-        className="mb-4"
       />
+      <AdminNav />
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
@@ -240,9 +241,7 @@ export default function AdminCohortDetailPage({ params }: AdminCohortDetailPageP
                   <CardTitle>About</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground whitespace-pre-wrap">
-                    {cohort.description}
-                  </p>
+                  <RichTextDisplay content={cohort.description} />
                 </CardContent>
               </Card>
 
@@ -339,12 +338,20 @@ export default function AdminCohortDetailPage({ params }: AdminCohortDetailPageP
                 </CardContent>
               </Card>
 
-              <Button variant="outline" className="w-full" asChild>
-                <Link href={`/cohorts/${cohort.slug}`}>
-                  <ExternalLink className="mr-2 h-4 w-4" />
-                  View Public Page
-                </Link>
-              </Button>
+              <div className="space-y-2">
+                <Button className="w-full" asChild>
+                  <Link href={`/admin/cohorts/${cohort.id}/edit`}>
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Edit Cohort
+                  </Link>
+                </Button>
+                <Button variant="outline" className="w-full" asChild>
+                  <Link href={`/cohorts/${cohort.slug}`}>
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    View Public Page
+                  </Link>
+                </Button>
+              </div>
             </div>
           </div>
         </TabsContent>

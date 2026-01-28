@@ -145,15 +145,14 @@ export default function AdminSubmissionDetailPage({ params }: AdminSubmissionDet
 
   return (
     <div className="space-y-6">
-      <AdminNav />
       <Breadcrumb
         items={[
           { label: "Admin", href: "/dashboard" },
           { label: "Submissions", href: "/admin/submissions" },
           { label: submission.title },
         ]}
-        className="mb-4"
       />
+      <AdminNav />
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">

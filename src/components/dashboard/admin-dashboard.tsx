@@ -65,7 +65,7 @@ export function AdminDashboard() {
           </p>
         </div>
         <Button asChild>
-          <Link href="/cohorts/new">
+          <Link href="/admin/cohorts/new">
             <PlusCircle className="mr-2 h-4 w-4" />
             New Cohort
           </Link>

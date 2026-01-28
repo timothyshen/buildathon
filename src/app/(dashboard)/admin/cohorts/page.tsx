@@ -1,22 +1,19 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { cohortsService } from "@/services";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Loader2 } from "lucide-react";
-import { CohortForm } from "@/components/admin/cohorts/cohort-form";
 import { CohortTable } from "@/components/admin/cohorts/cohort-table";
 import type { Cohort } from "@/types";
-import type { CohortFormData } from "@/lib/schemas";
 
 export default function CohortsPage() {
   const [cohorts, setCohorts] = useState<Cohort[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingCohort, setEditingCohort] = useState<Cohort | undefined>();
 
   useEffect(() => {
     async function loadData() {
@@ -26,23 +23,6 @@ export default function CohortsPage() {
     }
     loadData();
   }, []);
-
-  const handleEdit = (cohort: Cohort) => {
-    setEditingCohort(cohort);
-    setIsFormOpen(true);
-  };
-
-  const handleSubmit = (data: CohortFormData) => {
-    console.log("Form submitted:", data);
-    setEditingCohort(undefined);
-  };
-
-  const handleOpenChange = (open: boolean) => {
-    setIsFormOpen(open);
-    if (!open) {
-      setEditingCohort(undefined);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -58,14 +38,13 @@ export default function CohortsPage() {
 
   return (
     <div className="space-y-6">
-      <AdminNav />
       <Breadcrumb
         items={[
           { label: "Admin", href: "/dashboard" },
           { label: "Cohorts" }
         ]}
-        className="mb-4"
       />
+      <AdminNav />
 
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
@@ -74,9 +53,11 @@ export default function CohortsPage() {
             Manage buildathon cohorts and their settings
           </p>
         </div>
-        <Button onClick={() => setIsFormOpen(true)}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Create Cohort
+        <Button asChild>
+          <Link href="/admin/cohorts/new">
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Create Cohort
+          </Link>
         </Button>
       </div>
 
@@ -117,16 +98,9 @@ export default function CohortsPage() {
 
       <Card>
         <CardContent className="p-0">
-          <CohortTable cohorts={cohorts} onEdit={handleEdit} />
+          <CohortTable cohorts={cohorts} />
         </CardContent>
       </Card>
-
-      <CohortForm
-        open={isFormOpen}
-        onOpenChange={handleOpenChange}
-        cohort={editingCohort}
-        onSubmit={handleSubmit}
-      />
     </div>
   );
 }
