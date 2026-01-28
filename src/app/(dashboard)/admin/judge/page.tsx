@@ -2,17 +2,26 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/auth-context";
 import {
   reviewsService,
   submissionsService,
-  sponsorsService,
-  tracksService,
+  cohortsService,
 } from "@/services";
-import { useAuth } from "@/contexts/auth-context";
-import type { Review, Submission, Track, SponsorOrg } from "@/types";
+import type { Review, Submission, Cohort } from "@/types";
+import { AdminNav } from "@/components/admin/admin-nav";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -21,22 +30,30 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Star, CheckCircle, Clock, Loader2 } from "lucide-react";
+import {
+  Search,
+  Star,
+  CheckCircle,
+  Clock,
+  Loader2,
+  Scale,
+} from "lucide-react";
 import { toast } from "sonner";
 
-interface TrackSubmission {
+interface SubmissionWithReview {
   submission: Submission;
-  track: Track;
   review: Review | null;
 }
 
-export default function SponsorReviewsPage() {
-  const { user } = useAuth();
+export default function AdminJudgePage() {
+  const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
 
-  const [sponsorOrg, setSponsorOrg] = useState<SponsorOrg | null>(null);
-  const [trackSubmissions, setTrackSubmissions] = useState<TrackSubmission[]>([]);
+  const [items, setItems] = useState<SubmissionWithReview[]>([]);
+  const [cohorts, setCohorts] = useState<Cohort[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [selectedCohort, setSelectedCohort] = useState<string>("all");
   const [creatingReviewFor, setCreatingReviewFor] = useState<string | null>(null);
 
   useEffect(() => {
@@ -46,64 +63,45 @@ export default function SponsorReviewsPage() {
         return;
       }
 
-      // Get sponsor org for this user
-      const orgResult = await sponsorsService.getOrgByUser(user.id);
-      if (!orgResult.success || !orgResult.data) {
-        setIsLoading(false);
-        return;
-      }
-      setSponsorOrg(orgResult.data);
+      const [subResult, cohortsResult] = await Promise.all([
+        submissionsService.list({ status: "submitted" }),
+        cohortsService.list(),
+      ]);
 
-      // Get tracks for this sponsor org
-      const tracksResult = await tracksService.getBySponsor(orgResult.data.id);
-      if (!tracksResult.success) {
-        setIsLoading(false);
-        return;
-      }
+      if (cohortsResult.success) setCohorts(cohortsResult.data);
 
-      // For each track, get submissions and check for existing reviews
-      const allTrackSubmissions: TrackSubmission[] = [];
-      const seenSubmissionIds = new Set<string>();
-
-      for (const track of tracksResult.data) {
-        const subResult = await submissionsService.getByTrack(track.id);
-        if (!subResult.success) continue;
+      if (subResult.success) {
+        // For each submission, check if admin has existing review
+        const submissionItems: SubmissionWithReview[] = [];
 
         for (const submission of subResult.data) {
-          // Avoid duplicates if submission is in multiple tracks from same sponsor
-          if (seenSubmissionIds.has(submission.id)) continue;
-          seenSubmissionIds.add(submission.id);
-
-          // Check for existing review by this user
           const reviewsResult = await reviewsService.getBySubmission(submission.id);
           const existingReview = reviewsResult.success
             ? reviewsResult.data.find((r) => r.judgeId === user.id)
             : null;
 
-          allTrackSubmissions.push({
+          submissionItems.push({
             submission,
-            track,
             review: existingReview || null,
           });
         }
+
+        setItems(submissionItems);
       }
 
-      setTrackSubmissions(allTrackSubmissions);
       setIsLoading(false);
     }
     loadData();
   }, [user]);
 
-  const handleReview = async (item: TrackSubmission) => {
+  const handleJudge = async (item: SubmissionWithReview) => {
     if (!user) return;
 
     if (item.review) {
-      // Existing review - navigate directly
-      router.push(`/reviews/${item.review.id}?from=sponsor`);
+      router.push(`/reviews/${item.review.id}?from=admin`);
       return;
     }
 
-    // Create new review
     setCreatingReviewFor(item.submission.id);
     try {
       const result = await reviewsService.create({
@@ -111,7 +109,7 @@ export default function SponsorReviewsPage() {
         judgeId: user.id,
       });
       if (result.success) {
-        router.push(`/reviews/${result.data.id}?from=sponsor`);
+        router.push(`/reviews/${result.data.id}?from=admin`);
       } else {
         toast.error(result.error || "Failed to create review");
       }
@@ -122,7 +120,7 @@ export default function SponsorReviewsPage() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || authLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -130,45 +128,62 @@ export default function SponsorReviewsPage() {
     );
   }
 
-  if (!sponsorOrg) {
+  if (user?.role !== "admin") {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-muted-foreground">
-          No sponsor organization found for your account.
-        </div>
+        <div className="text-muted-foreground">Access denied. Admin only.</div>
       </div>
     );
   }
 
-  const reviewedCount = trackSubmissions.filter(
-    (ts) => ts.review?.status === "completed"
+  const filteredItems = items.filter((item) => {
+    const matchesSearch =
+      search === "" ||
+      item.submission.title.toLowerCase().includes(search.toLowerCase()) ||
+      item.submission.team?.name?.toLowerCase().includes(search.toLowerCase());
+
+    const matchesCohort =
+      selectedCohort === "all" || item.submission.cohortId === selectedCohort;
+
+    return matchesSearch && matchesCohort;
+  });
+
+  const reviewedCount = items.filter(
+    (i) => i.review?.status === "completed"
   ).length;
-  const inProgressCount = trackSubmissions.filter(
-    (ts) => ts.review?.status === "in_progress"
+  const inProgressCount = items.filter(
+    (i) => i.review?.status === "in_progress" || i.review?.status === "pending"
   ).length;
-  const notStartedCount = trackSubmissions.filter(
-    (ts) => !ts.review
-  ).length;
+  const notStartedCount = items.filter((i) => !i.review).length;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
+      <Breadcrumb
+        items={[
+          { label: "Admin", href: "/dashboard" },
+          { label: "Judge" },
+        ]}
+      />
+      <AdminNav />
+
       <div>
-        <h1 className="text-3xl font-bold">Track Reviews</h1>
+        <h1 className="text-3xl font-bold">Judge Submissions</h1>
         <p className="mt-2 text-muted-foreground">
-          Review submissions that selected your track ({sponsorOrg.name})
+          Review and score any submitted project
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-4">
+      {/* Stats */}
+      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Star className="h-4 w-4" />
+              <Scale className="h-4 w-4" />
               Total Submissions
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{trackSubmissions.length}</div>
+            <div className="text-2xl font-bold">{items.length}</div>
           </CardContent>
         </Card>
         <Card>
@@ -206,6 +221,33 @@ export default function SponsorReviewsPage() {
         </Card>
       </div>
 
+      {/* Filters */}
+      <div className="flex flex-col gap-4 sm:flex-row">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search by title or team..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <Select value={selectedCohort} onValueChange={setSelectedCohort}>
+          <SelectTrigger className="w-full sm:w-[180px]">
+            <SelectValue placeholder="All Cohorts" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Cohorts</SelectItem>
+            {cohorts.map((cohort) => (
+              <SelectItem key={cohort.id} value={cohort.id}>
+                {cohort.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Submissions Table */}
       <Card>
         <CardContent className="p-0">
           <Table>
@@ -213,23 +255,21 @@ export default function SponsorReviewsPage() {
               <TableRow>
                 <TableHead>Project</TableHead>
                 <TableHead className="hidden md:table-cell">Team</TableHead>
-                <TableHead className="hidden md:table-cell">Track</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead className="hidden md:table-cell">Tracks</TableHead>
+                <TableHead>Your Review</TableHead>
                 <TableHead className="hidden md:table-cell">Score</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {trackSubmissions.length === 0 ? (
+              {filteredItems.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-8">
-                    <p className="text-muted-foreground">
-                      No submissions in your tracks yet.
-                    </p>
+                    <p className="text-muted-foreground">No submissions found</p>
                   </TableCell>
                 </TableRow>
               ) : (
-                trackSubmissions.map((item) => (
+                filteredItems.map((item) => (
                   <TableRow key={item.submission.id}>
                     <TableCell>
                       <div>
@@ -243,7 +283,15 @@ export default function SponsorReviewsPage() {
                       {item.submission.team?.name || "Unknown"}
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
-                      <Badge variant="outline">{item.track.name}</Badge>
+                      <div className="flex flex-wrap gap-1">
+                        {item.submission.tracks?.map((track) => (
+                          <Badge key={track.id} variant="outline" className="text-xs">
+                            {track.name}
+                          </Badge>
+                        )) || (
+                          <span className="text-muted-foreground text-xs">None</span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       {item.review ? (
@@ -278,7 +326,7 @@ export default function SponsorReviewsPage() {
                       <Button
                         variant={item.review?.status === "completed" ? "ghost" : "default"}
                         size="sm"
-                        onClick={() => handleReview(item)}
+                        onClick={() => handleJudge(item)}
                         disabled={creatingReviewFor === item.submission.id}
                       >
                         {creatingReviewFor === item.submission.id ? (
@@ -288,7 +336,7 @@ export default function SponsorReviewsPage() {
                         ) : item.review ? (
                           "Continue"
                         ) : (
-                          "Review"
+                          "Judge"
                         )}
                       </Button>
                     </TableCell>

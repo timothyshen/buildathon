@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, use } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { reviewsService } from "@/services";
 import type { Review } from "@/types";
+import { toast } from "sonner";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,11 @@ interface ReviewDetailPageProps {
 export default function ReviewDetailPage({ params }: ReviewDetailPageProps) {
   const { id } = use(params);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const from = searchParams.get("from");
+
+  const backHref = from === "admin" ? "/admin/judge" : from === "sponsor" ? "/sponsor/reviews" : "/reviews";
+  const backLabel = from === "admin" ? "Judge" : from === "sponsor" ? "Track Reviews" : "Reviews";
 
   const [review, setReview] = useState<Review | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -83,7 +89,7 @@ export default function ReviewDetailPage({ params }: ReviewDetailPageProps) {
       <div className="py-8 text-center">
         <p>Review not found</p>
         <Button asChild className="mt-4">
-          <Link href="/reviews">Back to Reviews</Link>
+          <Link href={backHref}>Back to {backLabel}</Link>
         </Button>
       </div>
     );
@@ -101,10 +107,27 @@ export default function ReviewDetailPage({ params }: ReviewDetailPageProps) {
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    console.log("Review submitted", { scores, feedback, internalNotes });
-    router.push("/reviews");
+    try {
+      const result = await reviewsService.submitReview(id, {
+        innovationScore: scores.innovation,
+        executionScore: scores.execution,
+        designScore: scores.design,
+        impactScore: scores.impact,
+        presentationScore: scores.presentation,
+        feedback: feedback || undefined,
+        internalNotes: internalNotes || undefined,
+      });
+      if (result.success) {
+        toast.success("Review submitted successfully");
+        router.push(backHref);
+      } else {
+        toast.error(result.error || "Failed to submit review");
+      }
+    } catch {
+      toast.error("Failed to submit review");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -112,7 +135,7 @@ export default function ReviewDetailPage({ params }: ReviewDetailPageProps) {
       {/* Breadcrumb */}
       <Breadcrumb
         items={[
-          { label: "Reviews", href: "/reviews" },
+          { label: backLabel, href: backHref },
           { label: submission.title },
         ]}
         showHome={false}
