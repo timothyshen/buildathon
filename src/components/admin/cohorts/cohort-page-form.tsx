@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useState, useEffect, useCallback } from "react";
+import { useForm, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { cohortSchema, type CohortFormData } from "@/lib/schemas";
 import { Button } from "@/components/ui/button";
@@ -17,8 +17,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { ImageUploader } from "@/components/ui/image-uploader";
 import { CohortSponsorManager, type CohortSponsorInput } from "./cohort-sponsor-manager";
 import { PlusCircle, Trash2, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
+import { toast } from "sonner";
 import type { Cohort, SponsorOrg } from "@/types";
 import type { CohortSponsorWithOrg } from "@/services/sponsors.service";
 
@@ -97,12 +99,12 @@ export function CohortPageForm({
           status: cohort.status,
           isPublic: cohort.isPublic,
           maxTeamSize: cohort.maxTeamSize,
-          prizes: cohort.prizes,
         }
       : {
           status: "draft",
           isPublic: false,
           maxTeamSize: 5,
+          bannerImage: "",
         },
   });
 
@@ -114,11 +116,7 @@ export function CohortPageForm({
   };
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const name = e.target.value;
-    setValue("name", name);
-    if (!cohort) {
-      setValue("slug", generateSlug(name));
-    }
+    setValue("slug", generateSlug(e.target.value));
   };
 
   const handleDescriptionChange = (value: string) => {
@@ -163,6 +161,23 @@ export function CohortPageForm({
     await onSubmit({ ...data, prizes }, sponsors);
   };
 
+  // Map field names to their step index so we can navigate to the right step on validation error
+  const fieldStepMap: Record<string, number> = {
+    name: 0, slug: 0, description: 0, tagline: 0, bannerImage: 0,
+    startDate: 1, endDate: 1, submissionDeadline: 1, judgingStart: 1, judgingEnd: 1,
+    status: 2, isPublic: 2, maxTeamSize: 2,
+  };
+
+  const onValidationError = useCallback((fieldErrors: FieldErrors<CohortFormData>) => {
+    const firstErrorField = Object.keys(fieldErrors)[0];
+    if (firstErrorField) {
+      const targetStep = fieldStepMap[firstErrorField] ?? 0;
+      setStep(targetStep);
+      const errorMessage = fieldErrors[firstErrorField as keyof CohortFormData]?.message;
+      toast.error(errorMessage || `Please fix the errors in "${steps[targetStep]}"`);
+    }
+  }, []);
+
   return (
     <div className="space-y-6">
       {/* Step Indicator */}
@@ -200,7 +215,7 @@ export function CohortPageForm({
         </p>
       </div>
 
-      <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
+      <form onSubmit={handleSubmit(onFormSubmit, onValidationError)} className="space-y-6">
         {/* Step 1: Basic Info */}
         {step === 0 && (
           <Card>
@@ -213,8 +228,9 @@ export function CohortPageForm({
                   <Label htmlFor="name">Name *</Label>
                   <Input
                     id="name"
-                    {...register("name")}
-                    onChange={handleNameChange}
+                    {...register("name", {
+                      onChange: handleNameChange,
+                    })}
                     placeholder="SWA Summer 2024"
                   />
                   {errors.name && (
@@ -257,12 +273,13 @@ export function CohortPageForm({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="bannerImage">Banner Image URL</Label>
-                <Input
-                  id="bannerImage"
-                  {...register("bannerImage")}
-                  type="url"
-                  placeholder="https://..."
+                <ImageUploader
+                  value={watch("bannerImage") || undefined}
+                  onChange={(url) => setValue("bannerImage", url, { shouldDirty: true })}
+                  onRemove={() => setValue("bannerImage", "", { shouldDirty: true })}
+                  bucket="banners"
+                  label="Banner Image"
+                  aspectRatio="16/9"
                 />
               </div>
             </CardContent>

@@ -4,7 +4,7 @@
  */
 
 import { createClient } from "@/lib/supabase/client";
-import type { Review, User, Submission } from "@/types";
+import type { Review, User, Submission, Team, Cohort } from "@/types";
 import type { ServiceResponse, QueryOptions, PaginatedResponse } from "./types";
 import { success, error, paginated } from "./types";
 
@@ -49,6 +49,63 @@ function toUser(row: Record<string, unknown>): User {
   };
 }
 
+// Convert joined submission row to Submission type (basic fields + team)
+function toSubmissionFromJoin(row: Record<string, unknown>): Submission {
+  const teamRow = row.teams as Record<string, unknown> | null;
+  const cohortRow = row.cohorts as Record<string, unknown> | null;
+
+  const team: Team | undefined = teamRow
+    ? {
+        id: teamRow.id as string,
+        cohortId: teamRow.cohort_id as string,
+        name: teamRow.name as string,
+        slug: teamRow.slug as string,
+        description: teamRow.description as string | undefined,
+        logoUrl: teamRow.logo_url as string | undefined,
+        members: [],
+      }
+    : undefined;
+
+  const cohort: Cohort | undefined = cohortRow
+    ? {
+        id: cohortRow.id as string,
+        slug: cohortRow.slug as string,
+        name: cohortRow.name as string,
+        description: cohortRow.description as string,
+        startDate: new Date(cohortRow.start_date as string),
+        endDate: new Date(cohortRow.end_date as string),
+        submissionDeadline: new Date(cohortRow.submission_deadline as string),
+        judgingStart: new Date(cohortRow.judging_start as string),
+        judgingEnd: new Date(cohortRow.judging_end as string),
+        status: cohortRow.status as Cohort["status"],
+        isPublic: cohortRow.is_public as boolean,
+        maxTeamSize: cohortRow.max_team_size as number,
+      }
+    : undefined;
+
+  return {
+    id: row.id as string,
+    cohortId: row.cohort_id as string,
+    cohort,
+    teamId: row.team_id as string,
+    team,
+    title: row.title as string,
+    tagline: row.tagline as string | undefined,
+    description: row.description as string,
+    demoUrl: row.demo_url as string | undefined,
+    videoUrl: row.video_url as string | undefined,
+    repoUrl: row.repo_url as string | undefined,
+    presentationUrl: row.presentation_url as string | undefined,
+    screenshots: (row.screenshots as string[]) || [],
+    techStack: (row.tech_stack as string[]) || [],
+    builtWithStory: row.built_with_story as boolean,
+    status: row.status as Submission["status"],
+    submittedAt: row.submitted_at ? new Date(row.submitted_at as string) : undefined,
+    createdAt: new Date(row.created_at as string),
+    updatedAt: new Date(row.updated_at as string),
+  };
+}
+
 // Convert database row to Review type
 function toReview(row: Record<string, unknown>, judge?: User, submission?: Submission): Review {
   return {
@@ -79,7 +136,12 @@ async function getById(id: string): Promise<ServiceResponse<Review | null>> {
     .from("reviews")
     .select(`
       *,
-      users!reviews_judge_id_fkey (*)
+      users!reviews_judge_id_fkey (*),
+      submissions (
+        *,
+        teams (*),
+        cohorts (*)
+      )
     `)
     .eq("id", id)
     .single();
@@ -92,7 +154,10 @@ async function getById(id: string): Promise<ServiceResponse<Review | null>> {
   }
 
   const judge = data.users ? toUser(data.users as Record<string, unknown>) : undefined;
-  return success(toReview(data, judge));
+  const submission = data.submissions
+    ? toSubmissionFromJoin(data.submissions as Record<string, unknown>)
+    : undefined;
+  return success(toReview(data, judge, submission));
 }
 
 async function create(data: { submissionId: string; judgeId: string }): Promise<ServiceResponse<Review>> {
@@ -177,7 +242,11 @@ async function getByJudge(judgeId: string): Promise<ServiceResponse<Review[]>> {
     .select(`
       *,
       users!reviews_judge_id_fkey (*),
-      submissions (*)
+      submissions (
+        *,
+        teams (*),
+        cohorts (*)
+      )
     `)
     .eq("judge_id", judgeId)
     .order("created_at", { ascending: false });
@@ -188,8 +257,10 @@ async function getByJudge(judgeId: string): Promise<ServiceResponse<Review[]>> {
 
   const reviews = (data || []).map((row) => {
     const judge = row.users ? toUser(row.users as Record<string, unknown>) : undefined;
-    // Note: We're not fully populating submission here for simplicity
-    return toReview(row, judge);
+    const submission = row.submissions
+      ? toSubmissionFromJoin(row.submissions as Record<string, unknown>)
+      : undefined;
+    return toReview(row, judge, submission);
   });
 
   return success(reviews);
@@ -232,7 +303,11 @@ async function list(
     .select(`
       *,
       users!reviews_judge_id_fkey (*),
-      submissions!inner (cohort_id)
+      submissions!inner (
+        *,
+        teams (*),
+        cohorts (*)
+      )
     `, { count: "exact" });
 
   if (options?.status) {
@@ -264,7 +339,10 @@ async function list(
 
   const reviews = (data || []).map((row) => {
     const judge = row.users ? toUser(row.users as Record<string, unknown>) : undefined;
-    return toReview(row, judge);
+    const submission = row.submissions
+      ? toSubmissionFromJoin(row.submissions as Record<string, unknown>)
+      : undefined;
+    return toReview(row, judge, submission);
   });
 
   return paginated(reviews, count || 0, page, pageSize);

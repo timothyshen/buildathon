@@ -17,6 +17,7 @@ import {
 import { Loader2, ArrowLeft, ArrowRight, Save } from "lucide-react";
 import { StepIndicator } from "./components/step-indicator";
 import { StepDetails } from "./components/step-details";
+import { StepMedia } from "./components/step-media";
 import { StepLinksTech } from "./components/step-links-tech";
 import { StepTracks } from "./components/step-tracks";
 import { StepReview } from "./components/step-review";
@@ -28,9 +29,10 @@ const STORAGE_KEY = "submission-draft";
 
 const STEPS = [
   { id: 1, label: "Details" },
-  { id: 2, label: "Links & Tech" },
-  { id: 3, label: "Tracks" },
-  { id: 4, label: "Review" },
+  { id: 2, label: "Media" },
+  { id: 3, label: "Links & Tech" },
+  { id: 4, label: "Tracks" },
+  { id: 5, label: "Review" },
 ];
 
 interface SubmissionDraft {
@@ -42,6 +44,7 @@ interface SubmissionDraft {
   repoUrl: string;
   videoUrl: string;
   presentationUrl: string;
+  screenshots: string[];
   techStack: string[];
   builtWithStory: boolean;
   cohortId: string;
@@ -59,6 +62,7 @@ const initialData: SubmissionDraft = {
   repoUrl: "",
   videoUrl: "",
   presentationUrl: "",
+  screenshots: [],
   techStack: [],
   builtWithStory: false,
   cohortId: "",
@@ -154,6 +158,12 @@ export default function SubmitPage() {
     }
 
     if (step === 2) {
+      if (data.screenshots.length < 3) {
+        newErrors.screenshots = "Please upload at least 3 screenshots";
+      }
+    }
+
+    if (step === 3) {
       const urlPattern = /^(https?:\/\/)?[\w.-]+\.[a-z]{2,}(\/.*)?$/i;
       if (data.demoUrl && !urlPattern.test(data.demoUrl)) {
         newErrors.demoUrl = "Please enter a valid URL";
@@ -169,7 +179,7 @@ export default function SubmitPage() {
       }
     }
 
-    if (step === 3) {
+    if (step === 4) {
       if (!data.cohortId) {
         newErrors.cohortId = "Please select a cohort";
       }
@@ -206,7 +216,7 @@ export default function SubmitPage() {
   };
 
   const handleSubmit = async () => {
-    if (!validateStep(3)) {
+    if (!validateStep(4)) {
       toast.error("Please complete all required fields");
       return;
     }
@@ -300,6 +310,13 @@ export default function SubmitPage() {
           </div>
         )}
         {currentStep === 2 && (
+          <StepMedia
+            data={{ screenshots: data.screenshots }}
+            onChange={handleChange}
+            errors={errors}
+          />
+        )}
+        {currentStep === 3 && (
           <StepLinksTech
             data={{
               demoUrl: data.demoUrl,
@@ -313,7 +330,7 @@ export default function SubmitPage() {
             errors={errors}
           />
         )}
-        {currentStep === 3 && (
+        {currentStep === 4 && (
           <StepTracks
             data={{ cohortId: data.cohortId, trackIds: data.trackIds }}
             onChange={handleChange}
@@ -323,7 +340,7 @@ export default function SubmitPage() {
             sponsorOrgs={sponsorOrgs}
           />
         )}
-        {currentStep === 4 && (
+        {currentStep === 5 && (
           <StepReview
             data={data}
             onEdit={handleEdit}

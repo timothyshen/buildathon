@@ -24,13 +24,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isMountedRef = useRef(true);
   const initRef = useRef(false);
 
-  // Helper to create user from session data
+  // Helper to create user from session data (fallback when profile fetch fails)
+  // hasCompletedOnboarding defaults to true to prevent incorrect onboarding redirects
+  // when the profile DB fetch fails temporarily - the real value comes from the profile
   const createUserFromSession = useCallback((sessionUser: { id: string; email?: string | null; user_metadata?: Record<string, unknown>; created_at: string }) => ({
     id: sessionUser.id,
     email: sessionUser.email || "",
     name: (sessionUser.user_metadata?.name as string) || sessionUser.email?.split("@")[0] || "User",
     role: (sessionUser.user_metadata?.role as User["role"]) || "participant",
-    hasCompletedOnboarding: false,
+    hasCompletedOnboarding: true,
     createdAt: new Date(sessionUser.created_at),
   }), []);
 

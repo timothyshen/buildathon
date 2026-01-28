@@ -16,13 +16,8 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const { user, isLoading } = useAuth();
 
-  useEffect(() => {
-    if (!isLoading && !user) {
-      router.push("/login");
-    }
-  }, [user, isLoading, router]);
-
-  // Redirect to onboarding if not completed (except when already on onboarding page)
+  // Note: login redirect is handled by middleware (server-side).
+  // Only handle onboarding redirect client-side.
   useEffect(() => {
     if (!isLoading && user && !user.hasCompletedOnboarding && pathname !== "/onboarding") {
       router.push("/onboarding");
@@ -34,7 +29,8 @@ export default function DashboardLayout({
   }
 
   if (!user) {
-    return null;
+    // Middleware will redirect to /login - render nothing while that happens
+    return <Loading fullScreen label="Loading..." />;
   }
 
   return (

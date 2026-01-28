@@ -11,6 +11,7 @@ interface SubmissionData {
   title: string;
   tagline: string;
   description: string;
+  screenshots: string[];
   demoUrl: string;
   repoUrl: string;
   videoUrl: string;
@@ -71,8 +72,31 @@ export function StepReview({ data, onEdit, cohorts, tracks }: StepReviewProps) {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-lg">Screenshots</CardTitle>
+          <Button variant="ghost" size="sm" onClick={() => onEdit(2)} aria-label="Edit screenshots">
+            <Pencil className="h-4 w-4 mr-1" /> Edit
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {data.screenshots.length > 0 ? (
+            <div className="grid grid-cols-3 gap-2">
+              {data.screenshots.map((url, i) => (
+                <div key={url} className="aspect-video rounded-md overflow-hidden border">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={url} alt={`Screenshot ${i + 1}`} className="w-full h-full object-cover" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">No screenshots uploaded</p>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg">Links & Tech</CardTitle>
-          <Button variant="ghost" size="sm" onClick={() => onEdit(2)} aria-label="Edit links and tech stack">
+          <Button variant="ghost" size="sm" onClick={() => onEdit(3)} aria-label="Edit links and tech stack">
             <Pencil className="h-4 w-4 mr-1" /> Edit
           </Button>
         </CardHeader>
@@ -123,7 +147,7 @@ export function StepReview({ data, onEdit, cohorts, tracks }: StepReviewProps) {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg">Cohort & Tracks</CardTitle>
-          <Button variant="ghost" size="sm" onClick={() => onEdit(3)} aria-label="Edit cohort and tracks">
+          <Button variant="ghost" size="sm" onClick={() => onEdit(4)} aria-label="Edit cohort and tracks">
             <Pencil className="h-4 w-4 mr-1" /> Edit
           </Button>
         </CardHeader>

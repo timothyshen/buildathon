@@ -6,7 +6,7 @@ export const cohortSchema = z.object({
   slug: z.string().min(1, "Slug is required").regex(/^[a-z0-9-]+$/, "Slug must be lowercase with hyphens only"),
   description: z.string().min(1, "Description is required"),
   tagline: z.string().optional(),
-  bannerImage: z.string().url().optional().or(z.literal("")),
+  bannerImage: z.string().optional().or(z.literal("")),
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().min(1, "End date is required"),
   submissionDeadline: z.string().min(1, "Submission deadline is required"),
