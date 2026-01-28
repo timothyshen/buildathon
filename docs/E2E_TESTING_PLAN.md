@@ -4,6 +4,7 @@
 
 ### Prerequisites
 - Supabase project configured with database schema
+- Storage buckets created (`banners`, `screenshots`) via migration `003_storage_buckets.sql`
 - Seed data loaded (`npx tsx scripts/seed.ts`)
 - Dev server running (`npm run dev`)
 
@@ -58,6 +59,7 @@
 
 ### 2.3 Cohort Detail (`/cohorts/[slug]`)
 - [ ] Shows cohort information (dates, prizes, description)
+- [ ] Banner image displays in hero when set, SVG pattern fallback when not
 - [ ] Lists tracks for the cohort
 - [ ] Shows sponsors
 - [ ] "Apply" or "Submit" CTA works
@@ -72,6 +74,7 @@
 
 ### 2.5 Project Detail (`/projects/[id]`)
 - [ ] Shows project info (title, description, screenshots)
+- [ ] Screenshot gallery displays uploaded images
 - [ ] Shows team members
 - [ ] Demo/Repo links work
 - [ ] Tech stack badges display
@@ -123,13 +126,17 @@
 - [ ] Can edit draft submissions
 
 ### 3.6 Submit Project (`/submit`)
-- [ ] Multi-step form navigation works
-- [ ] Step 1: Select cohort and tracks
-- [ ] Step 2: Project details (title, description, tagline)
-- [ ] Step 3: Links (demo, repo, video)
-- [ ] Step 4: Tech stack selection
-- [ ] Step 5: Screenshots upload
-- [ ] Step 6: Review and submit
+- [ ] Multi-step form navigation works (5 steps)
+- [ ] Step 1 (Details): Title, tagline, description via rich text editor
+- [ ] Step 2 (Media): Upload screenshots (minimum 3, maximum 10)
+- [ ] Step 2: Cannot proceed with fewer than 3 screenshots
+- [ ] Step 2: Image uploads via drag-and-drop or click
+- [ ] Step 2: Can remove uploaded screenshots
+- [ ] Step 3 (Links & Tech): Demo URL, repo URL, video URL, presentation URL, tech stack, license
+- [ ] Step 4 (Tracks): Select cohort and tracks
+- [ ] Step 5 (Review): Shows summary of all steps with edit buttons
+- [ ] Step 5: Edit buttons navigate back to correct step
+- [ ] Step 5: Screenshot thumbnails display in review
 - [ ] Draft saving works
 - [ ] Final submission changes status
 
@@ -221,37 +228,67 @@
 
 ### 6.3 Cohort Detail (`/admin/cohorts/[id]`)
 - [ ] Shows cohort details
+- [ ] Banner image displays when set
 - [ ] Can edit cohort info
 - [ ] Can manage tracks
 - [ ] Can manage sponsors
 - [ ] Can change status
 
-### 6.4 Submissions (`/admin/submissions`)
+### 6.4 Cohort Edit (`/admin/cohorts/[id]/edit`)
+- [ ] Multi-step form loads with existing data (Basic Info, Dates, Settings, Prizes, Sponsors)
+- [ ] Can click any step tab directly in edit mode
+- [ ] Changing name auto-updates slug field
+- [ ] Banner image uploader shows current image with replace/remove
+- [ ] Can upload new banner image (drag-and-drop or click)
+- [ ] Can remove banner image
+- [ ] Rejects non-image files and files > 5MB
+- [ ] Save persists all changes across all steps
+- [ ] Validation errors navigate to the step with the error and show toast
+- [ ] Sponsor add/update/remove syncs correctly on save
+
+### 6.5 Create Cohort (`/admin/cohorts/new`)
+- [ ] Multi-step form works (must complete steps sequentially)
+- [ ] Name auto-generates slug
+- [ ] Can upload banner image
+- [ ] Creates cohort and redirects to list
+
+### 6.6 Submissions (`/admin/submissions`)
 - [ ] Lists all submissions
 - [ ] Filter by cohort
 - [ ] Filter by status
 - [ ] Search by title/team
 - [ ] Can view submission details
 
-### 6.5 Submission Detail (`/admin/submissions/[id]`)
+### 6.7 Submission Detail (`/admin/submissions/[id]`)
 - [ ] Shows full submission info
 - [ ] Can change status
 - [ ] Can assign reviews
 - [ ] Can mark as winner
 
-### 6.6 Judges (`/admin/judges`)
+### 6.8 Judges (`/admin/judges`)
 - [ ] Lists all judges
 - [ ] Shows review stats
 - [ ] Can invite new judge
 - [ ] Can assign reviews
 
-### 6.7 Sponsors (`/admin/sponsors`)
+### 6.9 Reviews (`/admin/reviews`)
+- [ ] Lists all reviews across cohorts
+- [ ] Filter by cohort, status, reviewer
+- [ ] Shows review scores and feedback
+
+### 6.10 Review Detail (`/admin/reviews/[id]`)
+- [ ] Shows submission with review scores
+- [ ] Admin can submit/edit reviews with 5 scoring categories
+- [ ] Can add feedback and internal notes
+- [ ] Three-role review system: admin, sponsor, judge reviews distinguished
+
+### 6.11 Sponsors (`/admin/sponsors`)
 - [ ] Lists sponsor organizations
 - [ ] Can create new org
 - [ ] Can edit org details
 - [ ] Can manage cohort sponsorships
 
-### 6.8 Users (`/admin/users`)
+### 6.12 Users (`/admin/users`)
 - [ ] Lists all users
 - [ ] Stats show role counts
 - [ ] Search by name/email
@@ -260,13 +297,13 @@
 - [ ] Sponsor org selector shows when role = sponsor
 - [ ] Role change persists
 
-### 6.9 Workshops (`/admin/workshops`)
+### 6.13 Workshops (`/admin/workshops`)
 - [ ] Lists all workshops
 - [ ] Can create workshop
 - [ ] Can edit any workshop
 - [ ] Can change workshop status
 
-### 6.10 Theme Guide (`/admin/theme`)
+### 6.14 Theme Guide (`/admin/theme`)
 - [ ] Displays color palette
 - [ ] Shows component examples
 
@@ -288,9 +325,51 @@
 
 ---
 
-## 8. Workshop RSVP Tests
+## 8. Image Upload Tests
 
-### 8.1 RSVP Flow
+### 8.1 Upload API (`POST /api/upload`)
+- [ ] Accepts valid image files (JPEG, PNG, WebP, GIF)
+- [ ] Rejects non-image file types (PDF, ZIP, etc.)
+- [ ] Rejects files over 5MB
+- [ ] Returns public URL on success
+- [ ] Requires valid bucket parameter (`banners` or `screenshots`)
+- [ ] Rejects invalid bucket names
+
+### 8.2 Cohort Banner Upload
+- [ ] ImageUploader renders in cohort form (Basic Info step)
+- [ ] Click or drag-and-drop uploads image
+- [ ] Shows upload progress/spinner
+- [ ] Displays image preview after upload
+- [ ] Can replace existing banner with new upload
+- [ ] Can remove banner image
+- [ ] Banner URL persists after saving cohort
+- [ ] Banner displays in CohortHero on public cohort page
+- [ ] Cohorts without banner show SVG pattern fallback
+
+### 8.3 Submission Screenshots Upload
+- [ ] MultiImageUploader renders in submit form (Media step)
+- [ ] Shows "{current}/3 required" counter
+- [ ] Shows "(X more needed)" in red when below minimum
+- [ ] Can upload multiple images
+- [ ] Grid layout displays uploaded thumbnails
+- [ ] Can remove individual screenshots
+- [ ] Cannot proceed past Media step with < 3 screenshots
+- [ ] Disables add button at 10 screenshots (max)
+- [ ] Screenshots display in review step summary
+- [ ] Screenshots persist after submission
+- [ ] ProjectGallery displays screenshots on project detail page
+
+### 8.4 Supabase Storage
+- [ ] `banners` bucket exists and is public
+- [ ] `screenshots` bucket exists and is public
+- [ ] Uploaded files accessible via public URL
+- [ ] Files persist after page refresh
+
+---
+
+## 9. Workshop RSVP Tests
+
+### 9.1 RSVP Flow
 - [ ] Can RSVP from workshop card
 - [ ] Can RSVP from workshop detail modal
 - [ ] RSVP count updates
@@ -298,82 +377,82 @@
 - [ ] Can cancel RSVP
 - [ ] Meeting link shown after RSVP
 
-### 8.2 Calendar Integration
+### 9.2 Calendar Integration
 - [ ] Google Calendar link works
 - [ ] ICS download works
 - [ ] Apple Calendar link works
 
 ---
 
-## 9. Search and Filter Tests
+## 10. Search and Filter Tests
 
-### 9.1 Explore Page Filters
+### 10.1 Explore Page Filters
 - [ ] Text search filters results
 - [ ] Track filter works
 - [ ] Tech stack filter works
 - [ ] Multiple filters combine correctly
 - [ ] Clear filters resets view
 
-### 9.2 Admin Table Filters
+### 10.2 Admin Table Filters
 - [ ] Search filters table rows
 - [ ] Dropdown filters work
 - [ ] Pagination works (if implemented)
 
 ---
 
-## 10. Responsive Design Tests
+## 11. Responsive Design Tests
 
-### 10.1 Mobile Views (< 768px)
+### 11.1 Mobile Views (< 768px)
 - [ ] Navigation collapses to hamburger
 - [ ] Mobile sidebar works
 - [ ] Tables hide non-essential columns
 - [ ] Forms are usable
 - [ ] Modals fit screen
 
-### 10.2 Tablet Views (768px - 1024px)
+### 11.2 Tablet Views (768px - 1024px)
 - [ ] Layout adapts properly
 - [ ] Sidebar may be collapsed
 - [ ] Tables show more columns
 
-### 10.3 Desktop Views (> 1024px)
+### 11.3 Desktop Views (> 1024px)
 - [ ] Full layout displayed
 - [ ] Sidebar always visible (dashboard)
 - [ ] Full tables displayed
 
 ---
 
-## 11. Error Handling Tests
+## 12. Error Handling Tests
 
-### 11.1 Network Errors
+### 12.1 Network Errors
 - [ ] Shows error message on API failure
 - [ ] Can retry failed requests
 - [ ] Graceful degradation
 
-### 11.2 Form Validation
+### 12.2 Form Validation
 - [ ] Required fields show errors
 - [ ] Email format validated
 - [ ] URL format validated
 - [ ] Error messages are clear
 
-### 11.3 404 Pages
+### 12.3 404 Pages
 - [ ] Invalid routes show 404 page
 - [ ] 404 has navigation back
 
 ---
 
-## 12. Data Integrity Tests
+## 13. Data Integrity Tests
 
-### 12.1 Submission Flow
+### 13.1 Submission Flow
 - [ ] Creating submission updates team's submissions
 - [ ] Deleting submission removes from lists
 - [ ] Status changes reflect everywhere
 
-### 12.2 Team Management
+### 13.2 Team Management
 - [ ] Adding member updates team list
 - [ ] Removing member updates counts
 - [ ] Team deletion handles submissions
 
-### 12.3 User Role Changes
+### 13.3 User Role Changes
 - [ ] Changing to judge → user appears in judges list
 - [ ] Changing to sponsor → can link to org
 - [ ] Changing from sponsor → org link cleared
