@@ -31,6 +31,7 @@ import {
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { ArrowLeft, Save, Loader2, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 const categories = ["Basics", "Advanced", "Business", "Technical"];
 
@@ -144,10 +145,22 @@ export default function WorkshopEditPage({ params }: WorkshopEditPageProps) {
     setIsLoading(true);
 
     try {
-      // Mock save - in real app, this would call an API
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      const result = await workshopsService.update(workshop.id, {
+        title,
+        description,
+        category,
+        duration: duration || undefined,
+        videoUrl: videoUrl || undefined,
+        articleUrl: articleUrl || undefined,
+        status,
+      });
 
+      if (!result.success) {
+        toast.error(result.error || "Failed to save workshop");
+        return;
+      }
+
+      toast.success("Workshop saved");
       router.push("/sponsor/workshops");
     } finally {
       setIsLoading(false);
@@ -159,7 +172,13 @@ export default function WorkshopEditPage({ params }: WorkshopEditPageProps) {
   };
 
   const confirmDelete = async () => {
-    // TODO: Implement workshop deletion
+    const result = await workshopsService.delete(workshop.id);
+    if (!result.success) {
+      toast.error(result.error || "Failed to delete workshop");
+      setShowDeleteDialog(false);
+      return;
+    }
+    toast.success("Workshop deleted");
     setShowDeleteDialog(false);
     router.push("/sponsor/workshops");
   };
@@ -187,10 +206,10 @@ export default function WorkshopEditPage({ params }: WorkshopEditPageProps) {
               <Badge
                 className={
                   status === "published"
-                    ? "bg-green-100 text-green-800"
+                    ? "bg-status-active text-status-active-foreground border border-status-active/30"
                     : status === "archived"
-                    ? "bg-amber-100 text-amber-800"
-                    : "bg-slate-100 text-slate-700"
+                    ? "bg-status-completed text-status-completed-foreground border border-status-completed/30"
+                    : "bg-status-draft text-status-draft-foreground border border-status-draft/30"
                 }
               >
                 {status}

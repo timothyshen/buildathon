@@ -21,7 +21,7 @@ import { StepMedia } from "./components/step-media";
 import { StepLinksTech } from "./components/step-links-tech";
 import { StepTracks } from "./components/step-tracks";
 import { StepReview } from "./components/step-review";
-import { teamsService, cohortsService, tracksService, sponsorsService } from "@/services";
+import { teamsService, cohortsService, tracksService, sponsorsService, submissionsService } from "@/services";
 import { useAuth } from "@/contexts/auth-context";
 import type { Team, Cohort, Track, SponsorOrg } from "@/types";
 
@@ -223,7 +223,28 @@ export default function SubmitPage() {
 
     setIsLoading(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const result = await submissionsService.create({
+        cohortId: data.cohortId,
+        teamId: data.teamId,
+        title: data.title,
+        tagline: data.tagline || undefined,
+        description: data.description,
+        demoUrl: data.demoUrl || undefined,
+        repoUrl: data.repoUrl || undefined,
+        videoUrl: data.videoUrl || undefined,
+        presentationUrl: data.presentationUrl || undefined,
+        screenshots: data.screenshots,
+        techStack: data.techStack,
+        builtWithStory: data.builtWithStory,
+        trackIds: data.trackIds,
+        status: "submitted",
+      });
+
+      if (!result.success) {
+        toast.error(result.error || "Failed to submit project");
+        return;
+      }
+
       localStorage.removeItem(STORAGE_KEY);
       toast.success("Project submitted successfully!");
       router.push("/submissions");

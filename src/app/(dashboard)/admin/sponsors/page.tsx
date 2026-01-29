@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { sponsorsService, cohortsService } from "@/services";
+import { sponsorsService, cohortsService, usersService } from "@/services";
+import { toast } from "sonner";
 import type { SponsorOrg, CohortSponsor, Cohort } from "@/types";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
@@ -97,9 +98,17 @@ export default function AdminSponsorsPage() {
     setDeleteTarget(sponsor);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (deleteTarget) {
-      console.log("Delete:", deleteTarget.id);
+      const result = await sponsorsService.deleteOrg(deleteTarget.id);
+      if (!result.success) {
+        toast.error(result.error || "Failed to delete sponsor");
+        setDeleteTarget(null);
+        return;
+      }
+      setSponsorOrgs((prev) => prev.filter((s) => s.id !== deleteTarget.id));
+      setCohortSponsors((prev) => prev.filter((cs) => cs.sponsorOrgId !== deleteTarget.id));
+      toast.success("Sponsor deleted");
       setDeleteTarget(null);
     }
   };
@@ -109,14 +118,78 @@ export default function AdminSponsorsPage() {
     setIsInviteOpen(true);
   };
 
-  const handleFormSubmit = (data: SponsorFormData) => {
-    console.log("Sponsor form submitted:", data);
+  const handleFormSubmit = async (data: SponsorFormData) => {
+    const orgData = {
+      name: data.name,
+      logo: data.logo || "",
+      website: data.website || "",
+      description: data.description || "",
+      contactName: data.contactName,
+      contactEmail: data.contactEmail,
+    };
+
+    if (editingSponsor) {
+      // Update existing sponsor org
+      const result = await sponsorsService.updateOrg(editingSponsor.id, orgData);
+      if (!result.success) {
+        toast.error(result.error || "Failed to update sponsor");
+        return;
+      }
+      setSponsorOrgs((prev) => prev.map((s) => (s.id === editingSponsor.id ? result.data : s)));
+      toast.success("Sponsor updated");
+    } else {
+      // Create new sponsor org
+      const orgResult = await sponsorsService.createOrg(orgData);
+      if (!orgResult.success) {
+        toast.error(orgResult.error || "Failed to create sponsor");
+        return;
+      }
+
+      // Create cohort sponsor junction
+      const csResult = await sponsorsService.createCohortSponsor({
+        cohortId: data.cohortId,
+        sponsorOrgId: orgResult.data.id,
+        tier: data.tier,
+        prizePoolContribution: data.prizePoolContribution,
+        hasDedicatedTrack: data.hasDedicatedTrack,
+      });
+
+      if (!csResult.success) {
+        toast.error(csResult.error || "Failed to link sponsor to cohort");
+        return;
+      }
+
+      setSponsorOrgs((prev) => [...prev, orgResult.data]);
+      setCohortSponsors((prev) => [...prev, csResult.data]);
+      toast.success("Sponsor created");
+    }
+
     setEditingSponsor(undefined);
+    setIsFormOpen(false);
   };
 
-  const handleInviteSubmit = (data: InviteSponsorFormData) => {
-    console.log("Invite submitted:", data);
+  const handleInviteSubmit = async (data: InviteSponsorFormData) => {
+    // Find user by email
+    const userResult = await usersService.getByEmail(data.email);
+    if (!userResult.success || !userResult.data) {
+      toast.error("No user found with that email address");
+      return;
+    }
+
+    // Assign sponsor role and org to the user
+    const updateResult = await usersService.update(userResult.data.id, {
+      role: "sponsor",
+      sponsorOrgId: data.sponsorId,
+    });
+
+    if (!updateResult.success) {
+      toast.error(updateResult.error || "Failed to assign sponsor role");
+      return;
+    }
+
+    toast.success(`${data.name} has been assigned as a sponsor`);
     setInvitingSponsor(undefined);
+    setIsInviteOpen(false);
   };
 
   const handleFormOpenChange = (open: boolean) => {

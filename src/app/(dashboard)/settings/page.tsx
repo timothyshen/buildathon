@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/auth-context";
+import { usersService } from "@/services";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,16 +10,46 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Loader2, Save } from "lucide-react";
+import { toast } from "sonner";
 
 export default function SettingsPage() {
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [name, setName] = useState("");
+  const [bio, setBio] = useState("");
+  const [twitter, setTwitter] = useState("");
+  const [github, setGithub] = useState("");
+
+  useEffect(() => {
+    if (user) {
+      setName(user.name || "");
+      setBio(user.bio || "");
+      setTwitter(user.twitter || "");
+      setGithub(user.github || "");
+    }
+  }, [user]);
 
   const handleSave = async () => {
+    if (!user) return;
     setIsLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setIsLoading(false);
+    try {
+      const result = await usersService.update(user.id, {
+        name: name.trim(),
+        bio: bio.trim() || undefined,
+        twitter: twitter.trim() || undefined,
+        github: github.trim() || undefined,
+      });
+
+      if (!result.success) {
+        toast.error(result.error || "Failed to save settings");
+        return;
+      }
+
+      if (refreshUser) refreshUser();
+      toast.success("Settings saved");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -51,7 +82,7 @@ export default function SettingsPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="name">Name</Label>
-              <Input id="name" defaultValue={user?.name} />
+              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -64,7 +95,8 @@ export default function SettingsPage() {
             <Textarea
               id="bio"
               placeholder="Tell us about yourself..."
-              defaultValue={user?.bio}
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
               rows={3}
             />
           </div>
@@ -90,7 +122,8 @@ export default function SettingsPage() {
                 id="twitter"
                 className="rounded-l-none"
                 placeholder="username"
-                defaultValue={user?.twitter}
+                value={twitter}
+                onChange={(e) => setTwitter(e.target.value)}
               />
             </div>
           </div>
@@ -105,7 +138,8 @@ export default function SettingsPage() {
                 id="github"
                 className="rounded-l-none"
                 placeholder="username"
-                defaultValue={user?.github}
+                value={github}
+                onChange={(e) => setGithub(e.target.value)}
               />
             </div>
           </div>
