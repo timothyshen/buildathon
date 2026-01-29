@@ -150,11 +150,15 @@ async function create(
   const { data: created, error: dbError } = await supabase
     .from("workshops")
     .insert(dbData)
-    .select()
-    .single();
+    .select("id")
+    .maybeSingle();
 
   if (dbError) {
     return error(dbError.message, null as unknown as Workshop);
+  }
+
+  if (!created) {
+    return error("Failed to retrieve created workshop", null as unknown as Workshop);
   }
 
   // Add cohort associations

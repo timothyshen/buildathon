@@ -147,10 +147,14 @@ async function create(
     .from("submissions")
     .insert(dbData)
     .select()
-    .single();
+    .maybeSingle();
 
   if (dbError) {
     return error(dbError.message, null as unknown as Submission);
+  }
+
+  if (!created) {
+    return error("Failed to retrieve created submission", null as unknown as Submission);
   }
 
   // Add track associations

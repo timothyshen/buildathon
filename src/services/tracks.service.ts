@@ -158,20 +158,28 @@ async function create(data: Omit<Track, "id">): Promise<ServiceResponse<Track>> 
   const { data: created, error: dbError } = await supabase
     .from("tracks")
     .insert(dbData)
-    .select(`
-      *,
-      sponsor_orgs (
-        name,
-        logo
-      )
-    `)
-    .single();
+    .select("*")
+    .maybeSingle();
 
   if (dbError) {
     return error(dbError.message, null as unknown as Track);
   }
 
-  const sponsorData = created.sponsor_orgs as { name: string; logo: string } | null;
+  if (!created) {
+    return error("Failed to retrieve created track", null as unknown as Track);
+  }
+
+  // Fetch sponsor data separately (join after insert can fail with PostgREST)
+  let sponsorData: { name: string; logo: string } | null = null;
+  if (created.sponsor_org_id) {
+    const { data: org } = await supabase
+      .from("sponsor_orgs")
+      .select("name, logo")
+      .eq("id", created.sponsor_org_id)
+      .single();
+    sponsorData = org as { name: string; logo: string } | null;
+  }
+
   return success(toTrack(created, sponsorData));
 }
 
@@ -180,24 +188,36 @@ async function update(id: string, data: Partial<Track>): Promise<ServiceResponse
 
   const dbData = toDbTrack(data) as TablesUpdate<"tracks">;
 
-  const { data: updated, error: dbError } = await supabase
+  const { error: updateError } = await supabase
     .from("tracks")
     .update(dbData)
-    .eq("id", id)
-    .select(`
-      *,
-      sponsor_orgs (
-        name,
-        logo
-      )
-    `)
-    .single();
+    .eq("id", id);
 
-  if (dbError) {
-    return error(dbError.message, null as unknown as Track);
+  if (updateError) {
+    return error(updateError.message, null as unknown as Track);
   }
 
-  const sponsorData = updated.sponsor_orgs as { name: string; logo: string } | null;
+  // Re-fetch with sponsor data
+  const { data: updated, error: fetchError } = await supabase
+    .from("tracks")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (fetchError) {
+    return error(fetchError.message, null as unknown as Track);
+  }
+
+  let sponsorData: { name: string; logo: string } | null = null;
+  if (updated.sponsor_org_id) {
+    const { data: org } = await supabase
+      .from("sponsor_orgs")
+      .select("name, logo")
+      .eq("id", updated.sponsor_org_id)
+      .single();
+    sponsorData = org as { name: string; logo: string } | null;
+  }
+
   return success(toTrack(updated, sponsorData));
 }
 

@@ -153,10 +153,14 @@ async function create(data: Omit<Cohort, "id">): Promise<ServiceResponse<Cohort>
     .from("cohorts")
     .insert(dbData)
     .select()
-    .single();
+    .maybeSingle();
 
   if (dbError) {
     return error(dbError.message, null as unknown as Cohort);
+  }
+
+  if (!created) {
+    return error("Failed to retrieve created cohort", null as unknown as Cohort);
   }
 
   return success(toCohort(created));
@@ -167,15 +171,23 @@ async function update(id: string, data: Partial<Cohort>): Promise<ServiceRespons
 
   const dbData = toDbCohort(data) as TablesUpdate<"cohorts">;
 
-  const { data: updated, error: dbError } = await supabase
+  const { error: updateError } = await supabase
     .from("cohorts")
     .update(dbData)
+    .eq("id", id);
+
+  if (updateError) {
+    return error(updateError.message, null as unknown as Cohort);
+  }
+
+  const { data: updated, error: fetchError } = await supabase
+    .from("cohorts")
+    .select("*")
     .eq("id", id)
-    .select()
     .single();
 
-  if (dbError) {
-    return error(dbError.message, null as unknown as Cohort);
+  if (fetchError) {
+    return error(fetchError.message, null as unknown as Cohort);
   }
 
   return success(toCohort(updated));

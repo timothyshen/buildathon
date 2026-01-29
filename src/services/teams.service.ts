@@ -209,10 +209,14 @@ async function create(data: CreateTeamData): Promise<ServiceResponse<Team>> {
       description: data.description?.trim(),
     })
     .select()
-    .single();
+    .maybeSingle();
 
   if (teamError) {
     return error(teamError.message, null as unknown as Team);
+  }
+
+  if (!teamData) {
+    return error("Failed to retrieve created team", null as unknown as Team);
   }
 
   // Add lead member
