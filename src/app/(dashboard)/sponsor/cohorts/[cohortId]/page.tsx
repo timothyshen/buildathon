@@ -22,6 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 import {
   ArrowLeft,
   Save,
@@ -152,7 +153,14 @@ export default function SponsorCohortPage({ params }: SponsorCohortPageProps) {
   const handleSaveDescription = async () => {
     setIsLoading(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      const result = await sponsorsService.updateCohortSponsor(cohortSponsor.id, {
+        description,
+      });
+      if (!result.success) {
+        toast.error(result.error || "Failed to save description");
+        return;
+      }
+      toast.success("Description saved");
     } finally {
       setIsLoading(false);
     }
@@ -160,8 +168,24 @@ export default function SponsorCohortPage({ params }: SponsorCohortPageProps) {
 
   const handleAddTrack = async () => {
     if (!newTrack.name) return;
+    const result = await tracksService.create({
+      cohortId,
+      sponsorOrgId: sponsor.id,
+      name: newTrack.name,
+      description: newTrack.description || "",
+      prizePool: newTrack.prizePool || undefined,
+      requirements: [],
+      sponsorName: sponsor.name,
+      sponsorLogo: sponsor.logo,
+    });
+    if (!result.success) {
+      toast.error(result.error || "Failed to create track");
+      return;
+    }
+    setSponsorTracks((prev) => [...prev, result.data]);
     setNewTrack({ name: "", prizePool: "", description: "" });
     setShowNewTrackForm(false);
+    toast.success("Track created");
   };
 
   const handleDeleteTrack = (trackId: string) => {
@@ -171,11 +195,17 @@ export default function SponsorCohortPage({ params }: SponsorCohortPageProps) {
     }
   };
 
-  const confirmDeleteTrack = () => {
+  const confirmDeleteTrack = async () => {
     if (deleteTrackTarget) {
-      // TODO: Implement track deletion
-      console.log("Delete track:", deleteTrackTarget.id);
+      const result = await tracksService.delete(deleteTrackTarget.id);
+      if (!result.success) {
+        toast.error(result.error || "Failed to delete track");
+        setDeleteTrackTarget(null);
+        return;
+      }
+      setSponsorTracks((prev) => prev.filter((t) => t.id !== deleteTrackTarget.id));
       setDeleteTrackTarget(null);
+      toast.success("Track deleted");
     }
   };
 

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
-import { sponsorsService } from "@/services";
+import { sponsorsService, workshopsService } from "@/services";
 import type { SponsorOrg } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
+import { toast } from "sonner";
 import { ArrowLeft, Save, Loader2 } from "lucide-react";
 
 const categories = ["Basics", "Advanced", "Business", "Technical"];
@@ -75,21 +76,27 @@ export default function NewWorkshopPage() {
     setIsLoading(true);
 
     try {
-      // Mock save - in real app, this would call an API
-      console.log("Creating workshop:", {
+      const result = await workshopsService.create({
         title,
         description,
         category,
-        duration,
-        videoUrl,
-        articleUrl,
+        duration: duration || undefined,
+        videoUrl: videoUrl || undefined,
+        articleUrl: articleUrl || undefined,
         status,
         sponsorOrgId: sponsor.id,
+        partnerName: sponsor.name,
+        partnerLogo: sponsor.logo,
+        isEvergreen: false,
+        cohortIds: [],
       });
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      if (!result.success) {
+        toast.error(result.error || "Failed to create workshop");
+        return;
+      }
 
+      toast.success("Workshop created successfully");
       router.push("/sponsor/workshops");
     } finally {
       setIsLoading(false);

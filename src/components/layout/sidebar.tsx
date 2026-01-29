@@ -97,19 +97,7 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
     loadCounts();
   }, [user]);
 
-  const roleHome: Record<string, string> = {
-    admin: "/admin/cohorts",
-    judge: "/reviews",
-    sponsor: "/sponsor/tracks",
-    participant: "/submissions",
-  };
-
   const navSections: NavSection[] = [
-    {
-      items: [
-        { href: roleHome[user?.role || "participant"], label: "Home", icon: Home },
-      ],
-    },
     {
       title: "Builder",
       roles: ["participant"],
@@ -140,7 +128,6 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
       title: "Sponsor",
       roles: ["sponsor"],
       items: [
-        { href: "/sponsor/workshops", label: "My Workshops", icon: GraduationCap },
         { href: "/sponsor/tracks", label: "My Sponsorships", icon: Trophy },
         {
           href: "/sponsor/reviews",
@@ -148,6 +135,7 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
           icon: Star,
           badge: pendingReviews > 0 ? pendingReviews : undefined,
         },
+        { href: "/sponsor/workshops", label: "My Workshops", icon: GraduationCap },
       ],
     },
     {
