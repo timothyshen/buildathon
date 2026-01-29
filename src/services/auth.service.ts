@@ -26,7 +26,6 @@ export interface AuthService {
   register(data: RegisterData): Promise<ServiceResponse<User>>;
   logout(): Promise<ServiceResponse<void>>;
   getCurrentUser(): Promise<ServiceResponse<User | null>>;
-  switchRole(role: User["role"]): Promise<ServiceResponse<User>>;
   completeOnboarding(data: OnboardingData): Promise<ServiceResponse<User>>;
   updateProfile(data: Partial<User>): Promise<ServiceResponse<User>>;
 }
@@ -193,31 +192,6 @@ async function getCurrentUser(): Promise<ServiceResponse<User | null>> {
   return success(toUser(userData));
 }
 
-async function switchRole(role: User["role"]): Promise<ServiceResponse<User>> {
-  const supabase = createClient();
-
-  const { data: { user: authUser } } = await supabase.auth.getUser();
-
-  if (!authUser) {
-    return error("No user logged in", null as unknown as User);
-  }
-
-  // Update role in users table
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: userData, error: userError } = await (supabase as any)
-    .from("users")
-    .update({ role })
-    .eq("id", authUser.id)
-    .select()
-    .single();
-
-  if (userError) {
-    return error(userError.message, null as unknown as User);
-  }
-
-  return success(toUser(userData));
-}
-
 async function completeOnboarding(data: OnboardingData): Promise<ServiceResponse<User>> {
   const supabase = createClient();
 
@@ -291,7 +265,6 @@ export const authService: AuthService = {
   register,
   logout,
   getCurrentUser,
-  switchRole,
   completeOnboarding,
   updateProfile,
 };

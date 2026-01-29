@@ -79,7 +79,7 @@ export default function AdminSubmissionsPage() {
     <div className="space-y-6">
       <Breadcrumb
         items={[
-          { label: "Admin", href: "/dashboard" },
+          { label: "Admin", href: "/admin/cohorts" },
           { label: "Submissions" }
         ]}
       />

@@ -96,7 +96,7 @@ export default function AdminUsersPage() {
       <div className="space-y-6">
         <Breadcrumb
           items={[
-            { label: "Admin", href: "/dashboard" },
+            { label: "Admin", href: "/admin/cohorts" },
             { label: "Users" },
           ]}
         />
@@ -192,7 +192,7 @@ export default function AdminUsersPage() {
     <div className="space-y-6">
       <Breadcrumb
         items={[
-          { label: "Admin", href: "/dashboard" },
+          { label: "Admin", href: "/admin/cohorts" },
           { label: "Users" },
         ]}
       />

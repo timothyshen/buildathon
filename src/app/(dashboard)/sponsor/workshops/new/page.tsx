@@ -100,7 +100,7 @@ export default function NewWorkshopPage() {
     <div className="space-y-6">
       <Breadcrumb
         items={[
-          { label: "Dashboard", href: "/dashboard" },
+          { label: "Sponsor", href: "/sponsor/tracks" },
           { label: "Workshops", href: "/sponsor/workshops" },
           { label: "New Workshop" },
         ]}

@@ -38,7 +38,7 @@ export default function OnboardingPage() {
   // Redirect if already onboarded
   useEffect(() => {
     if (user?.hasCompletedOnboarding) {
-      router.push("/dashboard");
+      router.replace("/dashboard");
     }
   }, [user?.hasCompletedOnboarding, router]);
 
@@ -95,7 +95,7 @@ export default function OnboardingPage() {
       });
 
       toast.success("Welcome aboard! Your profile is set up.");
-      router.push("/dashboard");
+      router.replace("/dashboard");
     } finally {
       setIsLoading(false);
     }

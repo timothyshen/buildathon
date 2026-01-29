@@ -174,7 +174,7 @@
 - [ ] Can add internal notes
 - [ ] Submit review works
 - [ ] Can save draft review
-
+n
 ---
 
 ## 5. Sponsor Dashboard Tests
@@ -311,13 +311,7 @@
 
 ## 7. Cross-Role Tests
 
-### 7.1 Role Switching (Dev Mode)
-- [ ] Admin can switch to any role
-- [ ] UI updates to show role-specific content
-- [ ] Navigation updates for role
-- [ ] Permissions respected
-
-### 7.2 Access Control
+### 7.1 Access Control
 - [ ] Participant cannot access `/admin/*`
 - [ ] Judge cannot access `/sponsor/*`
 - [ ] Sponsor cannot access `/admin/*`

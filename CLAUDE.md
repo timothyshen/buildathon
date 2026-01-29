@@ -25,9 +25,9 @@ This is a **Next.js 16 App Router** buildathon/hackathon management platform usi
 
 ### Key Patterns
 
-**Authentication**: Mock auth via `src/contexts/auth-context.tsx`. Uses localStorage for persistence. Dev mode role switcher in sidebar allows testing admin/sponsor/judge/participant views.
+**Authentication**: Supabase Auth via `src/contexts/auth-context.tsx`. Session managed by Supabase with middleware for server-side redirects.
 
-**Data Layer**: Currently uses mock data from `src/data/mock-data.ts`. All entities (Cohort, Submission, Track, Workshop, etc.) defined in `src/types/index.ts`.
+**Data Layer**: Supabase (PostgreSQL) via service layer in `src/services/`. All entities (Cohort, Submission, Track, Workshop, etc.) defined in `src/types/index.ts`.
 
 **Role-Based Views**: Dashboard renders different components based on `user.role`:
 - `admin` → AdminDashboard, access to `/admin/*` routes

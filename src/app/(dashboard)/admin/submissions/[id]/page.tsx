@@ -147,7 +147,7 @@ export default function AdminSubmissionDetailPage({ params }: AdminSubmissionDet
     <div className="space-y-6">
       <Breadcrumb
         items={[
-          { label: "Admin", href: "/dashboard" },
+          { label: "Admin", href: "/admin/cohorts" },
           { label: "Submissions", href: "/admin/submissions" },
           { label: submission.title },
         ]}

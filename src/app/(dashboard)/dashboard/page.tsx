@@ -1,25 +1,34 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
-import { AdminDashboard } from "@/components/dashboard/admin-dashboard";
-import { JudgeDashboard } from "@/components/dashboard/judge-dashboard";
-import { SponsorDashboard } from "@/components/dashboard/sponsor-dashboard";
-import { ParticipantDashboard } from "@/components/dashboard/participant-dashboard";
+import { Loading } from "@/components/ui/loading";
+import type { User } from "@/types";
 
-export default function DashboardPage() {
-  const { user } = useAuth();
-
-  if (!user) return null;
-
-  switch (user.role) {
+function getRoleHome(role: User["role"]): string {
+  switch (role) {
     case "admin":
-      return <AdminDashboard />;
+      return "/admin/cohorts";
     case "judge":
-      return <JudgeDashboard />;
+      return "/reviews";
     case "sponsor":
-      return <SponsorDashboard />;
+      return "/sponsor/tracks";
     case "participant":
     default:
-      return <ParticipantDashboard />;
+      return "/submissions";
   }
+}
+
+export default function DashboardPage() {
+  const router = useRouter();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      router.replace(getRoleHome(user.role));
+    }
+  }, [user, router]);
+
+  return <Loading fullScreen label="Loading..." />;
 }

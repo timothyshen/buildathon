@@ -48,7 +48,7 @@ interface SidebarContentProps {
 export function SidebarContent({ onNavigate }: SidebarContentProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, logout, switchRole } = useAuth();
+  const { user, logout } = useAuth();
 
   // Badge count state
   const [draftCount, setDraftCount] = useState(0);
@@ -97,10 +97,17 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
     loadCounts();
   }, [user]);
 
+  const roleHome: Record<string, string> = {
+    admin: "/admin/cohorts",
+    judge: "/reviews",
+    sponsor: "/sponsor/tracks",
+    participant: "/submissions",
+  };
+
   const navSections: NavSection[] = [
     {
       items: [
-        { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+        { href: roleHome[user?.role || "participant"], label: "Home", icon: Home },
       ],
     },
     {
@@ -279,33 +286,6 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
           <span>Back to Home</span>
         </Link>
       </div>
-
-      {/* Role Switcher (Dev Tool) */}
-      {user && (
-        <div className="border-t p-3">
-          <div className="rounded-md bg-muted p-3">
-            <p className="mb-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-              Dev Mode
-            </p>
-            <div className="grid grid-cols-2 gap-1.5">
-              {(["participant", "judge", "sponsor", "admin"] as const).map((role) => (
-                <button
-                  key={role}
-                  onClick={() => switchRole(role)}
-                  className={cn(
-                    "rounded px-2 py-1.5 text-xs font-medium transition-colors",
-                    user.role === role
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-background text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                  )}
-                >
-                  {role.charAt(0).toUpperCase() + role.slice(1)}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* User Profile */}
       {user && (

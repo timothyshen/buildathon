@@ -106,7 +106,7 @@ export default function NewCohortPage() {
         </Button>
         <Breadcrumb
           items={[
-            { label: "Admin", href: "/dashboard" },
+            { label: "Admin", href: "/admin/cohorts" },
             { label: "Cohorts", href: "/admin/cohorts" },
             { label: "New Cohort" },
           ]}

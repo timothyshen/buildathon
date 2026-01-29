@@ -11,7 +11,6 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   register: (data: RegisterData) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
-  switchRole: (role: User["role"]) => void;
   completeOnboarding: (data: OnboardingData) => void;
   refreshUser: () => Promise<void>;
 }
@@ -158,16 +157,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   }, []);
 
-  // Dev helper to switch roles for testing
-  const switchRole = useCallback(async (role: User["role"]) => {
-    if (!user) return;
-
-    const { data, success } = await authService.switchRole(role);
-    if (success && data) {
-      setUser(data);
-    }
-  }, [user]);
-
   // Complete onboarding and update user profile
   const completeOnboarding = useCallback(async (data: OnboardingData) => {
     if (!user) return;
@@ -179,7 +168,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [user]);
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, register, logout, switchRole, completeOnboarding, refreshUser }}>
+    <AuthContext.Provider value={{ user, isLoading, login, register, logout, completeOnboarding, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

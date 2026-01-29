@@ -126,7 +126,7 @@ export default function SponsorCohortPage({ params }: SponsorCohortPageProps) {
             The cohort you're looking for doesn't exist.
           </p>
           <Button asChild className="mt-4">
-            <Link href="/dashboard">Back to Dashboard</Link>
+            <Link href="/sponsor/tracks">Back to Sponsor Home</Link>
           </Button>
         </div>
       </div>
@@ -142,7 +142,7 @@ export default function SponsorCohortPage({ params }: SponsorCohortPageProps) {
             {sponsor.name} is not a sponsor of {cohort.name}.
           </p>
           <Button asChild className="mt-4">
-            <Link href="/dashboard">Back to Dashboard</Link>
+            <Link href="/sponsor/tracks">Back to Sponsor Home</Link>
           </Button>
         </div>
       </div>
@@ -191,7 +191,7 @@ export default function SponsorCohortPage({ params }: SponsorCohortPageProps) {
     <div className="space-y-6">
       <Breadcrumb
         items={[
-          { label: "Dashboard", href: "/dashboard" },
+          { label: "Sponsor", href: "/sponsor/tracks" },
           { label: cohort.name },
         ]}
       />
@@ -200,7 +200,7 @@ export default function SponsorCohortPage({ params }: SponsorCohortPageProps) {
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
-            <Link href="/dashboard">
+            <Link href="/sponsor/tracks">
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>

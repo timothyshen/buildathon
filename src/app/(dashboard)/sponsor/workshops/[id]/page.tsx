@@ -168,7 +168,7 @@ export default function WorkshopEditPage({ params }: WorkshopEditPageProps) {
     <div className="space-y-6">
       <Breadcrumb
         items={[
-          { label: "Dashboard", href: "/dashboard" },
+          { label: "Sponsor", href: "/sponsor/tracks" },
           { label: "Workshops", href: "/sponsor/workshops" },
           { label: workshop.title },
         ]}

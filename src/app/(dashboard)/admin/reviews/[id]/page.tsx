@@ -150,7 +150,7 @@ export default function AdminReviewDetailPage({ params }: AdminReviewDetailPageP
         </Button>
         <Breadcrumb
           items={[
-            { label: "Admin", href: "/dashboard" },
+            { label: "Admin", href: "/admin/cohorts" },
             { label: "Reviews", href: "/admin/reviews" },
             { label: `Review by ${judge?.name || "Unknown"}` },
           ]}

@@ -151,7 +151,7 @@ export default function EditCohortPage({ params }: EditCohortPageProps) {
         </Button>
         <Breadcrumb
           items={[
-            { label: "Admin", href: "/dashboard" },
+            { label: "Admin", href: "/admin/cohorts" },
             { label: "Cohorts", href: "/admin/cohorts" },
             { label: cohort.name, href: `/admin/cohorts/${id}` },
             { label: "Edit" },
