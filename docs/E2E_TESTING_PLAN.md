@@ -157,60 +157,62 @@
 ## 4. Judge Dashboard Tests
 
 ### 4.1 Dashboard Home
-- [ ] Shows judge-specific stats
-- [ ] Pending reviews count
-- [ ] Completed reviews count
+- [x] Shows judge-specific stats
+- [x] Pending reviews count
+- [x] Completed reviews count
+
+issue: sidebar showing participant side bar
 
 ### 4.2 Reviews List (`/reviews`)
-- [ ] Lists assigned reviews
-- [ ] Filter by status (pending, completed)
-- [ ] Shows submission preview
+- [x] Lists assigned reviews
+- [x] Filter by status (pending, completed)
+- [x] Shows submission preview
 
 ### 4.3 Review Detail (`/reviews/[id]`)
-- [ ] Shows submission details
-- [ ] Can view demo/repo
-- [ ] Scoring form with 5 categories
-- [ ] Can add feedback
-- [ ] Can add internal notes
-- [ ] Submit review works
+- [x] Shows submission details
+- [x] Can view demo/repo
+- [x] Scoring form with 5 categories
+- [x] Can add feedback
+- [x] Can add internal notes
+- [x] Submit review works
 - [ ] Can save draft review
-n
+
 ---
 
 ## 5. Sponsor Dashboard Tests
 
 ### 5.1 Dashboard Home
-- [ ] Shows sponsor org info
-- [ ] Participating cohorts list
-- [ ] Track submissions count
+- [x] Shows sponsor org info
+- [x] Participating cohorts list
+- [x] Track submissions count
 
 ### 5.2 Tracks (`/sponsor/tracks`)
-- [ ] Lists sponsor's tracks across cohorts
-- [ ] Shows submission counts per track
-- [ ] Can view track details
+- [x] Lists sponsor's tracks across cohorts
+- [x] Shows submission counts per track
+- [x] Can view track details
 
 ### 5.3 Reviews (`/sponsor/reviews`)
-- [ ] Lists submissions to sponsor tracks
+- [x] Lists submissions to sponsor tracks
 - [ ] Can filter by track
 - [ ] Can view submission details
 
 ### 5.4 Workshops (`/sponsor/workshops`)
-- [ ] Lists sponsor's workshops
-- [ ] Can create new workshop
-- [ ] Can edit existing workshop
+- [x] Lists sponsor's workshops
+- [x] Can create new workshop
+- [x] Can edit existing workshop
 - [ ] RSVP count displays
 
 ### 5.5 Create Workshop (`/sponsor/workshops/new`)
-- [ ] Form validates required fields
-- [ ] Can set schedule details
-- [ ] Can add video/article links
-- [ ] Creates workshop successfully
+- [x] Form validates required fields
+- [x] Can set schedule details
+- [x] Can add video/article links
+- [x] Creates workshop successfully
 
 ### 5.6 Edit Workshop (`/sponsor/workshops/[id]`)
-- [ ] Loads existing data
-- [ ] Can update all fields
-- [ ] Can change status (draft → published)
-- [ ] Can archive workshop
+- [x] Loads existing data
+- [x] Can update all fields
+- [x] Can change status (draft → published)
+- [x] Can archive workshop
 
 ---
 

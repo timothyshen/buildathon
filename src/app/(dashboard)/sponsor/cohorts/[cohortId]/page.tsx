@@ -39,6 +39,14 @@ interface SponsorCohortPageProps {
   params: Promise<{ cohortId: string }>;
 }
 
+function formatCurrency(value: string): string {
+  // Strip everything except digits
+  const digits = value.replace(/[^\d]/g, "");
+  if (!digits) return "";
+  // Format with commas and prepend $
+  return "$" + Number(digits).toLocaleString("en-US");
+}
+
 const tierColors: Record<string, string> = {
   platinum: "bg-slate-200 text-slate-800",
   gold: "bg-amber-100 text-amber-800",
@@ -60,6 +68,7 @@ export default function SponsorCohortPage({ params }: SponsorCohortPageProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [description, setDescription] = useState("");
   const [editingTrackId, setEditingTrackId] = useState<string | null>(null);
+  const [editTrack, setEditTrack] = useState({ name: "", prizePool: "", description: "" });
   const [newTrack, setNewTrack] = useState({ name: "", prizePool: "", description: "" });
   const [showNewTrackForm, setShowNewTrackForm] = useState(false);
   const [deleteTrackTarget, setDeleteTrackTarget] = useState<{ id: string; name: string } | null>(null);
@@ -186,6 +195,30 @@ export default function SponsorCohortPage({ params }: SponsorCohortPageProps) {
     setNewTrack({ name: "", prizePool: "", description: "" });
     setShowNewTrackForm(false);
     toast.success("Track created");
+  };
+
+  const startEditingTrack = (trackId: string) => {
+    const track = sponsorTracks.find((t) => t.id === trackId);
+    if (track) {
+      setEditTrack({ name: track.name, prizePool: track.prizePool || "", description: track.description || "" });
+      setEditingTrackId(trackId);
+    }
+  };
+
+  const handleSaveTrack = async () => {
+    if (!editingTrackId || !editTrack.name) return;
+    const result = await tracksService.update(editingTrackId, {
+      name: editTrack.name,
+      description: editTrack.description || "",
+      prizePool: editTrack.prizePool || undefined,
+    });
+    if (!result.success) {
+      toast.error(result.error || "Failed to update track");
+      return;
+    }
+    setSponsorTracks((prev) => prev.map((t) => (t.id === editingTrackId ? result.data : t)));
+    setEditingTrackId(null);
+    toast.success("Track updated");
   };
 
   const handleDeleteTrack = (trackId: string) => {
@@ -344,7 +377,7 @@ export default function SponsorCohortPage({ params }: SponsorCohortPageProps) {
                         id="prizePool"
                         value={newTrack.prizePool}
                         onChange={(e) =>
-                          setNewTrack({ ...newTrack, prizePool: e.target.value })
+                          setNewTrack({ ...newTrack, prizePool: formatCurrency(e.target.value) })
                         }
                         placeholder="$5,000"
                       />
@@ -390,43 +423,83 @@ export default function SponsorCohortPage({ params }: SponsorCohortPageProps) {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {sponsorTracks.map((track) => (
-                    <div
-                      key={track.id}
-                      className="flex items-center justify-between rounded-lg border p-4"
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-medium">{track.name}</h4>
-                          {track.prizePool && (
-                            <Badge variant="secondary">{track.prizePool}</Badge>
+                  {sponsorTracks.map((track) =>
+                    editingTrackId === track.id ? (
+                      <div key={track.id} className="rounded-lg border p-4 space-y-4 bg-muted/50">
+                        <h4 className="font-medium">Edit Track</h4>
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <div className="space-y-2">
+                            <Label htmlFor={`editName-${track.id}`}>Track Name *</Label>
+                            <Input
+                              id={`editName-${track.id}`}
+                              value={editTrack.name}
+                              onChange={(e) => setEditTrack({ ...editTrack, name: e.target.value })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor={`editPrize-${track.id}`}>Prize Pool</Label>
+                            <Input
+                              id={`editPrize-${track.id}`}
+                              value={editTrack.prizePool}
+                              onChange={(e) => setEditTrack({ ...editTrack, prizePool: formatCurrency(e.target.value) })}
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor={`editDesc-${track.id}`}>Description</Label>
+                          <Input
+                            id={`editDesc-${track.id}`}
+                            value={editTrack.description}
+                            onChange={(e) => setEditTrack({ ...editTrack, description: e.target.value })}
+                          />
+                        </div>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <Button size="sm" onClick={handleSaveTrack} disabled={!editTrack.name}>
+                            Save
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => setEditingTrackId(null)}>
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div
+                        key={track.id}
+                        className="flex items-center justify-between rounded-lg border p-4"
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-medium">{track.name}</h4>
+                            {track.prizePool && (
+                              <Badge variant="secondary">{track.prizePool}</Badge>
+                            )}
+                          </div>
+                          {track.description && (
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {track.description}
+                            </p>
                           )}
                         </div>
-                        {track.description && (
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {track.description}
-                          </p>
-                        )}
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => startEditingTrack(track.id)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-red-600"
+                            onClick={() => handleDeleteTrack(track.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
-                      <div className="flex flex-col sm:flex-row gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setEditingTrackId(track.id)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="text-red-600"
-                          onClick={() => handleDeleteTrack(track.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+                    )
+                  )}
                 </div>
               )}
             </CardContent>

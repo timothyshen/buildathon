@@ -197,7 +197,7 @@ export default async function CohortDetailPage({
 
           {/* Tracks Tab */}
           <TabsContent value="tracks">
-            <CohortTracks tracks={tracks} />
+            <CohortTracks tracks={tracks} sponsors={sponsors} />
           </TabsContent>
 
           {/* Sponsors Tab */}

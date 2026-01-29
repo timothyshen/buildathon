@@ -13,6 +13,7 @@ export type CohortSponsorWithOrg = SponsorOrg & {
   tier: SponsorTier;
   prizePoolContribution: number;
   hasDedicatedTrack: boolean;
+  sponsorMessage?: string;
 };
 
 export interface SponsorsService {
@@ -238,6 +239,7 @@ async function getCohortSponsors(cohortId: string): Promise<ServiceResponse<Coho
       tier: row.tier as SponsorTier,
       prizePoolContribution: row.prize_pool_contribution as number,
       hasDedicatedTrack: row.has_dedicated_track as boolean,
+      sponsorMessage: row.description as string | undefined,
     };
   });
 
