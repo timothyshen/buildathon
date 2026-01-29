@@ -65,16 +65,3 @@ export function paginated<T>(
   };
 }
 
-/**
- * Simulate network delay for mock implementations
- */
-export function delay(ms: number = 50): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-/**
- * Generate a unique ID for new entities
- */
-export function generateId(prefix: string = "id"): string {
-  return `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-}

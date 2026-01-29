@@ -20,7 +20,7 @@ export { sponsorsService } from "./sponsors.service";
 
 // Export types
 export type { ServiceResponse, PaginatedResponse, QueryOptions } from "./types";
-export { success, error, paginated, delay, generateId } from "./types";
+export { success, error, paginated } from "./types";
 
 // Export service-specific types
 export type { OnboardingData, RegisterData, AuthService } from "./auth.service";
