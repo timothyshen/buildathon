@@ -145,7 +145,7 @@ export default function ReviewDetailPage({ params }: ReviewDetailPageProps) {
       <div>
         <h1 className="text-2xl font-bold">Review: {submission.title}</h1>
         <p className="text-muted-foreground">
-          {submission.team?.name} • {submission.cohort?.name}
+          {submission.team?.name || "Solo"} • {submission.cohort?.name}
         </p>
       </div>
 

@@ -393,7 +393,8 @@ export type Database = {
         Row: {
           id: string;
           cohort_id: string;
-          team_id: string;
+          team_id: string | null;
+          created_by: string;
           title: string;
           tagline: string | null;
           description: string;
@@ -415,7 +416,8 @@ export type Database = {
         Insert: {
           id?: string;
           cohort_id: string;
-          team_id: string;
+          team_id?: string | null;
+          created_by: string;
           title: string;
           tagline?: string | null;
           description: string;
@@ -437,7 +439,8 @@ export type Database = {
         Update: {
           id?: string;
           cohort_id?: string;
-          team_id?: string;
+          team_id?: string | null;
+          created_by?: string;
           title?: string;
           tagline?: string | null;
           description?: string;

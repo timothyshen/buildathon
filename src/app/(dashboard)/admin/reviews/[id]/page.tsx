@@ -221,7 +221,7 @@ export default function AdminReviewDetailPage({ params }: AdminReviewDetailPageP
               <p className="text-sm text-muted-foreground">{submission.tagline}</p>
             )}
             <p className="text-sm">
-              Team: {submission?.team?.name || "Unknown"}
+              Team: {submission?.team?.name || "Solo"}
             </p>
             <Button variant="outline" size="sm" className="mt-2" asChild>
               <Link href={`/admin/submissions/${submission?.id}`}>

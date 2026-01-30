@@ -135,7 +135,7 @@ export function JudgeDashboard() {
                   <div>
                     <h3 className="font-semibold">{review.submission?.title}</h3>
                     <p className="text-sm text-muted-foreground">
-                      {review.submission?.tagline || review.submission?.team?.name}
+                      {review.submission?.tagline || review.submission?.team?.name || "Solo"}
                     </p>
                     <div className="mt-2 flex items-center gap-2">
                       <Badge variant="outline">

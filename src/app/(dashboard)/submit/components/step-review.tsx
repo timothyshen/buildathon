@@ -52,6 +52,10 @@ export function StepReview({ data, onEdit, cohorts, tracks }: StepReviewProps) {
         </CardHeader>
         <CardContent className="space-y-3">
           <div>
+            <p className="text-sm text-muted-foreground">Cohort</p>
+            <p className="font-medium">{cohort?.name || "—"}</p>
+          </div>
+          <div>
             <p className="text-sm text-muted-foreground">Title</p>
             <p className="font-medium">{data.title || "—"}</p>
           </div>
@@ -146,35 +150,28 @@ export function StepReview({ data, onEdit, cohorts, tracks }: StepReviewProps) {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg">Cohort & Tracks</CardTitle>
-          <Button variant="ghost" size="sm" onClick={() => onEdit(4)} aria-label="Edit cohort and tracks">
+          <CardTitle className="text-lg">Tracks</CardTitle>
+          <Button variant="ghost" size="sm" onClick={() => onEdit(4)} aria-label="Edit tracks">
             <Pencil className="h-4 w-4 mr-1" /> Edit
           </Button>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <div>
-            <p className="text-sm text-muted-foreground">Cohort</p>
-            <p className="font-medium">{cohort?.name || "—"}</p>
-          </div>
-          <div>
-            <p className="text-sm text-muted-foreground mb-2">Tracks</p>
-            {selectedTracks.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {selectedTracks.map((track) => (
-                  <Badge key={track.id} variant="outline">
-                    {track.name}
-                    {track.prizePool && (
-                      <span className="ml-1 text-muted-foreground">
-                        ({track.prizePool})
-                      </span>
-                    )}
-                  </Badge>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">General pool</p>
-            )}
-          </div>
+        <CardContent>
+          {selectedTracks.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {selectedTracks.map((track) => (
+                <Badge key={track.id} variant="outline">
+                  {track.name}
+                  {track.prizePool && (
+                    <span className="ml-1 text-muted-foreground">
+                      ({track.prizePool})
+                    </span>
+                  )}
+                </Badge>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">General pool</p>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -179,8 +179,19 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 
           {/* Sidebar - 1 column */}
           <div className="space-y-6">
-            {/* Team Card */}
-            {submission.team && <ProjectTeam team={submission.team} />}
+            {/* Team Card or Solo Badge */}
+            {submission.team ? (
+              <ProjectTeam team={submission.team} />
+            ) : (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Submitted by</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Badge variant="secondary">Solo submission</Badge>
+                </CardContent>
+              </Card>
+            )}
 
             {/* IP Registration Card */}
             {submission.ipAssetId && (

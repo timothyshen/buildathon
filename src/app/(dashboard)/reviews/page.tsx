@@ -59,7 +59,7 @@ export default function ReviewsPage() {
               {review.submission?.tagline || review.submission?.description?.slice(0, 100)}
             </p>
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <span>Team: {review.submission?.team?.name}</span>
+              <span>Team: {review.submission?.team?.name || "Solo"}</span>
               <span>Track: {review.submission?.track?.name || "Open"}</span>
             </div>
             {review.submission?.techStack && (

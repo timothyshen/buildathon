@@ -267,7 +267,7 @@ export default function AdminReviewsPage() {
                           {review.submission?.title || "Unknown Submission"}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {review.submission?.team?.name}
+                          {review.submission?.team?.name || "Solo"}
                         </p>
                       </div>
                     </TableCell>

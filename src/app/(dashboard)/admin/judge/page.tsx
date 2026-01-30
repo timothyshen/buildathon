@@ -140,7 +140,7 @@ export default function AdminJudgePage() {
     const matchesSearch =
       search === "" ||
       item.submission.title.toLowerCase().includes(search.toLowerCase()) ||
-      item.submission.team?.name?.toLowerCase().includes(search.toLowerCase());
+      (item.submission.team?.name || "Solo").toLowerCase().includes(search.toLowerCase());
 
     const matchesCohort =
       selectedCohort === "all" || item.submission.cohortId === selectedCohort;
@@ -280,7 +280,7 @@ export default function AdminJudgePage() {
                       </div>
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
-                      {item.submission.team?.name || "Unknown"}
+                      {item.submission.team?.name || "Solo"}
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
                       <div className="flex flex-wrap gap-1">

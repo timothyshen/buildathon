@@ -240,7 +240,7 @@ export default function SponsorReviewsPage() {
                       </div>
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
-                      {item.submission.team?.name || "Unknown"}
+                      {item.submission.team?.name || "Solo"}
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
                       <Badge variant="outline">{item.track.name}</Badge>

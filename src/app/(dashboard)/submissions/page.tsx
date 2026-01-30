@@ -6,21 +6,33 @@ import { useAuth } from "@/contexts/auth-context";
 import { submissionsService, tracksService, cohortsService } from "@/services";
 import type { Submission, Track, Cohort } from "@/types";
 import { getSubmissionStatusColor } from "@/lib/utils/status";
+import { stripHtml } from "@/lib/utils";
 import { getSubmissionPrizes, type PrizeInfo } from "@/lib/prize-utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PrizeBadges } from "@/components/ui/prize-badges";
-import { PlusCircle, FileText, ExternalLink, Github, Loader2 } from "lucide-react";
+import {
+  PlusCircle,
+  FileText,
+  ExternalLink,
+  Github,
+  Loader2,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 
 interface EnrichedSubmission extends Submission {
   prizes: PrizeInfo[];
 }
 
+const PAGE_SIZE = 10;
+
 export default function SubmissionsPage() {
   const { user } = useAuth();
   const [userSubmissions, setUserSubmissions] = useState<EnrichedSubmission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     async function loadData() {
@@ -69,6 +81,12 @@ export default function SubmissionsPage() {
     loadData();
   }, [user]);
 
+  const totalPages = Math.ceil(userSubmissions.length / PAGE_SIZE);
+  const paginatedSubmissions = userSubmissions.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -76,7 +94,6 @@ export default function SubmissionsPage() {
       </div>
     );
   }
-
 
   return (
     <div className="space-y-8">
@@ -109,99 +126,145 @@ export default function SubmissionsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-6">
-          {userSubmissions.map((submission) => (
-            <Card key={submission.id}>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <CardTitle>{submission.title}</CardTitle>
-                      <Badge className={getSubmissionStatusColor(submission.status)}>
-                        {submission.status}
-                      </Badge>
-                      {submission.prizes.length > 0 && (
-                        <PrizeBadges prizes={submission.prizes} maxVisible={3} size="sm" />
+        <>
+          <div className="grid gap-6">
+            {paginatedSubmissions.map((submission) => (
+              <Card key={submission.id}>
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <CardTitle>{submission.title}</CardTitle>
+                        <Badge className={getSubmissionStatusColor(submission.status)}>
+                          {submission.status}
+                        </Badge>
+                        {submission.prizes.length > 0 && (
+                          <PrizeBadges prizes={submission.prizes} maxVisible={3} size="sm" />
+                        )}
+                      </div>
+                      <CardDescription className="mt-1">
+                        {submission.tagline}
+                      </CardDescription>
+                    </div>
+                    <Button variant="outline" asChild>
+                      <Link
+                        href={
+                          submission.status === "draft"
+                            ? `/submissions/${submission.id}/edit`
+                            : `/submissions/${submission.id}`
+                        }
+                      >
+                        {submission.status === "draft" ? "Continue Editing" : "View"}
+                      </Link>
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground line-clamp-2">
+                      {stripHtml(submission.description)}
+                    </p>
+
+                    {submission.techStack.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {submission.techStack.map((tech) => (
+                          <Badge key={tech} variant="secondary">
+                            {tech}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <span>
+                        Cohort: <strong>{submission.cohort?.name}</strong>
+                      </span>
+                      {submission.track && (
+                        <span>
+                          Track: <strong>{submission.track.name}</strong>
+                        </span>
                       )}
                     </div>
-                    <CardDescription className="mt-1">
-                      {submission.tagline}
-                    </CardDescription>
-                  </div>
-                  <Button variant="outline" asChild>
-                    <Link href={`/submissions/${submission.id}`}>
-                      {submission.status === "draft" ? "Edit" : "View"}
-                    </Link>
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <p className="text-sm text-muted-foreground line-clamp-2">
-                    {submission.description}
-                  </p>
 
-                  <div className="flex flex-wrap gap-2">
-                    {submission.techStack.map((tech) => (
-                      <Badge key={tech} variant="secondary">
-                        {tech}
-                      </Badge>
-                    ))}
-                  </div>
+                    {(submission.demoUrl || submission.repoUrl) && (
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        {submission.demoUrl && (
+                          <Button variant="outline" size="sm" asChild>
+                            <a
+                              href={submission.demoUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <ExternalLink className="mr-2 h-4 w-4" />
+                              Demo
+                            </a>
+                          </Button>
+                        )}
+                        {submission.repoUrl && (
+                          <Button variant="outline" size="sm" asChild>
+                            <a
+                              href={submission.repoUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <Github className="mr-2 h-4 w-4" />
+                              Repo
+                            </a>
+                          </Button>
+                        )}
+                      </div>
+                    )}
 
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <span>
-                      Cohort: <strong>{submission.cohort?.name}</strong>
-                    </span>
-                    {submission.track && (
-                      <span>
-                        Track: <strong>{submission.track.name}</strong>
-                      </span>
+                    {submission.ipAssetId && (
+                      <div className="rounded-lg bg-green-50 p-3">
+                        <p className="text-sm font-medium text-green-800">
+                          IP Registered on Story Protocol
+                        </p>
+                        <p className="text-xs text-green-600">
+                          Asset ID: {submission.ipAssetId}
+                        </p>
+                      </div>
                     )}
                   </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
 
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    {submission.demoUrl && (
-                      <Button variant="outline" size="sm" asChild>
-                        <a
-                          href={submission.demoUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <ExternalLink className="mr-2 h-4 w-4" />
-                          Demo
-                        </a>
-                      </Button>
-                    )}
-                    {submission.repoUrl && (
-                      <Button variant="outline" size="sm" asChild>
-                        <a
-                          href={submission.repoUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <Github className="mr-2 h-4 w-4" />
-                          Repo
-                        </a>
-                      </Button>
-                    )}
-                  </div>
-
-                  {submission.ipAssetId && (
-                    <div className="rounded-lg bg-green-50 p-3">
-                      <p className="text-sm font-medium text-green-800">
-                        IP Registered on Story Protocol
-                      </p>
-                      <p className="text-xs text-green-600">
-                        Asset ID: {submission.ipAssetId}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between border-t pt-4">
+              <p className="text-sm text-muted-foreground">
+                Showing {(currentPage - 1) * PAGE_SIZE + 1}–
+                {Math.min(currentPage * PAGE_SIZE, userSubmissions.length)} of{" "}
+                {userSubmissions.length}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((p) => p - 1)}
+                >
+                  <ChevronLeft className="h-4 w-4 mr-1" />
+                  Previous
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage((p) => p + 1)}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

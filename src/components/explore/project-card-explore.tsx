@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ExternalLink, Github, GitFork } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, stripHtml } from "@/lib/utils";
 import { PrizeBadges, prizeBadgeConfig } from "@/components/ui/prize-badges";
 import type { EnrichedSubmission } from "@/lib/search-utils";
 
@@ -51,7 +51,7 @@ export function ProjectCardExplore({
               {submission.title}
             </h3>
             <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
-              {submission.tagline || submission.description}
+              {submission.tagline || stripHtml(submission.description)}
             </p>
           </div>
           {isWinner && prizes.length > 0 && (
@@ -91,7 +91,7 @@ export function ProjectCardExplore({
       {/* Footer */}
       <div className="flex items-center border-t px-5 py-3">
         <div className="flex-1 text-sm text-muted-foreground">
-          {submission.team?.name}
+          {submission.team?.name || "Solo"}
         </div>
         <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
           {submission.demoUrl && (

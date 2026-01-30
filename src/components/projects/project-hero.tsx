@@ -86,9 +86,7 @@ export function ProjectHero({ project, trackName, cohortName }: ProjectHeroProps
         )}
 
         {/* Team Name */}
-        {project.team && (
-          <p className="mt-3 text-slate-500">by {project.team.name}</p>
-        )}
+        <p className="mt-3 text-slate-500">by {project.team?.name || "Solo submission"}</p>
 
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-3 mt-8">

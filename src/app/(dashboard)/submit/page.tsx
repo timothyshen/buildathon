@@ -14,7 +14,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, ArrowLeft, ArrowRight, Save } from "lucide-react";
+import { Loader2, ArrowLeft, ArrowRight, Save, Users, User } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { StepIndicator } from "./components/step-indicator";
 import { StepDetails } from "./components/step-details";
 import { StepMedia } from "./components/step-media";
@@ -36,6 +37,8 @@ const STEPS = [
 ];
 
 interface SubmissionDraft {
+  draftId: string;
+  submissionMode: "team" | "solo";
   teamId: string;
   title: string;
   tagline: string;
@@ -54,6 +57,8 @@ interface SubmissionDraft {
 }
 
 const initialData: SubmissionDraft = {
+  draftId: "",
+  submissionMode: "team",
   teamId: "",
   title: "",
   tagline: "",
@@ -113,21 +118,54 @@ export default function SubmitPage() {
     loadData();
   }, [user]);
 
-  // Load draft or preselected cohort on mount
+  // Load draft or preselected cohort (runs once teams are loaded)
   useEffect(() => {
+    if (isLoadingData) return;
+
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
+        // Default submissionMode for old drafts
+        if (!parsed.submissionMode) {
+          parsed.submissionMode = parsed.teamId ? "team" : "solo";
+        }
+        // Migrate stale drafts: ensure cohortId matches team's cohort
+        if (parsed.submissionMode === "team" && parsed.teamId && userTeams.length > 0) {
+          const team = userTeams.find((t: Team) => t.id === parsed.teamId);
+          if (!team) {
+            parsed.teamId = "";
+            parsed.cohortId = "";
+            parsed.trackIds = [];
+          } else if (team.cohortId !== parsed.cohortId) {
+            parsed.cohortId = team.cohortId;
+            parsed.trackIds = [];
+          }
+        }
         setData(parsed);
         setCurrentStep(parsed.currentStep || 1);
       } catch {
         localStorage.removeItem(STORAGE_KEY);
       }
     } else if (preselectedCohort) {
-      setData((prev) => ({ ...prev, cohortId: preselectedCohort }));
+      const teamForCohort = userTeams.find((t) => t.cohortId === preselectedCohort);
+      if (teamForCohort) {
+        setData((prev) => ({
+          ...prev,
+          submissionMode: "team",
+          cohortId: preselectedCohort,
+          teamId: teamForCohort.id,
+        }));
+      } else {
+        setData((prev) => ({
+          ...prev,
+          submissionMode: "solo",
+          cohortId: preselectedCohort,
+          teamId: "",
+        }));
+      }
     }
-  }, [preselectedCohort]);
+  }, [preselectedCohort, userTeams, isLoadingData]);
 
   // Auto-save on data change (debounced)
   useEffect(() => {
@@ -146,8 +184,14 @@ export default function SubmitPage() {
     const newErrors: Record<string, string> = {};
 
     if (step === 1) {
-      if (!data.teamId) {
-        newErrors.teamId = "Please select a team";
+      if (data.submissionMode === "team") {
+        if (!data.teamId || !data.cohortId) {
+          newErrors.teamId = "Please select a team";
+        }
+      } else {
+        if (!data.cohortId) {
+          newErrors.cohortId = "Please select a cohort";
+        }
       }
       if (!data.title || data.title.length < 3) {
         newErrors.title = "Title must be at least 3 characters";
@@ -180,9 +224,6 @@ export default function SubmitPage() {
     }
 
     if (step === 4) {
-      if (!data.cohortId) {
-        newErrors.cohortId = "Please select a cohort";
-      }
       const cohortTracks = tracks.filter((t) => t.cohortId === data.cohortId);
       if (cohortTracks.length > 0 && data.trackIds.length === 0) {
         newErrors.trackIds = "Please select at least one track";
@@ -209,10 +250,60 @@ export default function SubmitPage() {
     setCurrentStep(step);
   };
 
-  const handleSaveAndExit = () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...data, currentStep }));
-    toast.success("Draft saved");
-    router.push("/submissions");
+  const handleSaveAndExit = async () => {
+    // Require at least cohort + title to save a draft to the database
+    const hasRequiredForSave = data.cohortId && data.title &&
+      (data.submissionMode === "solo" || data.teamId);
+
+    if (!hasRequiredForSave) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...data, currentStep }));
+      toast.success("Draft saved locally");
+      router.push("/submissions");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const submissionData = {
+        cohortId: data.cohortId,
+        teamId: data.submissionMode === "team" ? data.teamId : undefined,
+        createdBy: user!.id,
+        title: data.title,
+        tagline: data.tagline || undefined,
+        description: data.description || "",
+        demoUrl: data.demoUrl || undefined,
+        repoUrl: data.repoUrl || undefined,
+        videoUrl: data.videoUrl || undefined,
+        presentationUrl: data.presentationUrl || undefined,
+        screenshots: data.screenshots || [],
+        techStack: data.techStack || [],
+        builtWithStory: data.builtWithStory,
+        trackIds: data.trackIds,
+        status: "draft" as const,
+      };
+
+      let result;
+      if (data.draftId) {
+        result = await submissionsService.update(data.draftId, submissionData);
+      } else {
+        result = await submissionsService.create(submissionData);
+      }
+
+      if (!result.success) {
+        toast.error(result.error || "Failed to save draft");
+        return;
+      }
+
+      const savedId = data.draftId || result.data?.id;
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ ...data, draftId: savedId, currentStep })
+      );
+      toast.success("Draft saved");
+      router.push("/submissions");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSubmit = async () => {
@@ -223,9 +314,10 @@ export default function SubmitPage() {
 
     setIsLoading(true);
     try {
-      const result = await submissionsService.create({
+      const submissionData = {
         cohortId: data.cohortId,
-        teamId: data.teamId,
+        teamId: data.submissionMode === "team" ? data.teamId : undefined,
+        createdBy: user!.id,
         title: data.title,
         tagline: data.tagline || undefined,
         description: data.description,
@@ -237,8 +329,15 @@ export default function SubmitPage() {
         techStack: data.techStack,
         builtWithStory: data.builtWithStory,
         trackIds: data.trackIds,
-        status: "submitted",
-      });
+        status: "submitted" as const,
+      };
+
+      let result;
+      if (data.draftId) {
+        result = await submissionsService.update(data.draftId, submissionData);
+      } else {
+        result = await submissionsService.create(submissionData);
+      }
 
       if (!result.success) {
         toast.error(result.error || "Failed to submit project");
@@ -280,47 +379,158 @@ export default function SubmitPage() {
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Select Team</CardTitle>
-                <CardDescription>Choose which team is submitting this project</CardDescription>
+                <CardTitle>Submission Type</CardTitle>
+                <CardDescription>Are you submitting as a team or solo?</CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <Label htmlFor="team">Team *</Label>
-                  <Select
-                    value={data.teamId}
-                    onValueChange={(value) => handleChange("teamId", value)}
+              <CardContent className="space-y-4">
+                {/* Mode Toggle */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div
+                    role="radio"
+                    aria-checked={data.submissionMode === "team"}
+                    tabIndex={0}
+                    onClick={() => {
+                      handleChange("submissionMode", "team");
+                      if (!data.teamId) {
+                        handleChange("cohortId", "");
+                        handleChange("trackIds", []);
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        handleChange("submissionMode", "team");
+                        if (!data.teamId) {
+                          handleChange("cohortId", "");
+                          handleChange("trackIds", []);
+                        }
+                      }
+                    }}
+                    className={cn(
+                      "cursor-pointer rounded-lg border-2 p-4 text-center transition-all",
+                      data.submissionMode === "team"
+                        ? "border-primary bg-primary/10"
+                        : "border-border hover:border-primary/50"
+                    )}
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select your team" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {userTeams
-                        .filter((t) => {
-                          const cohort = cohorts.find((c) => c.id === t.cohortId);
-                          return cohort?.status === "active";
-                        })
-                        .map((team) => {
-                          const cohort = cohorts.find((c) => c.id === team.cohortId);
-                          return (
-                            <SelectItem key={team.id} value={team.id}>
-                              {team.name} ({cohort?.name})
-                            </SelectItem>
-                          );
-                        })}
-                    </SelectContent>
-                  </Select>
-                  {errors.teamId && (
-                    <p className="text-sm text-destructive">{errors.teamId}</p>
-                  )}
-                  {userTeams.filter((t) => {
-                    const cohort = cohorts.find((c) => c.id === t.cohortId);
-                    return cohort?.status === "active";
-                  }).length === 0 && (
-                    <p className="text-sm text-amber-600">
-                      You need to <Link href="/teams/new" className="underline">create a team</Link> first.
-                    </p>
-                  )}
+                    <Users className="h-8 w-8 mx-auto mb-2" />
+                    <p className="font-semibold">Team</p>
+                    <p className="text-sm text-muted-foreground">Submit with your team</p>
+                  </div>
+                  <div
+                    role="radio"
+                    aria-checked={data.submissionMode === "solo"}
+                    tabIndex={0}
+                    onClick={() => {
+                      handleChange("submissionMode", "solo");
+                      handleChange("teamId", "");
+                      handleChange("trackIds", []);
+                      handleChange("cohortId", "");
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        handleChange("submissionMode", "solo");
+                        handleChange("teamId", "");
+                        handleChange("trackIds", []);
+                        handleChange("cohortId", "");
+                      }
+                    }}
+                    className={cn(
+                      "cursor-pointer rounded-lg border-2 p-4 text-center transition-all",
+                      data.submissionMode === "solo"
+                        ? "border-primary bg-primary/10"
+                        : "border-border hover:border-primary/50"
+                    )}
+                  >
+                    <User className="h-8 w-8 mx-auto mb-2" />
+                    <p className="font-semibold">Solo</p>
+                    <p className="text-sm text-muted-foreground">Submit individually</p>
+                  </div>
                 </div>
+
+                {/* Team selector (team mode) */}
+                {data.submissionMode === "team" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="team">Team *</Label>
+                    <Select
+                      value={data.teamId}
+                      onValueChange={(value) => {
+                        const selectedTeam = userTeams.find((t) => t.id === value);
+                        handleChange("teamId", value);
+                        if (selectedTeam) {
+                          handleChange("cohortId", selectedTeam.cohortId);
+                          handleChange("trackIds", []);
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select your team" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {userTeams
+                          .filter((t) => {
+                            const cohort = cohorts.find((c) => c.id === t.cohortId);
+                            return cohort?.status === "active";
+                          })
+                          .map((team) => {
+                            const cohort = cohorts.find((c) => c.id === team.cohortId);
+                            return (
+                              <SelectItem key={team.id} value={team.id}>
+                                {team.name} ({cohort?.name})
+                              </SelectItem>
+                            );
+                          })}
+                      </SelectContent>
+                    </Select>
+                    {errors.teamId && (
+                      <p className="text-sm text-destructive">{errors.teamId}</p>
+                    )}
+                    {data.teamId && data.cohortId && (
+                      <p className="text-sm text-muted-foreground">
+                        Cohort: {cohorts.find((c) => c.id === data.cohortId)?.name}
+                      </p>
+                    )}
+                    {userTeams.filter((t) => {
+                      const cohort = cohorts.find((c) => c.id === t.cohortId);
+                      return cohort?.status === "active";
+                    }).length === 0 && (
+                      <p className="text-sm text-amber-600">
+                        You need to <Link href="/teams/new" className="underline">create a team</Link> first.
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Cohort selector (solo mode) */}
+                {data.submissionMode === "solo" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="cohort">Cohort *</Label>
+                    <Select
+                      value={data.cohortId}
+                      onValueChange={(value) => {
+                        handleChange("cohortId", value);
+                        handleChange("trackIds", []);
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a cohort" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {cohorts
+                          .filter((c) => c.status === "active")
+                          .map((cohort) => (
+                            <SelectItem key={cohort.id} value={cohort.id}>
+                              {cohort.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.cohortId && (
+                      <p className="text-sm text-destructive">{errors.cohortId}</p>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
             <StepDetails

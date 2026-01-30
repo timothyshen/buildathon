@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { cohortsService, tracksService, sponsorsService, submissionsService } from "@/services";
+import { stripHtml } from "@/lib/utils";
 import { CohortHero } from "@/components/cohorts/cohort-hero";
 import { CohortTimeline } from "@/components/cohorts/cohort-timeline";
 import { CohortTracks } from "@/components/cohorts/cohort-tracks";
@@ -309,7 +310,7 @@ export default async function CohortDetailPage({
                         <CardContent className="flex flex-col gap-4">
                           {/* Description */}
                           <p className="text-sm text-muted-foreground line-clamp-2">
-                            {project.description}
+                            {stripHtml(project.description)}
                           </p>
 
                           {/* Tech stack badges */}
@@ -329,11 +330,9 @@ export default async function CohortDetailPage({
                           )}
 
                           {/* Team name */}
-                          {project.team && (
-                            <p className="text-xs text-muted-foreground mt-auto">
-                              {project.team.name}
-                            </p>
-                          )}
+                          <p className="text-xs text-muted-foreground mt-auto">
+                            {project.team?.name || "Solo"}
+                          </p>
                         </CardContent>
                       </Card>
                     </Link>

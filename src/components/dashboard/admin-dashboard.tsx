@@ -201,7 +201,7 @@ export function AdminDashboard() {
                     <Badge variant="outline">{submission.status}</Badge>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    by {submission.team?.name} • {submission.cohort?.name}
+                    by {submission.team?.name || "Solo"} • {submission.cohort?.name}
                   </p>
                 </div>
                 <Button variant="outline" size="sm" asChild>

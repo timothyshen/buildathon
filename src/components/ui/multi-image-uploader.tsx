@@ -17,7 +17,7 @@ interface MultiImageUploaderProps {
 }
 
 export function MultiImageUploader({
-  value,
+  value = [],
   onChange,
   bucket,
   minImages = 0,

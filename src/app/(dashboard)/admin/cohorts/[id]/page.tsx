@@ -392,7 +392,7 @@ export default function AdminCohortDetailPage({ params }: AdminCohortDetailPageP
                           </div>
                         </TableCell>
                         <TableCell className="hidden md:table-cell">
-                          {submission.team?.name || "-"}
+                          {submission.team?.name || "Solo"}
                         </TableCell>
                         <TableCell className="hidden md:table-cell">
                           {submission.track?.name || "Open"}

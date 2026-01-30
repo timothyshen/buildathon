@@ -13,6 +13,8 @@ const dashboardRoutes = [
   "/admin",
   "/sponsor",
   "/settings",
+  "/teams",
+  "/onboarding",
 ];
 
 export function LayoutWrapper({ children }: { children: React.ReactNode }) {

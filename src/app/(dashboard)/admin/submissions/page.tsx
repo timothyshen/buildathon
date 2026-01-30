@@ -63,7 +63,7 @@ export default function AdminSubmissionsPage() {
     const matchesSearch =
       search === "" ||
       submission.title.toLowerCase().includes(search.toLowerCase()) ||
-      submission.team?.name.toLowerCase().includes(search.toLowerCase());
+      (submission.team?.name || "Solo").toLowerCase().includes(search.toLowerCase());
 
     const matchesCohort =
       selectedCohort === "all" || submission.cohortId === selectedCohort;
@@ -158,7 +158,7 @@ export default function AdminSubmissionsPage() {
                       </p>
                     </div>
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">{submission.team?.name || "-"}</TableCell>
+                  <TableCell className="hidden md:table-cell">{submission.team?.name || "Solo"}</TableCell>
                   <TableCell className="hidden md:table-cell">
                     <Badge variant="outline">{submission.cohort?.name}</Badge>
                   </TableCell>

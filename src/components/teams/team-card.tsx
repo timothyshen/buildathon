@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Users, Crown, ChevronRight } from "lucide-react";
 import { Team, Cohort } from "@/types";
+import { stripHtml } from "@/lib/utils";
 
 interface TeamCardProps {
   team: Team;
@@ -49,7 +50,7 @@ export function TeamCard({ team, currentUserId, cohort }: TeamCardProps) {
         <div className="space-y-3">
           {team.description && (
             <p className="text-sm text-muted-foreground line-clamp-2">
-              {team.description}
+              {stripHtml(team.description)}
             </p>
           )}
           <div className="flex items-center gap-4 text-sm text-muted-foreground">

@@ -4,7 +4,7 @@
  */
 
 import { createClient } from "@/lib/supabase/client";
-import type { Submission, Track, Team, Cohort } from "@/types";
+import type { Submission, Track, Team, Cohort, User, Prize } from "@/types";
 import type { ServiceResponse, QueryOptions, PaginatedResponse } from "./types";
 import { success, error, paginated } from "./types";
 
@@ -45,8 +45,9 @@ function toSubmission(
     id: row.id as string,
     cohortId: row.cohort_id as string,
     cohort,
-    teamId: row.team_id as string,
+    teamId: (row.team_id as string) || undefined,
     team,
+    createdBy: row.created_by as string,
     trackId: tracks?.[0]?.id,
     trackIds: tracks?.map((t) => t.id),
     track: tracks?.[0],
@@ -71,6 +72,60 @@ function toSubmission(
   };
 }
 
+// Helper to fetch team with members (for submission relations)
+async function fetchTeamForSubmission(
+  supabase: ReturnType<typeof createClient>,
+  teamId: string
+): Promise<Team | null> {
+  const { data: teamData, error: teamError } = await supabase
+    .from("teams")
+    .select("*")
+    .eq("id", teamId)
+    .single();
+
+  if (teamError) return null;
+
+  const { data: membersData } = await supabase
+    .from("team_members")
+    .select(`
+      role,
+      joined_at,
+      users (*)
+    `)
+    .eq("team_id", teamId);
+
+  const members = (membersData || []).map((m) => {
+    const u = m.users as Record<string, unknown>;
+    return {
+      userId: u.id as string,
+      user: {
+        id: u.id as string,
+        email: u.email as string,
+        name: u.name as string,
+        role: u.role as User["role"],
+        avatar: u.avatar as string | undefined,
+        walletAddress: u.wallet_address as string | undefined,
+        bio: u.bio as string | undefined,
+        twitter: u.twitter as string | undefined,
+        github: u.github as string | undefined,
+        createdAt: new Date(u.created_at as string),
+      } as User,
+      role: m.role as "lead" | "member",
+      joinedAt: new Date(m.joined_at as string),
+    };
+  });
+
+  return {
+    id: teamData.id as string,
+    cohortId: teamData.cohort_id as string,
+    name: teamData.name as string,
+    slug: teamData.slug as string,
+    description: teamData.description as string | undefined,
+    logoUrl: teamData.logo_url as string | undefined,
+    members,
+  };
+}
+
 // Helper to fetch submission with related data
 async function fetchSubmissionWithRelations(
   supabase: ReturnType<typeof createClient>,
@@ -84,18 +139,28 @@ async function fetchSubmissionWithRelations(
 
   if (subError) return null;
 
-  // Get tracks
-  const { data: trackData } = await supabase
-    .from("submission_tracks")
-    .select(`
-      tracks (
-        *,
-        sponsor_orgs (name, logo)
-      )
-    `)
-    .eq("submission_id", submissionId);
+  // Get tracks, team, and cohort in parallel
+  const [trackResult, team, cohortResult] = await Promise.all([
+    supabase
+      .from("submission_tracks")
+      .select(`
+        tracks (
+          *,
+          sponsor_orgs (name, logo)
+        )
+      `)
+      .eq("submission_id", submissionId),
+    subData.team_id
+      ? fetchTeamForSubmission(supabase, subData.team_id)
+      : Promise.resolve(null),
+    supabase
+      .from("cohorts")
+      .select("*")
+      .eq("id", subData.cohort_id)
+      .single(),
+  ]);
 
-  const tracks = (trackData || []).map((t) => {
+  const tracks = (trackResult.data || []).map((t) => {
     const track = t.tracks as Record<string, unknown>;
     const sponsor = track.sponsor_orgs as { name: string; logo: string } | null;
     return {
@@ -111,7 +176,29 @@ async function fetchSubmissionWithRelations(
     };
   });
 
-  return toSubmission(subData, tracks);
+  let cohort: Cohort | undefined;
+  if (cohortResult.data) {
+    const c = cohortResult.data;
+    cohort = {
+      id: c.id as string,
+      slug: c.slug as string,
+      name: c.name as string,
+      description: c.description as string,
+      tagline: c.tagline as string | undefined,
+      bannerImage: c.banner_image as string | undefined,
+      startDate: new Date(c.start_date as string),
+      endDate: new Date(c.end_date as string),
+      submissionDeadline: new Date(c.submission_deadline as string),
+      judgingStart: new Date(c.judging_start as string),
+      judgingEnd: new Date(c.judging_end as string),
+      status: c.status as Cohort["status"],
+      isPublic: c.is_public as boolean,
+      maxTeamSize: c.max_team_size as number,
+      prizes: (c.prizes as unknown as Prize[]) || [],
+    };
+  }
+
+  return toSubmission(subData, tracks, team || undefined, cohort);
 }
 
 // CRUD
@@ -127,9 +214,42 @@ async function create(
 ): Promise<ServiceResponse<Submission>> {
   const supabase = createClient();
 
+  // Validate team belongs to the specified cohort
+  if (data.teamId && data.cohortId) {
+    const { data: teamRow, error: teamError } = await supabase
+      .from("teams")
+      .select("cohort_id")
+      .eq("id", data.teamId)
+      .single();
+
+    if (teamError || !teamRow) {
+      return error("Team not found", null as unknown as Submission);
+    }
+
+    if (teamRow.cohort_id !== data.cohortId) {
+      return error("Team does not belong to the selected cohort", null as unknown as Submission);
+    }
+  }
+
+  // Validate tracks belong to the cohort
+  if (data.trackIds && data.trackIds.length > 0 && data.cohortId) {
+    const { data: trackRows } = await supabase
+      .from("tracks")
+      .select("id, cohort_id")
+      .in("id", data.trackIds);
+
+    const invalidTracks = (trackRows || []).filter(
+      (t) => t.cohort_id !== data.cohortId
+    );
+    if (invalidTracks.length > 0) {
+      return error("Selected tracks do not belong to the submission's cohort", null as unknown as Submission);
+    }
+  }
+
   const dbData = {
     cohort_id: data.cohortId,
-    team_id: data.teamId,
+    team_id: data.teamId || null,
+    created_by: data.createdBy,
     title: data.title,
     tagline: data.tagline,
     description: data.description,
@@ -172,6 +292,30 @@ async function create(
 
 async function update(id: string, data: Partial<Submission>): Promise<ServiceResponse<Submission>> {
   const supabase = createClient();
+
+  // Validate track-cohort consistency if tracks are being updated
+  if (data.trackIds && data.trackIds.length > 0) {
+    const { data: subRow } = await supabase
+      .from("submissions")
+      .select("cohort_id")
+      .eq("id", id)
+      .single();
+
+    const cohortId = data.cohortId || subRow?.cohort_id;
+    if (cohortId) {
+      const { data: trackRows } = await supabase
+        .from("tracks")
+        .select("id, cohort_id")
+        .in("id", data.trackIds);
+
+      const invalidTracks = (trackRows || []).filter(
+        (t) => t.cohort_id !== cohortId
+      );
+      if (invalidTracks.length > 0) {
+        return error("Selected tracks do not belong to the submission's cohort", null as unknown as Submission);
+      }
+    }
+  }
 
   const dbData: Record<string, unknown> = {};
   if (data.title !== undefined) dbData.title = data.title;
@@ -286,17 +430,23 @@ async function getByUser(userId: string): Promise<ServiceResponse<Submission[]>>
     .select("team_id")
     .eq("user_id", userId);
 
-  if (!memberData || memberData.length === 0) {
-    return success([]);
-  }
+  const teamIds = (memberData || []).map((m) => m.team_id);
 
-  const teamIds = memberData.map((m) => m.team_id);
-
-  const { data, error: dbError } = await supabase
+  // Query submissions: team-based OR solo (created_by with null team_id)
+  let query = supabase
     .from("submissions")
     .select("id")
-    .in("team_id", teamIds)
     .order("created_at", { ascending: false });
+
+  if (teamIds.length > 0) {
+    query = query.or(
+      `team_id.in.(${teamIds.join(",")}),and(created_by.eq.${userId},team_id.is.null)`
+    );
+  } else {
+    query = query.eq("created_by", userId).is("team_id", null);
+  }
+
+  const { data, error: dbError } = await query;
 
   if (dbError) {
     return error(dbError.message, []);

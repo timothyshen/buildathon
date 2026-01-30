@@ -166,12 +166,13 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
     notFound();
   }
 
-  // Check if user is team member or admin
+  // Check if user is team member, solo owner, or admin
   const isTeamMember = submission.team?.members.some(
     (m) => m.userId === user?.id
   );
+  const isSoloOwner = !submission.teamId && submission.createdBy === user?.id;
   const isAdmin = user?.role === "admin";
-  const hasAccess = isTeamMember || isAdmin;
+  const hasAccess = isTeamMember || isSoloOwner || isAdmin;
 
   // Redirect if not authorized
   if (!hasAccess) {
@@ -181,6 +182,12 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
 
   const statusBanner = getStatusBanner(submission.status);
   const StatusIcon = statusBanner.icon;
+
+  const canEditByStatus = submission.status === "draft" || submission.status === "submitted";
+  const deadlinePassed = submission.cohort?.submissionDeadline
+    ? new Date() > submission.cohort.submissionDeadline
+    : false;
+  const canEdit = canEditByStatus && !deadlinePassed;
 
   return (
     <div className="space-y-6">
@@ -208,7 +215,7 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
             </p>
           )}
         </div>
-        {submission.status === "draft" && (
+        {canEdit && (
           <Button asChild>
             <Link href={`/submissions/${submission.id}/edit`}>
               <Edit className="mr-2 h-4 w-4" />
@@ -349,8 +356,19 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
 
         {/* Sidebar (1 column) */}
         <div className="space-y-6">
-          {/* Team Card */}
-          {submission.team && <ProjectTeam team={submission.team} />}
+          {/* Team Card or Solo Badge */}
+          {submission.team ? (
+            <ProjectTeam team={submission.team} />
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Submitted by</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Badge variant="secondary">Solo submission</Badge>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Track Card */}
           {submissionTrack && (

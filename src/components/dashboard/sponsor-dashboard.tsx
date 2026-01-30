@@ -240,7 +240,7 @@ export function SponsorDashboard() {
                     <div>
                       <h3 className="font-semibold">{submission.title}</h3>
                       <p className="text-sm text-muted-foreground">
-                        {submission.tagline || submission.team?.name}
+                        {submission.tagline || submission.team?.name || "Solo"}
                       </p>
                       <div className="mt-2 flex items-center gap-2">
                         <Badge variant="outline">{track?.name || "Open Track"}</Badge>

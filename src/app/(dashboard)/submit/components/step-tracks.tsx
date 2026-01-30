@@ -3,13 +3,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Trophy, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Cohort, Track, SponsorOrg } from "@/types";
@@ -27,10 +20,8 @@ interface StepTracksProps {
 }
 
 export function StepTracks({ data, onChange, errors, cohorts, tracks, sponsorOrgs }: StepTracksProps) {
-  const activeCohorts = cohorts.filter(
-    (c) => c.status === "active" && c.isPublic
-  );
   const cohortTracks = tracks.filter((t) => t.cohortId === data.cohortId);
+  const cohort = cohorts.find((c) => c.id === data.cohortId);
 
   const toggleTrack = (trackId: string) => {
     const newTrackIds = data.trackIds.includes(trackId)
@@ -49,32 +40,18 @@ export function StepTracks({ data, onChange, errors, cohorts, tracks, sponsorOrg
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Buildathon</CardTitle>
-        <CardDescription>Select the cohort and track</CardDescription>
+        <CardTitle>Tracks</CardTitle>
+        <CardDescription>Select the tracks for your submission</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="cohort">Cohort *</Label>
-          <Select
-            value={data.cohortId}
-            onValueChange={(value) => {
-              onChange("cohortId", value);
-              onChange("trackIds", []); // Reset tracks when cohort changes
-            }}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select a cohort" />
-            </SelectTrigger>
-            <SelectContent>
-              {activeCohorts.map((cohort) => (
-                <SelectItem key={cohort.id} value={cohort.id}>
-                  {cohort.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {errors.cohortId && (
-            <p className="text-sm text-destructive">{errors.cohortId}</p>
+        <div className="space-y-1">
+          <Label>Cohort</Label>
+          {cohort ? (
+            <p className="text-sm font-medium">{cohort.name}</p>
+          ) : (
+            <p className="text-sm text-amber-600">
+              Please select a team or cohort first.
+            </p>
           )}
         </div>
 

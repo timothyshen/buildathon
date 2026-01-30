@@ -84,8 +84,9 @@ export interface Submission {
   id: string;
   cohortId: string;
   cohort?: Cohort;
-  teamId: string;
+  teamId?: string;
   team?: Team;
+  createdBy: string;
   trackId?: string;
   trackIds?: string[];
   track?: Track;

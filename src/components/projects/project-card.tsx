@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Submission } from "@/types";
+import { stripHtml } from "@/lib/utils";
 import {
   Card,
   CardContent,
@@ -47,7 +48,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
         <CardContent className="flex flex-col gap-4">
           {/* Description */}
           <p className="text-sm text-muted-foreground line-clamp-2">
-            {project.description}
+            {stripHtml(project.description)}
           </p>
 
           {/* Tech stack badges */}
@@ -65,11 +66,9 @@ export function ProjectCard({ project }: ProjectCardProps) {
           )}
 
           {/* Team name */}
-          {project.team && (
-            <p className="text-xs text-muted-foreground mt-auto">
-              {project.team.name}
-            </p>
-          )}
+          <p className="text-xs text-muted-foreground mt-auto">
+            {project.team?.name || "Solo"}
+          </p>
         </CardContent>
       </Card>
     </Link>
