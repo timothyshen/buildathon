@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useForm, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { cohortSchema, type CohortFormData } from "@/lib/schemas";
@@ -19,7 +19,7 @@ import {
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { ImageUploader } from "@/components/ui/image-uploader";
 import { CohortSponsorManager, type CohortSponsorInput } from "./cohort-sponsor-manager";
-import { PlusCircle, Trash2, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
+import { PlusCircle, Trash2, Loader2, ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { toast } from "sonner";
 import type { Cohort, SponsorOrg } from "@/types";
 import type { CohortSponsorWithOrg } from "@/services/sponsors.service";
@@ -28,7 +28,8 @@ interface CohortPageFormProps {
   cohort?: Cohort;
   cohortSponsors?: CohortSponsorWithOrg[];
   sponsorOrgs: SponsorOrg[];
-  onSubmit: (data: CohortFormData, sponsors: CohortSponsorInput[]) => Promise<void>;
+  onSave: (data: CohortFormData, sponsors: CohortSponsorInput[]) => Promise<void>;
+  onDone: () => void;
   onCancel: () => void;
   isLoading?: boolean;
 }
@@ -39,7 +40,8 @@ export function CohortPageForm({
   cohort,
   cohortSponsors = [],
   sponsorOrgs,
-  onSubmit,
+  onSave,
+  onDone,
   onCancel,
   isLoading = false,
 }: CohortPageFormProps) {
@@ -49,6 +51,8 @@ export function CohortPageForm({
     cohort?.prizes || [{ place: "1st", amount: "", description: "" }]
   );
   const [sponsors, setSponsors] = useState<CohortSponsorInput[]>([]);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Initialize sponsors from cohortSponsors
   useEffect(() => {
@@ -80,6 +84,7 @@ export function CohortPageForm({
     handleSubmit,
     setValue,
     watch,
+    getValues,
     formState: { errors },
     trigger,
   } = useForm<CohortFormData>({
@@ -124,6 +129,18 @@ export function CohortPageForm({
     setValue("description", value);
   };
 
+  const performSave = useCallback(async (sponsorsList: CohortSponsorInput[]) => {
+    setSaveStatus("saving");
+    try {
+      const formData = getValues();
+      await onSave({ ...formData, prizes }, sponsorsList);
+      setSaveStatus("saved");
+    } catch {
+      setSaveStatus("error");
+      toast.error("Failed to save changes");
+    }
+  }, [getValues, onSave, prizes]);
+
   const nextStep = async () => {
     const fieldsToValidate: (keyof CohortFormData)[][] = [
       ["name", "slug", "description"],
@@ -134,12 +151,31 @@ export function CohortPageForm({
     ];
 
     const isValid = await trigger(fieldsToValidate[step]);
-    if (isValid) {
-      setStep((s) => Math.min(s + 1, steps.length - 1));
+    if (!isValid) return;
+
+    const nextIndex = step + 1;
+
+    // Auto-save when entering the sponsors step (last step)
+    if (nextIndex === steps.length - 1) {
+      // Validate all fields before saving
+      const allValid = await trigger();
+      if (!allValid) return;
+      await performSave(sponsors);
     }
+
+    setStep(nextIndex);
   };
 
   const prevStep = () => setStep((s) => Math.max(s - 1, 0));
+
+  const handleSponsorsChange = useCallback((newSponsors: CohortSponsorInput[]) => {
+    setSponsors(newSponsors);
+    // Debounce auto-save when on the sponsors step
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = setTimeout(() => {
+      performSave(newSponsors);
+    }, 800);
+  }, [performSave]);
 
   const addPrize = () => {
     const places = ["1st", "2nd", "3rd", "4th", "5th"];
@@ -158,7 +194,7 @@ export function CohortPageForm({
   };
 
   const onFormSubmit = async (data: CohortFormData) => {
-    await onSubmit({ ...data, prizes }, sponsors);
+    await onSave({ ...data, prizes }, sponsors);
   };
 
   // Map field names to their step index so we can navigate to the right step on validation error
@@ -471,7 +507,7 @@ export function CohortPageForm({
             <CardContent>
               <CohortSponsorManager
                 sponsors={sponsors}
-                onChange={setSponsors}
+                onChange={handleSponsorsChange}
                 availableOrgs={sponsorOrgs}
                 disabled={isLoading}
               />
@@ -485,7 +521,21 @@ export function CohortPageForm({
             Cancel
           </Button>
 
-          <div className="flex gap-2">
+          <div className="flex items-center gap-3">
+            {/* Auto-save status indicator on sponsors step */}
+            {step === steps.length - 1 && saveStatus === "saving" && (
+              <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Saving...
+              </span>
+            )}
+            {step === steps.length - 1 && saveStatus === "saved" && (
+              <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                <Check className="h-3.5 w-3.5" />
+                Saved
+              </span>
+            )}
+
             {step > 0 && (
               <Button type="button" variant="outline" onClick={prevStep} disabled={isLoading}>
                 <ChevronLeft className="mr-1 h-4 w-4" />
@@ -494,22 +544,13 @@ export function CohortPageForm({
             )}
 
             {step < steps.length - 1 ? (
-              <Button type="button" onClick={nextStep} disabled={isLoading}>
+              <Button type="button" onClick={nextStep} disabled={isLoading || saveStatus === "saving"}>
                 Next
                 <ChevronRight className="ml-1 h-4 w-4" />
               </Button>
             ) : (
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : cohort ? (
-                  "Save Changes"
-                ) : (
-                  "Create Cohort"
-                )}
+              <Button type="button" onClick={onDone} disabled={isLoading || saveStatus === "saving"}>
+                Done
               </Button>
             )}
           </div>

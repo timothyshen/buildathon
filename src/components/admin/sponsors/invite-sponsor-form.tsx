@@ -1,6 +1,7 @@
 "use client";
 
 import { useForm } from "react-hook-form";
+import { useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { inviteSponsorSchema, type InviteSponsorFormData } from "@/lib/schemas";
 import { Button } from "@/components/ui/button";
@@ -53,6 +54,17 @@ export function InviteSponsorForm({
     },
   });
 
+  // Reset form values when dialog opens with different sponsor
+  useEffect(() => {
+    if (open) {
+      reset({
+        email: defaultSponsor?.contactEmail || "",
+        name: defaultSponsor?.contactName || "",
+        sponsorId: defaultSponsor?.id || "",
+      });
+    }
+  }, [open, defaultSponsor, reset]);
+
   const onFormSubmit = (data: InviteSponsorFormData) => {
     onSubmit(data);
     reset();
@@ -72,21 +84,25 @@ export function InviteSponsorForm({
         <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="sponsorId">Sponsor Organization *</Label>
-            <Select
-              value={watch("sponsorId")}
-              onValueChange={(value) => setValue("sponsorId", value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select organization" />
-              </SelectTrigger>
-              <SelectContent>
-                {sponsorOrgs.map((sponsor) => (
-                  <SelectItem key={sponsor.id} value={sponsor.id}>
-                    {sponsor.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {defaultSponsor ? (
+              <p className="text-sm font-medium py-2">{defaultSponsor.name}</p>
+            ) : (
+              <Select
+                value={watch("sponsorId")}
+                onValueChange={(value) => setValue("sponsorId", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select organization" />
+                </SelectTrigger>
+                <SelectContent>
+                  {sponsorOrgs.map((sponsor) => (
+                    <SelectItem key={sponsor.id} value={sponsor.id}>
+                      {sponsor.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
             {errors.sponsorId && (
               <p className="text-sm text-red-500">{errors.sponsorId.message}</p>
             )}

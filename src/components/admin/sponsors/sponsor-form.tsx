@@ -1,6 +1,7 @@
 "use client";
 
 import { useForm } from "react-hook-form";
+import { useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { sponsorSchema, type SponsorFormData } from "@/lib/schemas";
 import { Button } from "@/components/ui/button";
@@ -22,12 +23,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import type { SponsorOrg, Cohort } from "@/types";
+import type { SponsorOrg, CohortSponsor, Cohort } from "@/types";
 
 interface SponsorFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   sponsor?: SponsorOrg;
+  cohortSponsor?: CohortSponsor;
   onSubmit: (data: SponsorFormData) => void;
   defaultCohortId?: string;
   cohorts: Cohort[];
@@ -37,6 +39,7 @@ export function SponsorForm({
   open,
   onOpenChange,
   sponsor,
+  cohortSponsor,
   onSubmit,
   defaultCohortId,
   cohorts,
@@ -56,12 +59,12 @@ export function SponsorForm({
           logo: sponsor.logo,
           website: sponsor.website,
           description: sponsor.description,
-          tier: "silver" as const,
-          prizePoolContribution: 0,
-          hasDedicatedTrack: false,
+          tier: cohortSponsor?.tier || ("silver" as const),
+          prizePoolContribution: cohortSponsor?.prizePoolContribution || 0,
+          hasDedicatedTrack: cohortSponsor?.hasDedicatedTrack || false,
           contactName: sponsor.contactName,
           contactEmail: sponsor.contactEmail,
-          cohortId: defaultCohortId || "",
+          cohortId: cohortSponsor?.cohortId || defaultCohortId || "",
         }
       : {
           tier: "silver" as const,
@@ -70,6 +73,39 @@ export function SponsorForm({
           cohortId: defaultCohortId || "",
         },
   });
+
+  // Reset form values when dialog opens with different sponsor data
+  useEffect(() => {
+    if (open) {
+      reset(
+        sponsor
+          ? {
+              name: sponsor.name,
+              logo: sponsor.logo,
+              website: sponsor.website,
+              description: sponsor.description,
+              tier: cohortSponsor?.tier || ("silver" as const),
+              prizePoolContribution: cohortSponsor?.prizePoolContribution || 0,
+              hasDedicatedTrack: cohortSponsor?.hasDedicatedTrack || false,
+              contactName: sponsor.contactName,
+              contactEmail: sponsor.contactEmail,
+              cohortId: cohortSponsor?.cohortId || defaultCohortId || "",
+            }
+          : {
+              name: "",
+              logo: "",
+              website: "",
+              description: "",
+              tier: "silver" as const,
+              prizePoolContribution: 0,
+              hasDedicatedTrack: false,
+              contactName: "",
+              contactEmail: "",
+              cohortId: defaultCohortId || "",
+            }
+      );
+    }
+  }, [open, sponsor, cohortSponsor, defaultCohortId, reset]);
 
   const onFormSubmit = (data: SponsorFormData) => {
     onSubmit(data);

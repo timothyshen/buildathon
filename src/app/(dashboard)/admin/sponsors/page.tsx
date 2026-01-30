@@ -40,6 +40,7 @@ export default function AdminSponsorsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [editingSponsor, setEditingSponsor] = useState<SponsorOrg | undefined>();
+  const [editingCohortSponsor, setEditingCohortSponsor] = useState<CohortSponsor | undefined>();
   const [invitingSponsor, setInvitingSponsor] = useState<SponsorOrg | undefined>();
   const [deleteTarget, setDeleteTarget] = useState<SponsorOrg | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -91,6 +92,9 @@ export default function AdminSponsorsPage() {
 
   const handleEdit = (sponsor: SponsorOrg) => {
     setEditingSponsor(sponsor);
+    // Find the first cohort sponsor record for this org
+    const cs = cohortSponsors.find((c) => c.sponsorOrgId === sponsor.id);
+    setEditingCohortSponsor(cs);
     setIsFormOpen(true);
   };
 
@@ -136,6 +140,50 @@ export default function AdminSponsorsPage() {
         return;
       }
       setSponsorOrgs((prev) => prev.map((s) => (s.id === editingSponsor.id ? result.data : s)));
+
+      // Update or create cohort sponsor junction
+      const csData = {
+        tier: data.tier,
+        prizePoolContribution: data.prizePoolContribution,
+        hasDedicatedTrack: data.hasDedicatedTrack,
+      };
+
+      if (editingCohortSponsor) {
+        if (editingCohortSponsor.cohortId === data.cohortId) {
+          // Same cohort — update existing record
+          const csResult = await sponsorsService.updateCohortSponsor(editingCohortSponsor.id, csData);
+          if (csResult.success) {
+            setCohortSponsors((prev) =>
+              prev.map((cs) => (cs.id === editingCohortSponsor.id ? csResult.data : cs))
+            );
+          }
+        } else {
+          // Cohort changed — delete old, create new
+          await sponsorsService.deleteCohortSponsor(editingCohortSponsor.id);
+          const csResult = await sponsorsService.createCohortSponsor({
+            cohortId: data.cohortId,
+            sponsorOrgId: editingSponsor.id,
+            ...csData,
+          });
+          if (csResult.success) {
+            setCohortSponsors((prev) => [
+              ...prev.filter((cs) => cs.id !== editingCohortSponsor.id),
+              csResult.data,
+            ]);
+          }
+        }
+      } else if (data.cohortId) {
+        // No existing cohort sponsor — create new
+        const csResult = await sponsorsService.createCohortSponsor({
+          cohortId: data.cohortId,
+          sponsorOrgId: editingSponsor.id,
+          ...csData,
+        });
+        if (csResult.success) {
+          setCohortSponsors((prev) => [...prev, csResult.data]);
+        }
+      }
+
       toast.success("Sponsor updated");
     } else {
       // Create new sponsor org
@@ -165,6 +213,7 @@ export default function AdminSponsorsPage() {
     }
 
     setEditingSponsor(undefined);
+    setEditingCohortSponsor(undefined);
     setIsFormOpen(false);
   };
 
@@ -194,7 +243,10 @@ export default function AdminSponsorsPage() {
 
   const handleFormOpenChange = (open: boolean) => {
     setIsFormOpen(open);
-    if (!open) setEditingSponsor(undefined);
+    if (!open) {
+      setEditingSponsor(undefined);
+      setEditingCohortSponsor(undefined);
+    }
   };
 
   const handleInviteOpenChange = (open: boolean) => {
@@ -331,6 +383,7 @@ export default function AdminSponsorsPage() {
         open={isFormOpen}
         onOpenChange={handleFormOpenChange}
         sponsor={editingSponsor}
+        cohortSponsor={editingCohortSponsor}
         onSubmit={handleFormSubmit}
         cohorts={cohorts}
       />

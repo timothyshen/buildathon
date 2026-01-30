@@ -49,13 +49,12 @@ export default function EditCohortPage({ params }: EditCohortPageProps) {
     loadData();
   }, [id]);
 
-  const handleSubmit = async (data: CohortFormData, sponsors: CohortSponsorInput[]) => {
+  const handleSave = async (data: CohortFormData, sponsors: CohortSponsorInput[]) => {
     if (!cohort) return;
 
     setIsSaving(true);
 
     try {
-      // Convert form data to cohort format
       const cohortData = {
         slug: data.slug,
         name: data.name,
@@ -73,22 +72,20 @@ export default function EditCohortPage({ params }: EditCohortPageProps) {
         prizes: data.prizes || [],
       };
 
-      // Update the cohort
       const cohortResult = await cohortsService.update(cohort.id, cohortData);
       if (!cohortResult.success) {
         toast.error(cohortResult.error || "Failed to update cohort");
         return;
       }
 
-      // Sync sponsors - determine what to add, update, and remove
-      const existingSponsorIds = cohortSponsors.map((s) => s.id);
+      // Sync sponsors - fetch current state from DB to diff
+      const currentResult = await sponsorsService.getCohortSponsors(cohort.id);
+      const currentSponsors = currentResult.success ? currentResult.data : [];
       const newSponsorOrgIds = sponsors.map((s) => s.sponsorOrgId);
 
       // Remove sponsors that are no longer in the list
-      for (const existingSponsor of cohortSponsors) {
+      for (const existingSponsor of currentSponsors) {
         if (!newSponsorOrgIds.includes(existingSponsor.id)) {
-          // Need to find the cohort_sponsor record ID, not the org ID
-          // This is tricky - we need to get the actual CohortSponsor record
           const csResult = await sponsorsService.getCohortSponsor(cohort.id, existingSponsor.id);
           if (csResult.success && csResult.data) {
             await sponsorsService.deleteCohortSponsor(csResult.data.id);
@@ -101,14 +98,12 @@ export default function EditCohortPage({ params }: EditCohortPageProps) {
         const existingCs = await sponsorsService.getCohortSponsor(cohort.id, sponsor.sponsorOrgId);
 
         if (existingCs.success && existingCs.data) {
-          // Update existing
           await sponsorsService.updateCohortSponsor(existingCs.data.id, {
             tier: sponsor.tier,
             prizePoolContribution: sponsor.prizePoolContribution,
             hasDedicatedTrack: sponsor.hasDedicatedTrack,
           });
         } else {
-          // Create new
           await sponsorsService.createCohortSponsor({
             cohortId: cohort.id,
             sponsorOrgId: sponsor.sponsorOrgId,
@@ -118,15 +113,17 @@ export default function EditCohortPage({ params }: EditCohortPageProps) {
           });
         }
       }
-
-      toast.success("Cohort updated successfully");
-      router.push(`/admin/cohorts/${cohort.id}`);
     } catch (error) {
-      console.error("Error updating cohort:", error);
-      toast.error("Failed to update cohort");
+      console.error("Error saving cohort:", error);
+      toast.error("Failed to save cohort");
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleDone = () => {
+    toast.success("Cohort updated successfully");
+    router.push(`/admin/cohorts/${cohort!.id}`);
   };
 
   const handleCancel = () => {
@@ -171,7 +168,8 @@ export default function EditCohortPage({ params }: EditCohortPageProps) {
         cohort={cohort}
         cohortSponsors={cohortSponsors}
         sponsorOrgs={sponsorOrgs}
-        onSubmit={handleSubmit}
+        onSave={handleSave}
+        onDone={handleDone}
         onCancel={handleCancel}
         isLoading={isSaving}
       />

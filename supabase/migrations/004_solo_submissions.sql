@@ -31,7 +31,12 @@ ALTER TABLE submissions ALTER COLUMN team_id DROP NOT NULL;
 -- 5. Index for created_by lookups
 CREATE INDEX IF NOT EXISTS idx_submissions_created_by ON submissions(created_by);
 
--- 6. Update RLS policies to support solo submissions (team_id IS NULL)
+-- 6. Fix team_members: allow users to add themselves (needed for team creation)
+CREATE POLICY "Users can add themselves to teams"
+  ON team_members FOR INSERT
+  WITH CHECK (user_id = auth.uid());
+
+-- 7. Update RLS policies to support solo submissions (team_id IS NULL)
 
 -- Submissions: SELECT
 DROP POLICY IF EXISTS "Submitted submissions are viewable" ON submissions;

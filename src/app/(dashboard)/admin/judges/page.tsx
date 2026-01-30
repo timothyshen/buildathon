@@ -1,14 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { usersService, reviewsService } from "@/services";
-import type { User, Review } from "@/types";
+import { usersService, reviewsService, submissionsService } from "@/services";
+import type { User, Review, Submission } from "@/types";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -27,6 +28,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Search, UserPlus, Star, CheckCircle, Clock, Users, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 export default function AdminJudgesPage() {
   const [judges, setJudges] = useState<User[]>([]);
@@ -34,6 +36,14 @@ export default function AdminJudgesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+
+  // Assign reviews state
+  const [assignJudge, setAssignJudge] = useState<User | null>(null);
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [selectedSubmissionIds, setSelectedSubmissionIds] = useState<Set<string>>(new Set());
+  const [isLoadingSubmissions, setIsLoadingSubmissions] = useState(false);
+  const [isAssigning, setIsAssigning] = useState(false);
+  const [assignSearch, setAssignSearch] = useState("");
 
   useEffect(() => {
     async function loadData() {
@@ -48,6 +58,100 @@ export default function AdminJudgesPage() {
     }
     loadData();
   }, []);
+
+  const handleOpenAssignDialog = async (judge: User) => {
+    setAssignJudge(judge);
+    setSelectedSubmissionIds(new Set());
+    setAssignSearch("");
+    setIsLoadingSubmissions(true);
+
+    const result = await submissionsService.list({ status: "submitted" });
+    if (result.success) {
+      // Filter out submissions already assigned to this judge
+      const judgeReviewSubmissionIds = new Set(
+        reviews.filter((r) => r.judgeId === judge.id).map((r) => r.submissionId)
+      );
+      const available = result.data.filter((s) => !judgeReviewSubmissionIds.has(s.id));
+      setSubmissions(available);
+    }
+    setIsLoadingSubmissions(false);
+  };
+
+  const handleCloseAssignDialog = () => {
+    setAssignJudge(null);
+    setSubmissions([]);
+    setSelectedSubmissionIds(new Set());
+    setAssignSearch("");
+  };
+
+  const toggleSubmission = (id: string) => {
+    setSelectedSubmissionIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    const filtered = filteredSubmissions;
+    const allSelected = filtered.every((s) => selectedSubmissionIds.has(s.id));
+    if (allSelected) {
+      setSelectedSubmissionIds((prev) => {
+        const next = new Set(prev);
+        filtered.forEach((s) => next.delete(s.id));
+        return next;
+      });
+    } else {
+      setSelectedSubmissionIds((prev) => {
+        const next = new Set(prev);
+        filtered.forEach((s) => next.add(s.id));
+        return next;
+      });
+    }
+  };
+
+  const handleAssignReviews = async () => {
+    if (!assignJudge || selectedSubmissionIds.size === 0) return;
+
+    setIsAssigning(true);
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const submissionId of selectedSubmissionIds) {
+      const result = await reviewsService.create({
+        submissionId,
+        judgeId: assignJudge.id,
+      });
+      if (result.success) {
+        successCount++;
+        // Add to local reviews state
+        setReviews((prev) => [...prev, result.data]);
+      } else {
+        failCount++;
+      }
+    }
+
+    setIsAssigning(false);
+
+    if (failCount === 0) {
+      toast.success(`Assigned ${successCount} submission${successCount > 1 ? "s" : ""} to ${assignJudge.name}`);
+    } else {
+      toast.error(`${failCount} assignment${failCount > 1 ? "s" : ""} failed. ${successCount} succeeded.`);
+    }
+
+    handleCloseAssignDialog();
+  };
+
+  const filteredSubmissions = submissions.filter(
+    (s) =>
+      assignSearch === "" ||
+      s.title.toLowerCase().includes(assignSearch.toLowerCase()) ||
+      (s.team?.name || "Solo").toLowerCase().includes(assignSearch.toLowerCase())
+  );
 
   if (isLoading) {
     return (
@@ -241,7 +345,11 @@ export default function AdminJudgesPage() {
                         {avgScore > 0 ? avgScore.toFixed(1) : "-"}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button variant="outline" size="sm">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleOpenAssignDialog(judge)}
+                        >
                           Assign Reviews
                         </Button>
                       </TableCell>
@@ -253,6 +361,111 @@ export default function AdminJudgesPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Assign Reviews Dialog */}
+      <Dialog open={!!assignJudge} onOpenChange={(open) => { if (!open) handleCloseAssignDialog(); }}>
+        <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Assign Reviews to {assignJudge?.name}</DialogTitle>
+            <DialogDescription>
+              Select submissions for this judge to review
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search submissions..."
+              value={assignSearch}
+              onChange={(e) => setAssignSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+
+          <div className="flex-1 overflow-y-auto min-h-0 border rounded-md">
+            {isLoadingSubmissions ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : filteredSubmissions.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground text-sm">
+                {submissions.length === 0
+                  ? "No unassigned submissions available"
+                  : "No submissions match your search"}
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-10">
+                      <Checkbox
+                        checked={
+                          filteredSubmissions.length > 0 &&
+                          filteredSubmissions.every((s) => selectedSubmissionIds.has(s.id))
+                        }
+                        onCheckedChange={toggleAll}
+                      />
+                    </TableHead>
+                    <TableHead>Project</TableHead>
+                    <TableHead className="hidden sm:table-cell">Team</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredSubmissions.map((submission) => (
+                    <TableRow
+                      key={submission.id}
+                      className="cursor-pointer"
+                      onClick={() => toggleSubmission(submission.id)}
+                    >
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedSubmissionIds.has(submission.id)}
+                          onCheckedChange={() => toggleSubmission(submission.id)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{submission.title}</p>
+                          {submission.tagline && (
+                            <p className="text-xs text-muted-foreground">{submission.tagline}</p>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell text-muted-foreground">
+                        {submission.team?.name || "Solo"}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between pt-2">
+            <p className="text-sm text-muted-foreground">
+              {selectedSubmissionIds.size} selected
+            </p>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={handleCloseAssignDialog} disabled={isAssigning}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleAssignReviews}
+                disabled={selectedSubmissionIds.size === 0 || isAssigning}
+              >
+                {isAssigning ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Assigning...
+                  </>
+                ) : (
+                  `Assign ${selectedSubmissionIds.size > 0 ? selectedSubmissionIds.size : ""} Review${selectedSubmissionIds.size !== 1 ? "s" : ""}`
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

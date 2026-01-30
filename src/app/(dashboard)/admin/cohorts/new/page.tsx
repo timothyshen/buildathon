@@ -19,6 +19,7 @@ export default function NewCohortPage() {
   const [sponsorOrgs, setSponsorOrgs] = useState<SponsorOrg[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [createdCohortId, setCreatedCohortId] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadData() {
@@ -29,11 +30,10 @@ export default function NewCohortPage() {
     loadData();
   }, []);
 
-  const handleSubmit = async (data: CohortFormData, sponsors: CohortSponsorInput[]) => {
+  const handleSave = async (data: CohortFormData, sponsors: CohortSponsorInput[]) => {
     setIsSaving(true);
 
     try {
-      // Convert form data to cohort format
       const cohortData = {
         slug: data.slug,
         name: data.name,
@@ -51,37 +51,72 @@ export default function NewCohortPage() {
         prizes: data.prizes || [],
       };
 
-      // Create the cohort
-      const cohortResult = await cohortsService.create(cohortData);
-      if (!cohortResult.success) {
-        toast.error(cohortResult.error || "Failed to create cohort");
-        return;
+      let cohortId = createdCohortId;
+
+      if (cohortId) {
+        // Already created — update
+        const updateResult = await cohortsService.update(cohortId, cohortData);
+        if (!updateResult.success) {
+          toast.error(updateResult.error || "Failed to save cohort");
+          return;
+        }
+      } else {
+        // First save — create
+        const createResult = await cohortsService.create(cohortData);
+        if (!createResult.success) {
+          toast.error(createResult.error || "Failed to create cohort");
+          return;
+        }
+        cohortId = createResult.data.id;
+        setCreatedCohortId(cohortId);
       }
 
-      const newCohort = cohortResult.data;
+      // Sync sponsors: get current sponsors from DB, diff, and update
+      const currentResult = await sponsorsService.getCohortSponsors(cohortId);
+      const currentSponsors = currentResult.success ? currentResult.data : [];
+      const currentOrgIds = currentSponsors.map((s) => s.id);
+      const newOrgIds = sponsors.map((s) => s.sponsorOrgId);
 
-      // Create cohort sponsors
-      for (const sponsor of sponsors) {
-        const sponsorResult = await sponsorsService.createCohortSponsor({
-          cohortId: newCohort.id,
-          sponsorOrgId: sponsor.sponsorOrgId,
-          tier: sponsor.tier,
-          prizePoolContribution: sponsor.prizePoolContribution,
-          hasDedicatedTrack: sponsor.hasDedicatedTrack,
-        });
-        if (!sponsorResult.success) {
-          console.error("Failed to add sponsor:", sponsorResult.error);
+      // Remove sponsors no longer in the list
+      for (const existing of currentSponsors) {
+        if (!newOrgIds.includes(existing.id)) {
+          const cs = await sponsorsService.getCohortSponsor(cohortId, existing.id);
+          if (cs.success && cs.data) {
+            await sponsorsService.deleteCohortSponsor(cs.data.id);
+          }
         }
       }
 
-      toast.success("Cohort created successfully");
-      router.push("/admin/cohorts");
+      // Add or update sponsors
+      for (const sponsor of sponsors) {
+        const existingCs = await sponsorsService.getCohortSponsor(cohortId, sponsor.sponsorOrgId);
+        if (existingCs.success && existingCs.data) {
+          await sponsorsService.updateCohortSponsor(existingCs.data.id, {
+            tier: sponsor.tier,
+            prizePoolContribution: sponsor.prizePoolContribution,
+            hasDedicatedTrack: sponsor.hasDedicatedTrack,
+          });
+        } else {
+          await sponsorsService.createCohortSponsor({
+            cohortId,
+            sponsorOrgId: sponsor.sponsorOrgId,
+            tier: sponsor.tier,
+            prizePoolContribution: sponsor.prizePoolContribution,
+            hasDedicatedTrack: sponsor.hasDedicatedTrack,
+          });
+        }
+      }
     } catch (error) {
-      console.error("Error creating cohort:", error);
-      toast.error("Failed to create cohort");
+      console.error("Error saving cohort:", error);
+      toast.error("Failed to save cohort");
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleDone = () => {
+    toast.success("Cohort created successfully");
+    router.push("/admin/cohorts");
   };
 
   const handleCancel = () => {
@@ -123,7 +158,8 @@ export default function NewCohortPage() {
 
       <CohortPageForm
         sponsorOrgs={sponsorOrgs}
-        onSubmit={handleSubmit}
+        onSave={handleSave}
+        onDone={handleDone}
         onCancel={handleCancel}
         isLoading={isSaving}
       />
