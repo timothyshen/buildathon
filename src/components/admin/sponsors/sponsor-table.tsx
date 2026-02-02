@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Pencil, Trash2, Mail } from "lucide-react";
+import { Pencil, Trash2, Mail, Link2 } from "lucide-react";
 import type { SponsorOrg, SponsorTier } from "@/types";
 
 // Extended sponsor type with computed cohort participation data
@@ -26,6 +26,7 @@ interface SponsorTableProps {
   onEdit: (sponsor: SponsorOrg) => void;
   onDelete: (sponsor: SponsorOrg) => void;
   onInvite: (sponsor: SponsorOrg) => void;
+  onGenerateInviteLink: (sponsor: SponsorOrg) => void;
 }
 
 const tierColors: Record<SponsorTier, string> = {
@@ -36,7 +37,7 @@ const tierColors: Record<SponsorTier, string> = {
   community: "bg-green-100 text-green-800",
 };
 
-export function SponsorTable({ sponsors, onEdit, onDelete, onInvite }: SponsorTableProps) {
+export function SponsorTable({ sponsors, onEdit, onDelete, onInvite, onGenerateInviteLink }: SponsorTableProps) {
   const sortedSponsors = [...sponsors].sort((a, b) => {
     const tierOrder = ["platinum", "gold", "silver", "bronze", "community", null];
     const aIndex = a.highestTier ? tierOrder.indexOf(a.highestTier) : tierOrder.length - 1;
@@ -113,8 +114,16 @@ export function SponsorTable({ sponsors, onEdit, onDelete, onInvite }: SponsorTa
                 <Button
                   variant="ghost"
                   size="icon"
+                  onClick={() => onGenerateInviteLink(sponsor)}
+                  title="Generate invite link"
+                >
+                  <Link2 className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={() => onInvite(sponsor)}
-                  title="Invite sponsor user"
+                  title="Invite existing user"
                 >
                   <Mail className="h-4 w-4" />
                 </Button>

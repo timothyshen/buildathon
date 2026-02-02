@@ -26,7 +26,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { PlusCircle, Search, Building2, Loader2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { PlusCircle, Search, Building2, Loader2, Copy, Check } from "lucide-react";
 import { SponsorForm } from "@/components/admin/sponsors/sponsor-form";
 import { SponsorTable } from "@/components/admin/sponsors/sponsor-table";
 import { InviteSponsorForm } from "@/components/admin/sponsors/invite-sponsor-form";
@@ -45,6 +52,11 @@ export default function AdminSponsorsPage() {
   const [deleteTarget, setDeleteTarget] = useState<SponsorOrg | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCohort, setFilterCohort] = useState<string>("all");
+  const [inviteLinkDialogOpen, setInviteLinkDialogOpen] = useState(false);
+  const [generatedInviteLink, setGeneratedInviteLink] = useState("");
+  const [inviteLinkOrg, setInviteLinkOrg] = useState<string>("");
+  const [isGeneratingLink, setIsGeneratingLink] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -120,6 +132,49 @@ export default function AdminSponsorsPage() {
   const handleInvite = (sponsor: SponsorOrg) => {
     setInvitingSponsor(sponsor);
     setIsInviteOpen(true);
+  };
+
+  const handleGenerateInviteLink = async (sponsor: SponsorOrg) => {
+    setInviteLinkOrg(sponsor.name);
+    setGeneratedInviteLink("");
+    setCopied(false);
+    setInviteLinkDialogOpen(true);
+    setIsGeneratingLink(true);
+
+    try {
+      const res = await fetch("/api/invites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sponsorOrgId: sponsor.id }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.error || "Failed to generate invite link");
+        setInviteLinkDialogOpen(false);
+        return;
+      }
+
+      const link = `${window.location.origin}/register?invite=${data.token}`;
+      setGeneratedInviteLink(link);
+    } catch {
+      toast.error("Failed to generate invite link");
+      setInviteLinkDialogOpen(false);
+    } finally {
+      setIsGeneratingLink(false);
+    }
+  };
+
+  const handleCopyInviteLink = async () => {
+    try {
+      await navigator.clipboard.writeText(generatedInviteLink);
+      setCopied(true);
+      toast.success("Invite link copied to clipboard");
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("Failed to copy link");
+    }
   };
 
   const handleFormSubmit = async (data: SponsorFormData) => {
@@ -374,6 +429,7 @@ export default function AdminSponsorsPage() {
               onEdit={handleEdit}
               onDelete={handleDelete}
               onInvite={handleInvite}
+              onGenerateInviteLink={handleGenerateInviteLink}
             />
           </CardContent>
         </Card>
@@ -412,6 +468,47 @@ export default function AdminSponsorsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={inviteLinkDialogOpen} onOpenChange={setInviteLinkDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Invite Link for {inviteLinkOrg}</DialogTitle>
+            <DialogDescription>
+              Share this link with a sponsor representative. It expires in 7 days and can only be used once.
+            </DialogDescription>
+          </DialogHeader>
+          {isGeneratingLink ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <Input
+                  readOnly
+                  value={generatedInviteLink}
+                  className="font-mono text-sm"
+                />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handleCopyInviteLink}
+                  className="shrink-0"
+                >
+                  {copied ? (
+                    <Check className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                The recipient will register with this link and automatically be assigned as a sponsor for {inviteLinkOrg}.
+              </p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

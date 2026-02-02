@@ -882,6 +882,64 @@ export type Database = {
           }
         ];
       };
+      sponsor_invites: {
+        Row: {
+          id: string;
+          token: string;
+          sponsor_org_id: string;
+          email: string | null;
+          created_by: string;
+          expires_at: string;
+          used_at: string | null;
+          used_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          token?: string;
+          sponsor_org_id: string;
+          email?: string | null;
+          created_by: string;
+          expires_at: string;
+          used_at?: string | null;
+          used_by?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          token?: string;
+          sponsor_org_id?: string;
+          email?: string | null;
+          created_by?: string;
+          expires_at?: string;
+          used_at?: string | null;
+          used_by?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "sponsor_invites_sponsor_org_id_fkey";
+            columns: ["sponsor_org_id"];
+            isOneToOne: false;
+            referencedRelation: "sponsor_orgs";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "sponsor_invites_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "sponsor_invites_used_by_fkey";
+            columns: ["used_by"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: {

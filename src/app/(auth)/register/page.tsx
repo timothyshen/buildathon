@@ -1,17 +1,26 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, Building2 } from "lucide-react";
 
-export default function RegisterPage() {
+interface InviteInfo {
+  orgName: string;
+  orgLogo: string | null;
+  restrictedEmail: string | null;
+}
+
+function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const inviteToken = searchParams.get("invite");
   const { register } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -19,6 +28,36 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [inviteInfo, setInviteInfo] = useState<InviteInfo | null>(null);
+  const [inviteError, setInviteError] = useState("");
+  const [isValidatingInvite, setIsValidatingInvite] = useState(!!inviteToken);
+
+  // Validate invite token on mount
+  useEffect(() => {
+    if (!inviteToken) return;
+
+    async function validateInvite() {
+      try {
+        const res = await fetch(`/api/invites/${inviteToken}`);
+        const data = await res.json();
+
+        if (!res.ok) {
+          setInviteError(data.error || "Invalid invite link");
+          return;
+        }
+
+        setInviteInfo(data);
+        if (data.restrictedEmail) {
+          setEmail(data.restrictedEmail);
+        }
+      } catch {
+        setInviteError("Failed to validate invite link");
+      } finally {
+        setIsValidatingInvite(false);
+      }
+    }
+    validateInvite();
+  }, [inviteToken]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,6 +78,25 @@ export default function RegisterPage() {
     const result = await register({ email, password, name });
 
     if (result.success) {
+      // If this is an invite registration, consume the invite token
+      if (inviteToken && inviteInfo) {
+        try {
+          const consumeRes = await fetch(`/api/invites/${inviteToken}`, {
+            method: "POST",
+          });
+          if (!consumeRes.ok) {
+            const data = await consumeRes.json();
+            setError(data.error || "Failed to activate sponsor account");
+            setIsLoading(false);
+            return;
+          }
+        } catch {
+          setError("Failed to activate sponsor account");
+          setIsLoading(false);
+          return;
+        }
+      }
+
       router.push("/onboarding");
     } else {
       setError(result.error || "Registration failed");
@@ -47,16 +105,66 @@ export default function RegisterPage() {
     setIsLoading(false);
   };
 
+  if (isValidatingInvite) {
+    return (
+      <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center px-4">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (inviteError) {
+    return (
+      <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center px-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="py-8">
+            <div className="text-center space-y-3">
+              <p className="text-lg font-medium text-destructive">Invalid Invite</p>
+              <p className="text-sm text-muted-foreground">{inviteError}</p>
+              <Button asChild variant="outline" className="mt-4">
+                <Link href="/register">Register without invite</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Create Account</CardTitle>
           <CardDescription>
-            Join SWA.XYZ and start building
+            {inviteInfo
+              ? "You've been invited to join as a sponsor"
+              : "Join SWA.XYZ and start building"}
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {inviteInfo && (
+            <div className="mb-6 flex items-center gap-3 rounded-lg border bg-muted/50 p-4">
+              {inviteInfo.orgLogo ? (
+                <img
+                  src={inviteInfo.orgLogo}
+                  alt={inviteInfo.orgName}
+                  className="h-10 w-10 rounded object-contain"
+                />
+              ) : (
+                <div className="flex h-10 w-10 items-center justify-center rounded bg-muted">
+                  <Building2 className="h-5 w-5 text-muted-foreground" />
+                </div>
+              )}
+              <div>
+                <p className="font-medium">{inviteInfo.orgName}</p>
+                <Badge variant="secondary" className="mt-0.5 text-xs">
+                  Sponsor
+                </Badge>
+              </div>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Name</Label>
@@ -80,7 +188,7 @@ export default function RegisterPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                disabled={isLoading}
+                disabled={isLoading || !!inviteInfo?.restrictedEmail}
               />
             </div>
 
@@ -136,5 +244,17 @@ export default function RegisterPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center px-4">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    }>
+      <RegisterForm />
+    </Suspense>
   );
 }

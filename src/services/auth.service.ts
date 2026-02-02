@@ -201,11 +201,18 @@ async function completeOnboarding(data: OnboardingData): Promise<ServiceResponse
     return error("No user logged in", null as unknown as User);
   }
 
+  // Fetch current role to preserve it (sponsor invites set role before onboarding)
+  const { data: existingProfile } = await supabase
+    .from("users")
+    .select("role")
+    .eq("id", authUser.id)
+    .maybeSingle();
+
   const dbData: Record<string, unknown> = {
     id: authUser.id,
     email: authUser.email,
     name: data.name,
-    role: "participant",
+    role: existingProfile?.role || "participant",
     has_completed_onboarding: true,
   };
   if (data.bio !== undefined) dbData.bio = data.bio;
