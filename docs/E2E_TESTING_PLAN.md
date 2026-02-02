@@ -6,7 +6,8 @@
 - Supabase project configured with database schema
 - Storage buckets created (`banners`, `screenshots`) via migration `003_storage_buckets.sql`
 - Seed data loaded (`npx tsx scripts/seed.ts`)
-- Dev server running (`npm run dev`)
+- Sponsor invites migration applied (`003_sponsor_invites.sql`)
+- Dev server running (`pnpm dev`)
 
 ### Test Accounts
 | Email | Password | Role |
@@ -33,13 +34,26 @@
 - [ ] Navigate to `/register`
 - [ ] Register with new email → creates account
 - [ ] Register with existing email → shows error
-- [ ] Password validation works (minimum length)
+- [ ] Password validation works (minimum 6 characters)
+- [ ] Password confirmation must match
 - [ ] Redirects to onboarding after registration
 
-### 1.3 Onboarding Flow
+### 1.3 Sponsor Invite Registration Flow
+- [ ] Navigate to `/register?invite=<valid-token>` → shows org banner with name, logo, "Sponsor" badge
+- [ ] Navigate to `/register?invite=<invalid-token>` → shows "Invalid Invite" error with fallback link
+- [ ] Navigate to `/register?invite=<expired-token>` → shows expiry error
+- [ ] Navigate to `/register?invite=<used-token>` → shows "already been used" error
+- [ ] Email field is locked when invite has a restricted email
+- [ ] After registration with valid invite → user role set to `sponsor`, `sponsor_org_id` set
+- [ ] After registration with valid invite → invite token marked as used
+- [ ] Sponsor user proceeds through onboarding → role preserved as `sponsor` (not overwritten to `participant`)
+- [ ] Sponsor lands in sponsor dashboard after onboarding
+
+### 1.4 Onboarding Flow
 - [ ] New user redirected to `/onboarding`
 - [ ] Can fill out profile details (name, bio, social links)
 - [ ] Completing onboarding redirects to dashboard
+- [ ] Onboarding preserves existing role (sponsor, judge) instead of defaulting to participant
 - [ ] Skipping onboarding works (if allowed)
 
 ---
@@ -95,37 +109,45 @@
 
 ## 3. Participant Dashboard Tests
 
-### 3.1 Dashboard Home (`/dashboard`)
+### 3.1 Dashboard Header (All Roles)
+- [ ] Desktop: user avatar dropdown visible on the right
+- [ ] Mobile: hamburger menu + logo + user avatar dropdown
+- [ ] Dropdown shows user name, email, avatar
+- [ ] Dropdown "Settings" link navigates to `/settings`
+- [ ] Dropdown "Sign Out" logs out and redirects to home
+- [ ] Sidebar includes "Settings" link in Quick Actions
+
+### 3.2 Dashboard Home (`/dashboard`)
 - [ ] Shows participant-specific content
 - [ ] Displays active cohorts
 - [ ] Shows user's submissions
 - [ ] Shows upcoming workshops
 
-### 3.2 Teams (`/teams`)
+### 3.3 Teams (`/teams`)
 - [ ] Lists user's teams
 - [ ] Can create new team
 - [ ] Can view team details
 - [ ] Pending invites display
 
-### 3.3 Team Detail (`/teams/[id]`)
+### 3.4 Team Detail (`/teams/[id]`)
 - [ ] Shows team members
 - [ ] Team lead can invite members
 - [ ] Team lead can remove members
 - [ ] Can edit team info (if lead)
 - [ ] Pending invites show status
 
-### 3.4 Create Team (`/teams/new`)
+### 3.5 Create Team (`/teams/new`)
 - [ ] Form validates required fields
 - [ ] Creates team successfully
 - [ ] Redirects to team page after creation
 
-### 3.5 Submissions (`/submissions`)
+### 3.6 Submissions (`/submissions`)
 - [ ] Lists user's submissions
 - [ ] Shows submission status
 - [ ] Can view submission details
 - [ ] Can edit draft submissions
 
-### 3.6 Submit Project (`/submit`)
+### 3.7 Submit Project (`/submit`)
 - [ ] Multi-step form navigation works (5 steps)
 - [ ] Step 1 (Details): Title, tagline, description via rich text editor
 - [ ] Step 2 (Media): Upload screenshots (minimum 3, maximum 10)
@@ -140,13 +162,13 @@
 - [ ] Draft saving works
 - [ ] Final submission changes status
 
-### 3.7 Submission Detail (`/submissions/[id]`)
+### 3.8 Submission Detail (`/submissions/[id]`)
 - [ ] Shows all submission details
 - [ ] Can edit if status is draft
 - [ ] Shows review scores (if available)
 - [ ] Shows submission status
 
-### 3.8 Settings (`/settings`)
+### 3.9 Settings (`/settings`)
 - [ ] Can update profile info
 - [ ] Can update social links
 - [ ] Can connect wallet
@@ -160,8 +182,6 @@
 - [x] Shows judge-specific stats
 - [x] Pending reviews count
 - [x] Completed reviews count
-
-issue: sidebar showing participant side bar
 
 ### 4.2 Reviews List (`/reviews`)
 - [x] Lists assigned reviews
@@ -243,15 +263,19 @@ issue: sidebar showing participant side bar
 - [ ] Banner image uploader shows current image with replace/remove
 - [ ] Can upload new banner image (drag-and-drop or click)
 - [ ] Can remove banner image
-- [ ] Rejects non-image files and files > 5MB
+- [ ] Large images auto-compressed client-side (resized to 2560px max, WebP)
 - [ ] Save persists all changes across all steps
 - [ ] Validation errors navigate to the step with the error and show toast
 - [ ] Sponsor add/update/remove syncs correctly on save
+- [ ] Can create new sponsor org inline via "+" button in Sponsors step
 
 ### 6.5 Create Cohort (`/admin/cohorts/new`)
 - [ ] Multi-step form works (must complete steps sequentially)
 - [ ] Name auto-generates slug
 - [ ] Can upload banner image
+- [ ] Sponsors step: "+" button opens "Create New Organization" dialog
+- [ ] Create org dialog validates required fields (name, contact name, contact email)
+- [ ] New org appears in dropdown immediately after creation
 - [ ] Creates cohort and redirects to list
 
 ### 6.6 Submissions (`/admin/submissions`)
@@ -289,6 +313,12 @@ issue: sidebar showing participant side bar
 - [ ] Can create new org
 - [ ] Can edit org details
 - [ ] Can manage cohort sponsorships
+- [ ] Link icon button generates invite link for a sponsor org
+- [ ] Invite link dialog shows copyable URL
+- [ ] Copy button copies link to clipboard with visual feedback (checkmark)
+- [ ] Dialog describes 7-day expiry and single-use constraint
+- [ ] Mail icon button opens existing "Invite Sponsor" form (assign role to existing user)
+- [ ] Stats cards show correct counts (total sponsors, contributions, tracks, platinum/gold)
 
 ### 6.12 Users (`/admin/users`)
 - [ ] Lists all users
@@ -314,10 +344,12 @@ issue: sidebar showing participant side bar
 ## 7. Cross-Role Tests
 
 ### 7.1 Access Control
-- [ ] Participant cannot access `/admin/*`
+- [ ] Participant cannot access `/admin/*` (redirected to `/dashboard`)
 - [ ] Judge cannot access `/sponsor/*`
-- [ ] Sponsor cannot access `/admin/*`
+- [ ] Sponsor cannot access `/admin/*` (redirected to `/dashboard`)
 - [ ] Unauthenticated users redirected to login
+- [ ] Admin layout performs client-side role check (defense-in-depth)
+- [ ] Middleware performs server-side redirect for protected routes
 
 ---
 
@@ -326,12 +358,21 @@ issue: sidebar showing participant side bar
 ### 8.1 Upload API (`POST /api/upload`)
 - [ ] Accepts valid image files (JPEG, PNG, WebP, GIF)
 - [ ] Rejects non-image file types (PDF, ZIP, etc.)
-- [ ] Rejects files over 5MB
+- [ ] Rejects files over 5MB (after client-side compression)
 - [ ] Returns public URL on success
 - [ ] Requires valid bucket parameter (`banners` or `screenshots`)
 - [ ] Rejects invalid bucket names
 
-### 8.2 Cohort Banner Upload
+### 8.2 Client-Side Image Compression
+- [ ] Large images (>1MB) are auto-compressed before upload
+- [ ] Banners resized to max 2560px dimension, WebP at 85% quality
+- [ ] Screenshots resized to max 1920px dimension, WebP at 85% quality
+- [ ] GIFs are skipped (not compressed)
+- [ ] Files under 1MB are skipped (not compressed)
+- [ ] Compression result only used if smaller than original
+- [ ] Users can upload images larger than 5MB (compressed to fit)
+
+### 8.3 Cohort Banner Upload
 - [ ] ImageUploader renders in cohort form (Basic Info step)
 - [ ] Click or drag-and-drop uploads image
 - [ ] Shows upload progress/spinner
@@ -342,11 +383,12 @@ issue: sidebar showing participant side bar
 - [ ] Banner displays in CohortHero on public cohort page
 - [ ] Cohorts without banner show SVG pattern fallback
 
-### 8.3 Submission Screenshots Upload
+### 8.4 Submission Screenshots Upload
 - [ ] MultiImageUploader renders in submit form (Media step)
 - [ ] Shows "{current}/3 required" counter
 - [ ] Shows "(X more needed)" in red when below minimum
-- [ ] Can upload multiple images
+- [ ] Can upload multiple images simultaneously (select 3+ at once)
+- [ ] All selected images upload correctly (no dropped uploads)
 - [ ] Grid layout displays uploaded thumbnails
 - [ ] Can remove individual screenshots
 - [ ] Cannot proceed past Media step with < 3 screenshots
@@ -355,7 +397,7 @@ issue: sidebar showing participant side bar
 - [ ] Screenshots persist after submission
 - [ ] ProjectGallery displays screenshots on project detail page
 
-### 8.4 Supabase Storage
+### 8.5 Supabase Storage
 - [ ] `banners` bucket exists and is public
 - [ ] `screenshots` bucket exists and is public
 - [ ] Uploaded files accessible via public URL
@@ -363,9 +405,38 @@ issue: sidebar showing participant side bar
 
 ---
 
-## 9. Workshop RSVP Tests
+## 9. Sponsor Invite API Tests
 
-### 9.1 RSVP Flow
+### 9.1 Create Invite (`POST /api/invites`)
+- [ ] Admin can create invite with `sponsorOrgId`
+- [ ] Returns token, orgName, expiresAt
+- [ ] Non-admin gets 403 Forbidden
+- [ ] Unauthenticated gets 401 Unauthorized
+- [ ] Invalid sponsorOrgId returns 404
+- [ ] Optional `email` field restricts invite to specific email
+- [ ] Optional `expiresInDays` (default 7) sets correct expiry
+
+### 9.2 Validate Invite (`GET /api/invites/[token]`)
+- [ ] Valid token returns orgName, orgLogo, restrictedEmail
+- [ ] No auth required (public endpoint)
+- [ ] Invalid token returns 404
+- [ ] Expired token returns 410
+- [ ] Used token returns 410
+
+### 9.3 Consume Invite (`POST /api/invites/[token]`)
+- [ ] Authenticated user can consume valid token
+- [ ] Sets user role to `sponsor` and `sponsor_org_id`
+- [ ] Marks invite as used (used_at, used_by)
+- [ ] Email-restricted invite rejects mismatched email (403)
+- [ ] Expired token returns 410
+- [ ] Already-used token returns 410
+- [ ] Unauthenticated gets 401
+
+---
+
+## 10. Workshop RSVP Tests
+
+### 10.1 RSVP Flow
 - [ ] Can RSVP from workshop card
 - [ ] Can RSVP from workshop detail modal
 - [ ] RSVP count updates
@@ -373,82 +444,83 @@ issue: sidebar showing participant side bar
 - [ ] Can cancel RSVP
 - [ ] Meeting link shown after RSVP
 
-### 9.2 Calendar Integration
+### 10.2 Calendar Integration
 - [ ] Google Calendar link works
 - [ ] ICS download works
 - [ ] Apple Calendar link works
 
 ---
 
-## 10. Search and Filter Tests
+## 11. Search and Filter Tests
 
-### 10.1 Explore Page Filters
+### 11.1 Explore Page Filters
 - [ ] Text search filters results
 - [ ] Track filter works
 - [ ] Tech stack filter works
 - [ ] Multiple filters combine correctly
 - [ ] Clear filters resets view
 
-### 10.2 Admin Table Filters
+### 11.2 Admin Table Filters
 - [ ] Search filters table rows
 - [ ] Dropdown filters work
 - [ ] Pagination works (if implemented)
 
 ---
 
-## 11. Responsive Design Tests
+## 12. Responsive Design Tests
 
-### 11.1 Mobile Views (< 768px)
-- [ ] Navigation collapses to hamburger
-- [ ] Mobile sidebar works
+### 12.1 Mobile Views (< 768px)
+- [ ] Dashboard header shows hamburger + logo + avatar dropdown
+- [ ] Mobile sidebar sheet opens/closes correctly
 - [ ] Tables hide non-essential columns
 - [ ] Forms are usable
 - [ ] Modals fit screen
 
-### 11.2 Tablet Views (768px - 1024px)
+### 12.2 Tablet Views (768px - 1024px)
 - [ ] Layout adapts properly
 - [ ] Sidebar may be collapsed
 - [ ] Tables show more columns
 
-### 11.3 Desktop Views (> 1024px)
+### 12.3 Desktop Views (> 1024px)
 - [ ] Full layout displayed
 - [ ] Sidebar always visible (dashboard)
+- [ ] Dashboard header shows avatar dropdown on the right
 - [ ] Full tables displayed
 
 ---
 
-## 12. Error Handling Tests
+## 13. Error Handling Tests
 
-### 12.1 Network Errors
+### 13.1 Network Errors
 - [ ] Shows error message on API failure
 - [ ] Can retry failed requests
 - [ ] Graceful degradation
 
-### 12.2 Form Validation
+### 13.2 Form Validation
 - [ ] Required fields show errors
 - [ ] Email format validated
 - [ ] URL format validated
 - [ ] Error messages are clear
 
-### 12.3 404 Pages
+### 13.3 404 Pages
 - [ ] Invalid routes show 404 page
 - [ ] 404 has navigation back
 
 ---
 
-## 13. Data Integrity Tests
+## 14. Data Integrity Tests
 
-### 13.1 Submission Flow
+### 14.1 Submission Flow
 - [ ] Creating submission updates team's submissions
 - [ ] Deleting submission removes from lists
 - [ ] Status changes reflect everywhere
 
-### 13.2 Team Management
+### 14.2 Team Management
 - [ ] Adding member updates team list
 - [ ] Removing member updates counts
 - [ ] Team deletion handles submissions
 
-### 13.3 User Role Changes
+### 14.3 User Role Changes
 - [ ] Changing to judge → user appears in judges list
 - [ ] Changing to sponsor → can link to org
 - [ ] Changing from sponsor → org link cleared
