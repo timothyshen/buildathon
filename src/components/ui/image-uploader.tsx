@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { compressImage } from "@/lib/compress-image";
 import { Upload, X, Loader2, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -38,15 +39,20 @@ export function ImageUploader({
         return;
       }
 
-      if (file.size > maxSizeMB * 1024 * 1024) {
-        toast.error(`File too large. Maximum size is ${maxSizeMB}MB`);
-        return;
-      }
-
       setIsUploading(true);
       try {
+        const compressed = await compressImage(file, {
+          maxDimension: bucket === "banners" ? 2560 : 2048,
+        });
+
+        if (compressed.size > maxSizeMB * 1024 * 1024) {
+          toast.error(`File too large after compression. Maximum size is ${maxSizeMB}MB`);
+          setIsUploading(false);
+          return;
+        }
+
         const formData = new FormData();
-        formData.append("file", file);
+        formData.append("file", compressed);
         formData.append("bucket", bucket);
 
         const res = await fetch("/api/upload", {

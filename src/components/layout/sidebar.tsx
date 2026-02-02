@@ -18,6 +18,7 @@ import {
   Home,
   Compass,
   BookOpen,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getRoleBadgeColor } from "@/lib/utils/colors";
@@ -265,6 +266,14 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
 
       {/* Quick Actions */}
       <div className="border-t p-3">
+        <Link
+          href="/settings"
+          onClick={handleNavClick}
+          className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        >
+          <Settings className="h-4 w-4" />
+          <span>Settings</span>
+        </Link>
         <Link
           href="/"
           onClick={handleNavClick}

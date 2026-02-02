@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { Sidebar } from "@/components/layout/sidebar";
-import { MobileHeader } from "@/components/layout/mobile-header";
+import { DashboardHeader } from "@/components/layout/dashboard-header";
 import { Loading } from "@/components/ui/loading";
 
 export default function DashboardLayout({
@@ -37,7 +37,7 @@ export default function DashboardLayout({
     <div className="flex h-screen flex-col md:flex-row bg-muted">
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
-        <MobileHeader />
+        <DashboardHeader />
         <main className="flex-1 overflow-y-auto">
           <div className="min-h-full bg-background">
             <div className="mx-auto max-w-6xl px-4 py-6 md:px-6 md:py-8 lg:px-8">
