@@ -28,6 +28,8 @@ export function MultiImageUploader({
   const [uploadingCount, setUploadingCount] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const valueRef = useRef(value);
+  valueRef.current = value;
 
   const canAdd = value.length + uploadingCount < maxImages;
 
@@ -61,14 +63,16 @@ export function MultiImageUploader({
           return;
         }
 
-        onChange([...value, data.url]);
+        const updated = [...valueRef.current, data.url];
+        valueRef.current = updated;
+        onChange(updated);
       } catch {
         toast.error("Upload failed");
       } finally {
         setUploadingCount((c) => c - 1);
       }
     },
-    [bucket, onChange, value]
+    [bucket, onChange]
   );
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
