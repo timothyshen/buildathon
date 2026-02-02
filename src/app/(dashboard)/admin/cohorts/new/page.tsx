@@ -9,7 +9,7 @@ import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { CohortPageForm } from "@/components/admin/cohorts/cohort-page-form";
 import type { CohortSponsorInput } from "@/components/admin/cohorts/cohort-sponsor-manager";
 import type { SponsorOrg } from "@/types";
-import type { CohortFormData } from "@/lib/schemas";
+import type { CohortFormData, SponsorOrgFormData } from "@/lib/schemas";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -114,6 +114,24 @@ export default function NewCohortPage() {
     }
   };
 
+  const handleCreateOrg = async (data: SponsorOrgFormData): Promise<SponsorOrg | null> => {
+    const result = await sponsorsService.createOrg({
+      name: data.name,
+      logo: data.logo || "",
+      website: data.website || "",
+      description: data.description || "",
+      contactName: data.contactName,
+      contactEmail: data.contactEmail,
+    });
+    if (result.success) {
+      setSponsorOrgs((prev) => [...prev, result.data]);
+      toast.success("Organization created");
+      return result.data;
+    }
+    toast.error(result.error || "Failed to create organization");
+    return null;
+  };
+
   const handleDone = () => {
     toast.success("Cohort created successfully");
     router.push("/admin/cohorts");
@@ -162,6 +180,7 @@ export default function NewCohortPage() {
         onDone={handleDone}
         onCancel={handleCancel}
         isLoading={isSaving}
+        onCreateOrg={handleCreateOrg}
       />
     </div>
   );

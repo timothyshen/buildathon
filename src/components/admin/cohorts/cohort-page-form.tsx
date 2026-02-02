@@ -23,6 +23,7 @@ import { PlusCircle, Trash2, Loader2, ChevronLeft, ChevronRight, Check } from "l
 import { toast } from "sonner";
 import type { Cohort, SponsorOrg } from "@/types";
 import type { CohortSponsorWithOrg } from "@/services/sponsors.service";
+import type { SponsorOrgFormData } from "@/lib/schemas";
 
 interface CohortPageFormProps {
   cohort?: Cohort;
@@ -32,6 +33,7 @@ interface CohortPageFormProps {
   onDone: () => void;
   onCancel: () => void;
   isLoading?: boolean;
+  onCreateOrg?: (data: SponsorOrgFormData) => Promise<SponsorOrg | null>;
 }
 
 const steps = ["Basic Info", "Dates", "Settings", "Prizes", "Sponsors"];
@@ -44,6 +46,7 @@ export function CohortPageForm({
   onDone,
   onCancel,
   isLoading = false,
+  onCreateOrg,
 }: CohortPageFormProps) {
   const [step, setStep] = useState(0);
   const [description, setDescription] = useState(cohort?.description || "");
@@ -510,6 +513,7 @@ export function CohortPageForm({
                 onChange={handleSponsorsChange}
                 availableOrgs={sponsorOrgs}
                 disabled={isLoading}
+                onCreateOrg={onCreateOrg}
               />
             </CardContent>
           </Card>

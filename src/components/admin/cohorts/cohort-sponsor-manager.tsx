@@ -1,8 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { sponsorOrgSchema, type SponsorOrgFormData } from "@/lib/schemas";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -10,9 +15,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { PlusCircle, X, Building2 } from "lucide-react";
+import { PlusCircle, X, Building2, Loader2 } from "lucide-react";
 import type { SponsorOrg, SponsorTier } from "@/types";
 
 // Local type for managing sponsors in the form
@@ -31,6 +43,7 @@ interface CohortSponsorManagerProps {
   onChange: (sponsors: CohortSponsorInput[]) => void;
   availableOrgs: SponsorOrg[];
   disabled?: boolean;
+  onCreateOrg?: (data: SponsorOrgFormData) => Promise<SponsorOrg | null>;
 }
 
 const tierOptions: { value: SponsorTier; label: string }[] = [
@@ -54,8 +67,11 @@ export function CohortSponsorManager({
   onChange,
   availableOrgs,
   disabled = false,
+  onCreateOrg,
 }: CohortSponsorManagerProps) {
   const [isAdding, setIsAdding] = useState(false);
+  const [isCreateOrgOpen, setIsCreateOrgOpen] = useState(false);
+  const [isCreatingOrg, setIsCreatingOrg] = useState(false);
   const [newSponsor, setNewSponsor] = useState<{
     sponsorOrgId: string;
     tier: SponsorTier;
@@ -68,10 +84,21 @@ export function CohortSponsorManager({
     hasDedicatedTrack: false,
   });
 
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset: resetOrgForm,
+  } = useForm<SponsorOrgFormData>({
+    resolver: zodResolver(sponsorOrgSchema),
+  });
+
   // Filter out orgs that are already added
   const unaddedOrgs = availableOrgs.filter(
     (org) => !sponsors.some((s) => s.sponsorOrgId === org.id)
   );
+
+  const canAddSponsor = unaddedOrgs.length > 0 || !!onCreateOrg;
 
   const handleAddSponsor = () => {
     if (!newSponsor.sponsorOrgId) return;
@@ -113,11 +140,26 @@ export function CohortSponsorManager({
     );
   };
 
+  const handleCreateOrg = async (data: SponsorOrgFormData) => {
+    if (!onCreateOrg) return;
+    setIsCreatingOrg(true);
+    try {
+      const newOrg = await onCreateOrg(data);
+      if (newOrg) {
+        setNewSponsor((prev) => ({ ...prev, sponsorOrgId: newOrg.id }));
+        setIsCreateOrgOpen(false);
+        resetOrgForm();
+      }
+    } finally {
+      setIsCreatingOrg(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <Label className="text-base font-semibold">Sponsors</Label>
-        {!isAdding && unaddedOrgs.length > 0 && (
+        {!isAdding && canAddSponsor && (
           <Button
             type="button"
             variant="outline"
@@ -231,34 +273,47 @@ export function CohortSponsorManager({
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label>Select Organization</Label>
-                  <Select
-                    value={newSponsor.sponsorOrgId}
-                    onValueChange={(value) =>
-                      setNewSponsor({ ...newSponsor, sponsorOrgId: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose a sponsor organization" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {unaddedOrgs.map((org) => (
-                        <SelectItem key={org.id} value={org.id}>
-                          <div className="flex items-center gap-2">
-                            {org.logo ? (
-                              <img
-                                src={org.logo}
-                                alt={org.name}
-                                className="h-5 w-5 rounded object-contain"
-                              />
-                            ) : (
-                              <Building2 className="h-5 w-5 text-muted-foreground" />
-                            )}
-                            {org.name}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="flex gap-2">
+                    <Select
+                      value={newSponsor.sponsorOrgId}
+                      onValueChange={(value) =>
+                        setNewSponsor({ ...newSponsor, sponsorOrgId: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose a sponsor organization" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {unaddedOrgs.map((org) => (
+                          <SelectItem key={org.id} value={org.id}>
+                            <div className="flex items-center gap-2">
+                              {org.logo ? (
+                                <img
+                                  src={org.logo}
+                                  alt={org.name}
+                                  className="h-5 w-5 rounded object-contain"
+                                />
+                              ) : (
+                                <Building2 className="h-5 w-5 text-muted-foreground" />
+                              )}
+                              {org.name}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {onCreateOrg && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setIsCreateOrgOpen(true)}
+                        title="Create new organization"
+                      >
+                        <PlusCircle className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -319,7 +374,7 @@ export function CohortSponsorManager({
       )}
 
       {/* Show add button at bottom if some sponsors exist */}
-      {sponsors.length > 0 && !isAdding && unaddedOrgs.length > 0 && (
+      {sponsors.length > 0 && !isAdding && canAddSponsor && (
         <Button
           type="button"
           variant="outline"
@@ -332,10 +387,90 @@ export function CohortSponsorManager({
         </Button>
       )}
 
-      {unaddedOrgs.length === 0 && sponsors.length > 0 && (
+      {!canAddSponsor && sponsors.length > 0 && (
         <p className="text-center text-sm text-muted-foreground">
           All sponsor organizations have been added to this cohort.
         </p>
+      )}
+
+      {/* Create New Organization Dialog */}
+      {onCreateOrg && (
+        <Dialog open={isCreateOrgOpen} onOpenChange={setIsCreateOrgOpen}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Create New Organization</DialogTitle>
+              <DialogDescription>
+                Add a new sponsor organization. You can select it for this cohort after creation.
+              </DialogDescription>
+            </DialogHeader>
+
+            <form onSubmit={handleSubmit(handleCreateOrg)} className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="org-name">Organization Name *</Label>
+                  <Input id="org-name" {...register("name")} placeholder="Acme Corp" />
+                  {errors.name && (
+                    <p className="text-sm text-red-500">{errors.name.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="org-website">Website</Label>
+                  <Input id="org-website" {...register("website")} type="url" placeholder="https://..." />
+                  {errors.website && (
+                    <p className="text-sm text-red-500">{errors.website.message}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="org-logo">Logo URL</Label>
+                <Input id="org-logo" {...register("logo")} type="url" placeholder="https://..." />
+                {errors.logo && (
+                  <p className="text-sm text-red-500">{errors.logo.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="org-description">Description</Label>
+                <Textarea
+                  id="org-description"
+                  {...register("description")}
+                  placeholder="About this organization..."
+                  rows={2}
+                />
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="org-contactName">Contact Name *</Label>
+                  <Input id="org-contactName" {...register("contactName")} placeholder="John Doe" />
+                  {errors.contactName && (
+                    <p className="text-sm text-red-500">{errors.contactName.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="org-contactEmail">Contact Email *</Label>
+                  <Input id="org-contactEmail" {...register("contactEmail")} type="email" placeholder="john@example.com" />
+                  {errors.contactEmail && (
+                    <p className="text-sm text-red-500">{errors.contactEmail.message}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <Button type="button" variant="outline" onClick={() => setIsCreateOrgOpen(false)} disabled={isCreatingOrg}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isCreatingOrg}>
+                  {isCreatingOrg && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Create Organization
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );

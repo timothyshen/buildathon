@@ -57,6 +57,18 @@ export const sponsorSchema = z.object({
 
 export type SponsorFormData = z.infer<typeof sponsorSchema>;
 
+// Sponsor Org Schema (org-level fields only, no cohort-specific fields)
+export const sponsorOrgSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  logo: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  website: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  description: z.string().optional(),
+  contactName: z.string().min(1, "Contact name is required"),
+  contactEmail: z.string().email("Must be a valid email"),
+});
+
+export type SponsorOrgFormData = z.infer<typeof sponsorOrgSchema>;
+
 // Invite Sponsor Schema
 export const inviteSponsorSchema = z.object({
   email: z.string().email("Must be a valid email"),
