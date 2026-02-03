@@ -20,6 +20,7 @@ export interface TractionService {
     submissionId: string,
     data: Partial<Omit<SubmissionTraction, "id" | "submissionId" | "createdAt" | "updatedAt">>
   ): Promise<ServiceResponse<SubmissionTraction>>;
+  disconnectGA(submissionId: string): Promise<ServiceResponse<void>>;
 
   // Snapshots
   getSnapshots(submissionId: string): Promise<ServiceResponse<TractionSnapshot[]>>;
@@ -56,6 +57,12 @@ function toTraction(row: Record<string, unknown>): SubmissionTraction {
     twitterHandle: row.twitter_handle as string | undefined,
     twitterUserId: row.twitter_user_id as string | undefined,
     websiteUrl: row.website_url as string | undefined,
+    gaPropertyId: row.ga_property_id as string | undefined,
+    gaRefreshToken: row.ga_refresh_token as string | undefined,
+    gaConnectedAt: row.ga_connected_at
+      ? new Date(row.ga_connected_at as string)
+      : undefined,
+    gaConnectedBy: row.ga_connected_by as string | undefined,
     createdAt: new Date(row.created_at as string),
     updatedAt: new Date(row.updated_at as string),
   };
@@ -76,6 +83,12 @@ function toSnapshot(row: Record<string, unknown>): TractionSnapshot {
     twitterFollowers: row.twitter_followers as number | undefined,
     twitterImpressions7d: row.twitter_impressions_7d as number | undefined,
     twitterEngagement7d: row.twitter_engagement_7d as number | undefined,
+    gaActiveUsers: row.ga_active_users as number | undefined,
+    gaTotalUsers: row.ga_total_users as number | undefined,
+    gaSessions: row.ga_sessions as number | undefined,
+    gaPageviews: row.ga_pageviews as number | undefined,
+    gaBounceRate: row.ga_bounce_rate as number | undefined,
+    gaAvgSessionDuration: row.ga_avg_session_duration as number | undefined,
     dataSource: row.data_source as "manual" | "api" | "both",
     createdAt: new Date(row.created_at as string),
   };
@@ -363,9 +376,31 @@ async function verifyMilestone(
   return success(toMilestone(result));
 }
 
+async function disconnectGA(submissionId: string): Promise<ServiceResponse<void>> {
+  const supabase = createClient();
+
+  const { error: dbError } = await supabase
+    .from("submission_traction")
+    .update({
+      ga_property_id: null,
+      ga_refresh_token: null,
+      ga_connected_at: null,
+      ga_connected_by: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("submission_id", submissionId);
+
+  if (dbError) {
+    return error(dbError.message, undefined);
+  }
+
+  return success(undefined);
+}
+
 export const tractionService: TractionService = {
   getTraction,
   upsertTraction,
+  disconnectGA,
   getSnapshots,
   getLatestSnapshot,
   createSnapshot,

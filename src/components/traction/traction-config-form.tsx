@@ -11,7 +11,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Twitter, Globe, FileCode } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Loader2, Twitter, Globe, FileCode, BarChart3, Check, X, ExternalLink } from "lucide-react";
 
 const tractionConfigSchema = z.object({
   twitterHandle: z.string(),
@@ -34,6 +45,52 @@ export function TractionConfigForm({
   onUpdate,
 }: TractionConfigFormProps) {
   const [isSaving, setIsSaving] = useState(false);
+  const [isConnectingGA, setIsConnectingGA] = useState(false);
+  const [isDisconnectingGA, setIsDisconnectingGA] = useState(false);
+
+  const isGAConnected = !!traction?.gaPropertyId;
+
+  const handleConnectGA = async () => {
+    setIsConnectingGA(true);
+    try {
+      const response = await fetch(`/api/traction/ga/authorize?submissionId=${submissionId}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast.error(data.error || "Failed to start Google Analytics connection");
+        return;
+      }
+
+      // Redirect to Google OAuth
+      window.location.href = data.authUrl;
+    } catch {
+      toast.error("Failed to connect Google Analytics");
+    } finally {
+      setIsConnectingGA(false);
+    }
+  };
+
+  const handleDisconnectGA = async () => {
+    setIsDisconnectingGA(true);
+    const result = await tractionService.disconnectGA(submissionId);
+
+    if (result.success) {
+      toast.success("Google Analytics disconnected");
+      // Update local state by clearing GA fields
+      if (traction) {
+        onUpdate({
+          ...traction,
+          gaPropertyId: undefined,
+          gaRefreshToken: undefined,
+          gaConnectedAt: undefined,
+          gaConnectedBy: undefined,
+        });
+      }
+    } else {
+      toast.error(result.error || "Failed to disconnect");
+    }
+    setIsDisconnectingGA(false);
+  };
 
   const {
     register,
@@ -73,14 +130,103 @@ export function TractionConfigForm({
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Project Links</CardTitle>
-        <CardDescription>
-          Connect your project&apos;s social and blockchain presence for automated tracking
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+    <div className="space-y-6">
+      {/* Google Analytics Integration */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5" />
+            Google Analytics
+          </CardTitle>
+          <CardDescription>
+            Connect Google Analytics to automatically track website metrics
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isGAConnected ? (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-sm">
+                <Check className="h-4 w-4 text-green-500" />
+                <span className="text-green-600 font-medium">Connected</span>
+                <span className="text-muted-foreground">
+                  Property: {traction?.gaPropertyId}
+                </span>
+              </div>
+              {traction?.gaConnectedAt && (
+                <p className="text-xs text-muted-foreground">
+                  Connected on {new Date(traction.gaConnectedAt).toLocaleDateString()}
+                </p>
+              )}
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <X className="mr-2 h-4 w-4" />
+                    Disconnect
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Disconnect Google Analytics?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will remove the Google Analytics connection. You can reconnect at any time.
+                      Existing metrics data will be preserved.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDisconnectGA}
+                      disabled={isDisconnectingGA}
+                    >
+                      {isDisconnectingGA ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Disconnecting...
+                        </>
+                      ) : (
+                        "Disconnect"
+                      )}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Connect your Google Analytics 4 property to automatically pull website traffic metrics.
+              </p>
+              <Button
+                onClick={handleConnectGA}
+                disabled={isConnectingGA}
+                variant="outline"
+              >
+                {isConnectingGA ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Connecting...
+                  </>
+                ) : (
+                  <>
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    Connect Google Analytics
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Project Links */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Project Links</CardTitle>
+          <CardDescription>
+            Connect your project&apos;s social and blockchain presence for automated tracking
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {/* Twitter */}
           <div className="space-y-2">
@@ -165,5 +311,6 @@ export function TractionConfigForm({
         </form>
       </CardContent>
     </Card>
+    </div>
   );
 }

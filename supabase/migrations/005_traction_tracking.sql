@@ -32,6 +32,12 @@ CREATE TABLE submission_traction (
   -- Website
   website_url TEXT,
 
+  -- Google Analytics integration
+  ga_property_id TEXT,           -- GA4 property ID (e.g., "properties/123456789")
+  ga_refresh_token TEXT,         -- OAuth refresh token (encrypted)
+  ga_connected_at TIMESTAMPTZ,   -- When GA was connected
+  ga_connected_by UUID REFERENCES users(id),  -- Who connected it
+
   -- Metadata
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
@@ -59,6 +65,14 @@ CREATE TABLE traction_snapshots (
   twitter_followers INTEGER,
   twitter_impressions_7d INTEGER,
   twitter_engagement_7d INTEGER,  -- likes + retweets + replies
+
+  -- Google Analytics (automated)
+  ga_active_users INTEGER,        -- Daily active users from GA
+  ga_total_users INTEGER,         -- Total unique users
+  ga_sessions INTEGER,
+  ga_pageviews INTEGER,
+  ga_bounce_rate NUMERIC(5,2),    -- Percentage
+  ga_avg_session_duration INTEGER -- Seconds
 
   -- Metadata
   data_source TEXT DEFAULT 'manual',  -- 'manual', 'api', 'both'

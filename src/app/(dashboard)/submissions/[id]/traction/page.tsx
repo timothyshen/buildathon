@@ -1,8 +1,9 @@
 "use client";
 
 import { use, useState, useEffect } from "react";
-import { notFound, useRouter } from "next/navigation";
+import { notFound, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { toast } from "sonner";
 import { useAuth } from "@/contexts/auth-context";
 import { submissionsService, tractionService } from "@/services";
 import type {
@@ -27,6 +28,7 @@ interface TractionPageProps {
 export default function TractionPage({ params }: TractionPageProps) {
   const { id } = use(params);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, isLoading: authLoading } = useAuth();
 
   const [submission, setSubmission] = useState<Submission | null>(null);
@@ -34,6 +36,15 @@ export default function TractionPage({ params }: TractionPageProps) {
   const [snapshots, setSnapshots] = useState<TractionSnapshot[]>([]);
   const [milestones, setMilestones] = useState<TractionMilestone[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Handle GA connection success from OAuth callback
+  useEffect(() => {
+    if (searchParams.get("ga_connected") === "true") {
+      toast.success("Google Analytics connected successfully");
+      // Remove query param from URL
+      router.replace(`/submissions/${id}/traction`, { scroll: false });
+    }
+  }, [searchParams, id, router]);
 
   useEffect(() => {
     async function loadData() {

@@ -78,10 +78,11 @@ export function MetricsHistory({ snapshots }: MetricsHistoryProps) {
                 <TableHead>Date</TableHead>
                 <TableHead className="text-right">DAU</TableHead>
                 <TableHead className="text-right">MAU</TableHead>
-                <TableHead className="text-right">Visits</TableHead>
-                <TableHead className="text-right">Followers</TableHead>
-                <TableHead className="text-right">Tx Count</TableHead>
-                <TableHead className="text-right">Addresses</TableHead>
+                <TableHead className="text-right hidden md:table-cell">Visits</TableHead>
+                <TableHead className="text-right hidden md:table-cell">GA Users</TableHead>
+                <TableHead className="text-right hidden lg:table-cell">Sessions</TableHead>
+                <TableHead className="text-right hidden md:table-cell">Followers</TableHead>
+                <TableHead className="text-right hidden lg:table-cell">Tx Count</TableHead>
                 <TableHead>Source</TableHead>
               </TableRow>
             </TableHeader>
@@ -115,7 +116,7 @@ export function MetricsHistory({ snapshots }: MetricsHistoryProps) {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right hidden md:table-cell">
                       <div className="flex items-center justify-end gap-1">
                         {formatNumber(snapshot.reportedMonthlyVisits)}
                         {getGrowthIndicator(
@@ -124,7 +125,25 @@ export function MetricsHistory({ snapshots }: MetricsHistoryProps) {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right hidden md:table-cell">
+                      <div className="flex items-center justify-end gap-1">
+                        {formatNumber(snapshot.gaActiveUsers)}
+                        {getGrowthIndicator(
+                          snapshot.gaActiveUsers,
+                          previousSnapshot?.gaActiveUsers
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right hidden lg:table-cell">
+                      <div className="flex items-center justify-end gap-1">
+                        {formatNumber(snapshot.gaSessions)}
+                        {getGrowthIndicator(
+                          snapshot.gaSessions,
+                          previousSnapshot?.gaSessions
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right hidden md:table-cell">
                       <div className="flex items-center justify-end gap-1">
                         {formatNumber(snapshot.twitterFollowers)}
                         {getGrowthIndicator(
@@ -133,21 +152,12 @@ export function MetricsHistory({ snapshots }: MetricsHistoryProps) {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right hidden lg:table-cell">
                       <div className="flex items-center justify-end gap-1">
                         {formatNumber(snapshot.onchainTxCount)}
                         {getGrowthIndicator(
                           snapshot.onchainTxCount,
                           previousSnapshot?.onchainTxCount
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        {formatNumber(snapshot.onchainUniqueAddresses)}
-                        {getGrowthIndicator(
-                          snapshot.onchainUniqueAddresses,
-                          previousSnapshot?.onchainUniqueAddresses
                         )}
                       </div>
                     </TableCell>

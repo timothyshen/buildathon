@@ -286,6 +286,12 @@ export interface SubmissionTraction {
   // Website
   websiteUrl?: string;
 
+  // Google Analytics
+  gaPropertyId?: string;
+  gaRefreshToken?: string;
+  gaConnectedAt?: Date;
+  gaConnectedBy?: string;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -309,6 +315,14 @@ export interface TractionSnapshot {
   twitterFollowers?: number;
   twitterImpressions7d?: number;
   twitterEngagement7d?: number;
+
+  // Google Analytics (automated)
+  gaActiveUsers?: number;
+  gaTotalUsers?: number;
+  gaSessions?: number;
+  gaPageviews?: number;
+  gaBounceRate?: number;
+  gaAvgSessionDuration?: number;
 
   dataSource: "manual" | "api" | "both";
   createdAt: Date;
