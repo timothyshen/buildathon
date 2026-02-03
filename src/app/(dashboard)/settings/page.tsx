@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { usersService } from "@/services";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,8 +14,14 @@ import { Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
 
 export default function SettingsPage() {
+  const router = useRouter();
   const { user, logout, refreshUser } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+
+  const handleLogout = useCallback(async () => {
+    await logout();
+    router.push("/");
+  }, [logout, router]);
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
   const [twitter, setTwitter] = useState("");
@@ -206,7 +213,7 @@ export default function SettingsPage() {
                 Sign out of your account on this device
               </p>
             </div>
-            <Button variant="outline" onClick={logout}>
+            <Button variant="outline" onClick={handleLogout}>
               Sign Out
             </Button>
           </div>

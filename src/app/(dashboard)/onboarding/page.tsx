@@ -84,18 +84,19 @@ export default function OnboardingPage() {
 
     setIsLoading(true);
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      completeOnboarding({
+      const success = await completeOnboarding({
         name: data.name.trim(),
         bio: data.bio.trim() || undefined,
         twitter: data.twitter.trim() || undefined,
         github: data.github.trim() || undefined,
       });
 
-      toast.success("Welcome aboard! Your profile is set up.");
-      router.replace("/dashboard");
+      if (success) {
+        toast.success("Welcome aboard! Your profile is set up.");
+        router.replace("/dashboard");
+      } else {
+        toast.error("Failed to complete setup. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }

@@ -173,12 +173,13 @@ export async function fetchContractMetrics(
   contractAddress: string,
   queryId?: number
 ): Promise<OnChainMetrics> {
-  // Use provided query ID or default
+  // Use provided query ID or default from env
   // You'll need to create this query in Dune and get the ID
-  const METRICS_QUERY_ID = queryId || parseInt(process.env.DUNE_METRICS_QUERY_ID || "0");
+  const envQueryId = process.env.DUNE_METRICS_QUERY_ID;
+  const METRICS_QUERY_ID = queryId || (envQueryId ? parseInt(envQueryId) : null);
 
   if (!METRICS_QUERY_ID) {
-    throw new Error("DUNE_METRICS_QUERY_ID not configured");
+    throw new Error("DUNE_METRICS_QUERY_ID not configured - set the environment variable or pass queryId");
   }
 
   const rows = await runQuery(METRICS_QUERY_ID, {
@@ -226,7 +227,8 @@ export async function fetchContractMetrics(
  */
 export async function verifyContract(contractAddress: string): Promise<boolean> {
   // Use a simple query to check if contract has any transactions
-  const VERIFY_QUERY_ID = parseInt(process.env.DUNE_VERIFY_QUERY_ID || "0");
+  const envVerifyId = process.env.DUNE_VERIFY_QUERY_ID;
+  const VERIFY_QUERY_ID = envVerifyId ? parseInt(envVerifyId) : null;
 
   if (!VERIFY_QUERY_ID) {
     // If no verify query configured, assume valid

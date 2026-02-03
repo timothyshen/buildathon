@@ -314,7 +314,7 @@ export function SponsorDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle>Your Workshops</CardTitle>
-                <CardDescription>Learning content you've created</CardDescription>
+                <CardDescription>Learning content you&apos;ve created</CardDescription>
               </div>
               <Button variant="ghost" size="sm" asChild>
                 <Link href="/sponsor/workshops">View All</Link>

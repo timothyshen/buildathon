@@ -287,7 +287,10 @@ async function create(
   }
 
   const submission = await fetchSubmissionWithRelations(supabase, created.id);
-  return success(submission!);
+  if (!submission) {
+    return error("Failed to fetch created submission", null as unknown as Submission);
+  }
+  return success(submission);
 }
 
 async function update(id: string, data: Partial<Submission>): Promise<ServiceResponse<Submission>> {

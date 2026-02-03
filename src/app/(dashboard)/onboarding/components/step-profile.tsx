@@ -23,7 +23,7 @@ export function StepProfile({ data, onChange, errors }: StepProfileProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Welcome! Let's set up your profile</CardTitle>
+        <CardTitle>Welcome! Let&apos;s set up your profile</CardTitle>
         <CardDescription>
           Tell us a bit about yourself so others can get to know you.
         </CardDescription>

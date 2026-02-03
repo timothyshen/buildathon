@@ -8,14 +8,12 @@ import { Send, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface InviteFormProps {
-  teamId: string;
   currentMemberCount: number;
   existingEmails: string[];
   onInvite: (email: string) => Promise<void>;
 }
 
 export function InviteForm({
-  teamId,
   currentMemberCount,
   existingEmails,
   onInvite,
@@ -55,7 +53,7 @@ export function InviteForm({
       await onInvite(trimmedEmail);
       setEmail("");
       toast.success("Invitation sent!");
-    } catch (error) {
+    } catch {
       toast.error("Failed to send invitation");
     } finally {
       setIsLoading(false);

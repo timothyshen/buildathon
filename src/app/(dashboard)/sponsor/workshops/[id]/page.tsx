@@ -113,7 +113,7 @@ export default function WorkshopEditPage({ params }: WorkshopEditPageProps) {
         <div className="text-center">
           <h2 className="text-xl font-semibold">Workshop not found</h2>
           <p className="text-muted-foreground mt-2">
-            The workshop you're looking for doesn't exist.
+            The workshop you&apos;re looking for doesn&apos;t exist.
           </p>
           <Button asChild className="mt-4">
             <Link href="/sponsor/workshops">Back to Workshops</Link>
@@ -130,7 +130,7 @@ export default function WorkshopEditPage({ params }: WorkshopEditPageProps) {
         <div className="text-center">
           <h2 className="text-xl font-semibold">Access Denied</h2>
           <p className="text-muted-foreground mt-2">
-            You don't have permission to edit this workshop.
+            You don&apos;t have permission to edit this workshop.
           </p>
           <Button asChild className="mt-4">
             <Link href="/sponsor/workshops">Back to Workshops</Link>

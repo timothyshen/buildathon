@@ -113,7 +113,7 @@ export default function NewTeamPage() {
         <CardHeader>
           <CardTitle>Team Details</CardTitle>
           <CardDescription>
-            You'll be the team lead and can invite up to 4 more members.
+            You&apos;ll be the team lead and can invite up to 4 more members.
           </CardDescription>
         </CardHeader>
         <CardContent>

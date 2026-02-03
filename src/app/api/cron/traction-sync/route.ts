@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     // Process each submission
     for (const record of tractionRecords || []) {
       // Helper to get or create today's snapshot
-      const getOrCreateSnapshot = async () => {
+      const getOrCreateSnapshot = async (): Promise<{ id: string | null; isNew: boolean; dataSource: string }> => {
         const { data: existing } = await adminClient
           .from("traction_snapshots")
           .select("id, data_source")
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
           return { id: existing.id, isNew: false, dataSource: existing.data_source };
         }
 
-        const { data: created } = await adminClient
+        const { data: created, error: insertError } = await adminClient
           .from("traction_snapshots")
           .insert({
             submission_id: record.submission_id,
@@ -68,7 +68,12 @@ export async function POST(request: Request) {
           .select("id")
           .single();
 
-        return { id: created?.id, isNew: true, dataSource: "api" };
+        if (insertError || !created?.id) {
+          console.error(`[Traction Sync] Failed to create snapshot for ${record.submission_id}:`, insertError);
+          return { id: null, isNew: true, dataSource: "api" };
+        }
+
+        return { id: created.id, isNew: true, dataSource: "api" };
       };
 
       // Sync Google Analytics

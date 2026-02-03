@@ -11,7 +11,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   register: (data: RegisterData) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
-  completeOnboarding: (data: OnboardingData) => void;
+  completeOnboarding: (data: OnboardingData) => Promise<boolean>;
   refreshUser: () => Promise<void>;
 }
 
@@ -24,16 +24,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const initRef = useRef(false);
 
   // Helper to create user from session data (fallback when profile fetch fails)
-  // hasCompletedOnboarding defaults to true to prevent incorrect onboarding redirects
-  // when the profile DB fetch fails temporarily - the real value comes from the profile
-  const createUserFromSession = useCallback((sessionUser: { id: string; email?: string | null; user_metadata?: Record<string, unknown>; created_at: string }) => ({
-    id: sessionUser.id,
-    email: sessionUser.email || "",
-    name: (sessionUser.user_metadata?.name as string) || sessionUser.email?.split("@")[0] || "User",
-    role: (sessionUser.user_metadata?.role as User["role"]) || "participant",
-    hasCompletedOnboarding: true,
-    createdAt: new Date(sessionUser.created_at),
-  }), []);
+  // For existing users (created > 5 min ago), default hasCompletedOnboarding to true
+  // to prevent incorrect redirects. For new users, default to false so they complete onboarding.
+  const createUserFromSession = useCallback((sessionUser: { id: string; email?: string | null; user_metadata?: Record<string, unknown>; created_at: string }) => {
+    const createdAt = new Date(sessionUser.created_at);
+    const isNewUser = Date.now() - createdAt.getTime() < 5 * 60 * 1000; // 5 minutes
+    return {
+      id: sessionUser.id,
+      email: sessionUser.email || "",
+      name: (sessionUser.user_metadata?.name as string) || sessionUser.email?.split("@")[0] || "User",
+      role: (sessionUser.user_metadata?.role as User["role"]) || "participant",
+      hasCompletedOnboarding: !isNewUser, // New users should complete onboarding
+      createdAt,
+    };
+  }, []);
 
   // Function to fetch user profile from database with timeout
   const fetchUserProfile = useCallback(async (): Promise<User | null> => {
@@ -158,13 +162,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Complete onboarding and update user profile
-  const completeOnboarding = useCallback(async (data: OnboardingData) => {
-    if (!user) return;
+  const completeOnboarding = useCallback(async (data: OnboardingData): Promise<boolean> => {
+    if (!user) return false;
 
     const { data: updatedUser, success } = await authService.completeOnboarding(data);
     if (success && updatedUser) {
       setUser(updatedUser);
+      return true;
     }
+    return false;
   }, [user]);
 
   return (
