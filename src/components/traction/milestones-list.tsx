@@ -184,13 +184,14 @@ export function MilestonesList({
               Track key achievements and progress
             </CardDescription>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm">
-                <Plus className="mr-2 h-4 w-4" />
-                Add Milestone
-              </Button>
-            </DialogTrigger>
+          {!isAdmin && (
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Milestone
+                </Button>
+              </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Add Milestone</DialogTitle>
@@ -294,6 +295,7 @@ export function MilestonesList({
               </form>
             </DialogContent>
           </Dialog>
+          )}
         </div>
       </CardHeader>
       <CardContent>
@@ -301,7 +303,9 @@ export function MilestonesList({
           <div className="text-center py-8 text-muted-foreground">
             <Trophy className="mx-auto h-8 w-8 mb-2 opacity-50" />
             <p>No milestones yet</p>
-            <p className="text-sm">Add your first achievement to get started</p>
+            {!isAdmin && (
+              <p className="text-sm">Add your first achievement to get started</p>
+            )}
           </div>
         ) : (
           <div className="space-y-4">
@@ -361,19 +365,21 @@ export function MilestonesList({
                         {milestone.verified ? "Unverify" : "Verify"}
                       </Button>
                     )}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDelete(milestone.id)}
-                      disabled={deletingId === milestone.id}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      {deletingId === milestone.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Trash2 className="h-4 w-4" />
-                      )}
-                    </Button>
+                    {!isAdmin && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDelete(milestone.id)}
+                        disabled={deletingId === milestone.id}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        {deletingId === milestone.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
+                      </Button>
+                    )}
                   </div>
                 </div>
               );

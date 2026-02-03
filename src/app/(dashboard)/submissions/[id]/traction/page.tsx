@@ -151,18 +151,22 @@ export default function TractionPage({ params }: TractionPageProps) {
             <Trophy className="h-4 w-4" />
             Milestones
           </TabsTrigger>
-          <TabsTrigger value="settings" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            Settings
-          </TabsTrigger>
+          {!isAdmin && (
+            <TabsTrigger value="settings" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              Settings
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="metrics" className="space-y-6">
-          <MetricsForm
-            submissionId={id}
-            latestSnapshot={snapshots[0] || null}
-            onSnapshotCreated={handleSnapshotCreated}
-          />
+          {!isAdmin && (
+            <MetricsForm
+              submissionId={id}
+              latestSnapshot={snapshots[0] || null}
+              onSnapshotCreated={handleSnapshotCreated}
+            />
+          )}
           <MetricsHistory snapshots={snapshots} />
         </TabsContent>
 
@@ -175,13 +179,15 @@ export default function TractionPage({ params }: TractionPageProps) {
           />
         </TabsContent>
 
-        <TabsContent value="settings">
-          <TractionConfigForm
-            submissionId={id}
-            traction={traction}
-            onUpdate={handleTractionUpdate}
-          />
-        </TabsContent>
+        {!isAdmin && (
+          <TabsContent value="settings">
+            <TractionConfigForm
+              submissionId={id}
+              traction={traction}
+              onUpdate={handleTractionUpdate}
+            />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );

@@ -1,50 +1,84 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import type { TractionSnapshot } from "@/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { BarChart3 } from "lucide-react";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { BarChart3, TrendingUp, TrendingDown, Minus } from "lucide-react";
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 
 interface MetricsHistoryProps {
   snapshots: TractionSnapshot[];
 }
 
-function formatNumber(num: number | undefined): string {
-  if (num === undefined) return "-";
+type MetricCategory = "users" | "web" | "social" | "onchain";
+
+const CATEGORY_CONFIG: Record<MetricCategory, { label: string; description: string }> = {
+  users: { label: "User Metrics", description: "DAU & MAU over time" },
+  web: { label: "Web Analytics", description: "GA users, sessions & visits" },
+  social: { label: "Social", description: "Twitter followers" },
+  onchain: { label: "On-chain", description: "Transaction counts & volume" },
+};
+
+const COLORS = {
+  primary: "#2563eb",
+  secondary: "#7c3aed",
+  tertiary: "#059669",
+  quaternary: "#d97706",
+};
+
+function formatNumber(num: number | undefined | null): string {
+  if (num === undefined || num === null) return "-";
   if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
   if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
   return num.toString();
 }
 
-function formatVolume(vol: string | undefined): string {
-  if (!vol || vol === "0") return "-";
-  const num = parseFloat(vol);
-  if (isNaN(num)) return "-";
-  if (num >= 1000000) return `${(num / 1000000).toFixed(2)}M`;
-  if (num >= 1000) return `${(num / 1000).toFixed(2)}K`;
-  return num.toFixed(2);
-}
-
-function getGrowthIndicator(current: number | undefined, previous: number | undefined) {
-  if (current === undefined || previous === undefined) return null;
-  if (current > previous) {
-    return <TrendingUp className="h-4 w-4 text-green-600" />;
-  }
-  if (current < previous) {
-    return <TrendingDown className="h-4 w-4 text-red-600" />;
-  }
-  return <Minus className="h-4 w-4 text-muted-foreground" />;
+function formatYAxis(value: number): string {
+  if (value >= 1000000) return `${(value / 1000000).toFixed(0)}M`;
+  if (value >= 1000) return `${(value / 1000).toFixed(0)}K`;
+  return value.toString();
 }
 
 export function MetricsHistory({ snapshots }: MetricsHistoryProps) {
+  const [activeCategory, setActiveCategory] = useState<MetricCategory>("users");
+
+  const chartData = useMemo(() => {
+    // Reverse to show oldest first (left to right timeline)
+    return [...snapshots].reverse().map((snapshot) => ({
+      date: new Date(snapshot.snapshotDate).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      }),
+      fullDate: new Date(snapshot.snapshotDate).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      }),
+      // User metrics
+      dau: snapshot.reportedDau ?? null,
+      mau: snapshot.reportedMau ?? null,
+      // Web analytics
+      visits: snapshot.reportedMonthlyVisits ?? null,
+      gaUsers: snapshot.gaActiveUsers ?? null,
+      sessions: snapshot.gaSessions ?? null,
+      // Social
+      followers: snapshot.twitterFollowers ?? null,
+      // On-chain
+      dailyTx: snapshot.onchainDailyTxCount ?? null,
+      weeklyTx: snapshot.onchainWeeklyTxCount ?? null,
+      dailyVolume: snapshot.onchainDailyVolume ? parseFloat(snapshot.onchainDailyVolume) : null,
+    }));
+  }, [snapshots]);
+
   if (snapshots.length === 0) {
     return (
       <Card>
@@ -68,6 +102,198 @@ export function MetricsHistory({ snapshots }: MetricsHistoryProps) {
     );
   }
 
+  const renderChart = () => {
+    switch (activeCategory) {
+      case "users":
+        return (
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+              <XAxis
+                dataKey="date"
+                tick={{ fontSize: 12 }}
+                className="text-muted-foreground"
+              />
+              <YAxis
+                tickFormatter={formatYAxis}
+                tick={{ fontSize: 12 }}
+                className="text-muted-foreground"
+              />
+              <Tooltip
+                formatter={(value) => formatNumber(value as number)}
+                labelFormatter={(label, payload) => payload?.[0]?.payload?.fullDate ?? label}
+                contentStyle={{
+                  backgroundColor: 'hsl(var(--card))',
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '8px',
+                }}
+              />
+              <Legend />
+              <Line
+                type="monotone"
+                dataKey="dau"
+                name="DAU"
+                stroke={COLORS.primary}
+                strokeWidth={2}
+                dot={{ r: 4 }}
+                connectNulls
+              />
+              <Line
+                type="monotone"
+                dataKey="mau"
+                name="MAU"
+                stroke={COLORS.secondary}
+                strokeWidth={2}
+                dot={{ r: 4 }}
+                connectNulls
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        );
+
+      case "web":
+        return (
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+              <XAxis
+                dataKey="date"
+                tick={{ fontSize: 12 }}
+                className="text-muted-foreground"
+              />
+              <YAxis
+                tickFormatter={formatYAxis}
+                tick={{ fontSize: 12 }}
+                className="text-muted-foreground"
+              />
+              <Tooltip
+                formatter={(value) => formatNumber(value as number)}
+                labelFormatter={(label, payload) => payload?.[0]?.payload?.fullDate ?? label}
+                contentStyle={{
+                  backgroundColor: 'hsl(var(--card))',
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '8px',
+                }}
+              />
+              <Legend />
+              <Line
+                type="monotone"
+                dataKey="gaUsers"
+                name="GA Users"
+                stroke={COLORS.primary}
+                strokeWidth={2}
+                dot={{ r: 4 }}
+                connectNulls
+              />
+              <Line
+                type="monotone"
+                dataKey="sessions"
+                name="Sessions"
+                stroke={COLORS.secondary}
+                strokeWidth={2}
+                dot={{ r: 4 }}
+                connectNulls
+              />
+              <Line
+                type="monotone"
+                dataKey="visits"
+                name="Monthly Visits"
+                stroke={COLORS.tertiary}
+                strokeWidth={2}
+                dot={{ r: 4 }}
+                connectNulls
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        );
+
+      case "social":
+        return (
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+              <XAxis
+                dataKey="date"
+                tick={{ fontSize: 12 }}
+                className="text-muted-foreground"
+              />
+              <YAxis
+                tickFormatter={formatYAxis}
+                tick={{ fontSize: 12 }}
+                className="text-muted-foreground"
+              />
+              <Tooltip
+                formatter={(value) => formatNumber(value as number)}
+                labelFormatter={(label, payload) => payload?.[0]?.payload?.fullDate ?? label}
+                contentStyle={{
+                  backgroundColor: 'hsl(var(--card))',
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '8px',
+                }}
+              />
+              <Legend />
+              <Line
+                type="monotone"
+                dataKey="followers"
+                name="Twitter Followers"
+                stroke={COLORS.primary}
+                strokeWidth={2}
+                dot={{ r: 4 }}
+                connectNulls
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        );
+
+      case "onchain":
+        return (
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+              <XAxis
+                dataKey="date"
+                tick={{ fontSize: 12 }}
+                className="text-muted-foreground"
+              />
+              <YAxis
+                tickFormatter={formatYAxis}
+                tick={{ fontSize: 12 }}
+                className="text-muted-foreground"
+              />
+              <Tooltip
+                formatter={(value) => formatNumber(value as number)}
+                labelFormatter={(label, payload) => payload?.[0]?.payload?.fullDate ?? label}
+                contentStyle={{
+                  backgroundColor: 'hsl(var(--card))',
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '8px',
+                }}
+              />
+              <Legend />
+              <Line
+                type="monotone"
+                dataKey="dailyTx"
+                name="Daily Tx"
+                stroke={COLORS.primary}
+                strokeWidth={2}
+                dot={{ r: 4 }}
+                connectNulls
+              />
+              <Line
+                type="monotone"
+                dataKey="weeklyTx"
+                name="Weekly Tx"
+                stroke={COLORS.secondary}
+                strokeWidth={2}
+                dot={{ r: 4 }}
+                connectNulls
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        );
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -76,126 +302,35 @@ export function MetricsHistory({ snapshots }: MetricsHistoryProps) {
           Metrics History
         </CardTitle>
         <CardDescription>
-          Historical snapshots of your project metrics ({snapshots.length} records)
+          {snapshots.length} snapshots recorded
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead className="text-right">DAU</TableHead>
-                <TableHead className="text-right">MAU</TableHead>
-                <TableHead className="text-right hidden md:table-cell">Visits</TableHead>
-                <TableHead className="text-right hidden md:table-cell">GA Users</TableHead>
-                <TableHead className="text-right hidden lg:table-cell">Sessions</TableHead>
-                <TableHead className="text-right hidden md:table-cell">Followers</TableHead>
-                <TableHead className="text-right hidden lg:table-cell">Daily Tx</TableHead>
-                <TableHead className="text-right hidden lg:table-cell">Weekly Tx</TableHead>
-                <TableHead className="text-right hidden xl:table-cell">Daily Vol</TableHead>
-                <TableHead>Source</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {snapshots.map((snapshot, index) => {
-                const previousSnapshot = snapshots[index + 1];
-                return (
-                  <TableRow key={snapshot.id}>
-                    <TableCell className="font-medium">
-                      {new Date(snapshot.snapshotDate).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        {formatNumber(snapshot.reportedDau)}
-                        {getGrowthIndicator(
-                          snapshot.reportedDau,
-                          previousSnapshot?.reportedDau
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        {formatNumber(snapshot.reportedMau)}
-                        {getGrowthIndicator(
-                          snapshot.reportedMau,
-                          previousSnapshot?.reportedMau
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right hidden md:table-cell">
-                      <div className="flex items-center justify-end gap-1">
-                        {formatNumber(snapshot.reportedMonthlyVisits)}
-                        {getGrowthIndicator(
-                          snapshot.reportedMonthlyVisits,
-                          previousSnapshot?.reportedMonthlyVisits
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right hidden md:table-cell">
-                      <div className="flex items-center justify-end gap-1">
-                        {formatNumber(snapshot.gaActiveUsers)}
-                        {getGrowthIndicator(
-                          snapshot.gaActiveUsers,
-                          previousSnapshot?.gaActiveUsers
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right hidden lg:table-cell">
-                      <div className="flex items-center justify-end gap-1">
-                        {formatNumber(snapshot.gaSessions)}
-                        {getGrowthIndicator(
-                          snapshot.gaSessions,
-                          previousSnapshot?.gaSessions
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right hidden md:table-cell">
-                      <div className="flex items-center justify-end gap-1">
-                        {formatNumber(snapshot.twitterFollowers)}
-                        {getGrowthIndicator(
-                          snapshot.twitterFollowers,
-                          previousSnapshot?.twitterFollowers
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right hidden lg:table-cell">
-                      <div className="flex items-center justify-end gap-1">
-                        {formatNumber(snapshot.onchainDailyTxCount)}
-                        {getGrowthIndicator(
-                          snapshot.onchainDailyTxCount,
-                          previousSnapshot?.onchainDailyTxCount
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right hidden lg:table-cell">
-                      <div className="flex items-center justify-end gap-1">
-                        {formatNumber(snapshot.onchainWeeklyTxCount)}
-                        {getGrowthIndicator(
-                          snapshot.onchainWeeklyTxCount,
-                          previousSnapshot?.onchainWeeklyTxCount
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right hidden xl:table-cell">
-                      {formatVolume(snapshot.onchainDailyVolume)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={snapshot.dataSource === "api" ? "default" : "secondary"}
-                      >
-                        {snapshot.dataSource}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+      <CardContent className="space-y-4">
+        {/* Category tabs */}
+        <div className="flex flex-wrap gap-2">
+          {(Object.keys(CATEGORY_CONFIG) as MetricCategory[]).map((category) => (
+            <button
+              key={category}
+              onClick={() => setActiveCategory(category)}
+              className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+                activeCategory === category
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted hover:bg-muted/80 text-muted-foreground"
+              }`}
+            >
+              {CATEGORY_CONFIG[category].label}
+            </button>
+          ))}
+        </div>
+
+        {/* Category description */}
+        <p className="text-sm text-muted-foreground">
+          {CATEGORY_CONFIG[activeCategory].description}
+        </p>
+
+        {/* Chart */}
+        <div className="pt-2">
+          {renderChart()}
         </div>
       </CardContent>
     </Card>
