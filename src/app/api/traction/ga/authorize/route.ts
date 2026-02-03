@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { createSignedState } from "@/lib/oauth-state";
 
 /**
  * GET /api/traction/ga/authorize
@@ -83,9 +84,9 @@ export async function GET(request: Request) {
       );
     }
 
-    // Build OAuth URL
+    // Build OAuth URL with signed state to prevent CSRF
     const scope = "https://www.googleapis.com/auth/analytics.readonly";
-    const state = Buffer.from(JSON.stringify({ submissionId, userId: user.id })).toString("base64");
+    const state = createSignedState(submissionId, user.id);
 
     const authUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
     authUrl.searchParams.set("client_id", clientId);

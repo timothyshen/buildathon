@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { verifySignedState } from "@/lib/oauth-state";
 
 /**
  * GET /api/traction/ga/callback
@@ -26,13 +27,11 @@ export async function GET(request: Request) {
       );
     }
 
-    // Decode state
-    let stateData: { submissionId: string; userId: string };
-    try {
-      stateData = JSON.parse(Buffer.from(state, "base64").toString("utf-8"));
-    } catch {
+    // Verify and decode signed state (prevents CSRF attacks)
+    const stateData = verifySignedState(state);
+    if (!stateData) {
       return NextResponse.redirect(
-        new URL("/submissions?error=ga_auth_failed&message=Invalid+state", process.env.NEXT_PUBLIC_APP_URL!)
+        new URL("/submissions?error=ga_auth_failed&message=Invalid+or+expired+state", process.env.NEXT_PUBLIC_APP_URL!)
       );
     }
 
