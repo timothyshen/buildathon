@@ -1010,6 +1010,12 @@ export type Database = {
           onchain_tx_count: number | null;
           onchain_unique_addresses: number | null;
           onchain_tvl_usd: number | null;
+          onchain_daily_tx_count: number | null;
+          onchain_weekly_tx_count: number | null;
+          onchain_daily_volume: string | null;
+          onchain_weekly_volume: string | null;
+          onchain_daily_active_addresses: number | null;
+          onchain_weekly_active_addresses: number | null;
           twitter_followers: number | null;
           twitter_impressions_7d: number | null;
           twitter_engagement_7d: number | null;
@@ -1032,6 +1038,12 @@ export type Database = {
           onchain_tx_count?: number | null;
           onchain_unique_addresses?: number | null;
           onchain_tvl_usd?: number | null;
+          onchain_daily_tx_count?: number | null;
+          onchain_weekly_tx_count?: number | null;
+          onchain_daily_volume?: string | null;
+          onchain_weekly_volume?: string | null;
+          onchain_daily_active_addresses?: number | null;
+          onchain_weekly_active_addresses?: number | null;
           twitter_followers?: number | null;
           twitter_impressions_7d?: number | null;
           twitter_engagement_7d?: number | null;
@@ -1054,6 +1066,12 @@ export type Database = {
           onchain_tx_count?: number | null;
           onchain_unique_addresses?: number | null;
           onchain_tvl_usd?: number | null;
+          onchain_daily_tx_count?: number | null;
+          onchain_weekly_tx_count?: number | null;
+          onchain_daily_volume?: string | null;
+          onchain_weekly_volume?: string | null;
+          onchain_daily_active_addresses?: number | null;
+          onchain_weekly_active_addresses?: number | null;
           twitter_followers?: number | null;
           twitter_impressions_7d?: number | null;
           twitter_engagement_7d?: number | null;

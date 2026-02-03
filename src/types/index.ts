@@ -310,6 +310,12 @@ export interface TractionSnapshot {
   onchainTxCount?: number;
   onchainUniqueAddresses?: number;
   onchainTvlUsd?: number;
+  onchainDailyTxCount?: number;
+  onchainWeeklyTxCount?: number;
+  onchainDailyVolume?: string;
+  onchainWeeklyVolume?: string;
+  onchainDailyActiveAddresses?: number;
+  onchainWeeklyActiveAddresses?: number;
 
   // Twitter (automated)
   twitterFollowers?: number;

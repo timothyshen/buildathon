@@ -24,6 +24,15 @@ function formatNumber(num: number | undefined): string {
   return num.toString();
 }
 
+function formatVolume(vol: string | undefined): string {
+  if (!vol || vol === "0") return "-";
+  const num = parseFloat(vol);
+  if (isNaN(num)) return "-";
+  if (num >= 1000000) return `${(num / 1000000).toFixed(2)}M`;
+  if (num >= 1000) return `${(num / 1000).toFixed(2)}K`;
+  return num.toFixed(2);
+}
+
 function getGrowthIndicator(current: number | undefined, previous: number | undefined) {
   if (current === undefined || previous === undefined) return null;
   if (current > previous) {
@@ -82,7 +91,9 @@ export function MetricsHistory({ snapshots }: MetricsHistoryProps) {
                 <TableHead className="text-right hidden md:table-cell">GA Users</TableHead>
                 <TableHead className="text-right hidden lg:table-cell">Sessions</TableHead>
                 <TableHead className="text-right hidden md:table-cell">Followers</TableHead>
-                <TableHead className="text-right hidden lg:table-cell">Tx Count</TableHead>
+                <TableHead className="text-right hidden lg:table-cell">Daily Tx</TableHead>
+                <TableHead className="text-right hidden lg:table-cell">Weekly Tx</TableHead>
+                <TableHead className="text-right hidden xl:table-cell">Daily Vol</TableHead>
                 <TableHead>Source</TableHead>
               </TableRow>
             </TableHeader>
@@ -154,12 +165,24 @@ export function MetricsHistory({ snapshots }: MetricsHistoryProps) {
                     </TableCell>
                     <TableCell className="text-right hidden lg:table-cell">
                       <div className="flex items-center justify-end gap-1">
-                        {formatNumber(snapshot.onchainTxCount)}
+                        {formatNumber(snapshot.onchainDailyTxCount)}
                         {getGrowthIndicator(
-                          snapshot.onchainTxCount,
-                          previousSnapshot?.onchainTxCount
+                          snapshot.onchainDailyTxCount,
+                          previousSnapshot?.onchainDailyTxCount
                         )}
                       </div>
+                    </TableCell>
+                    <TableCell className="text-right hidden lg:table-cell">
+                      <div className="flex items-center justify-end gap-1">
+                        {formatNumber(snapshot.onchainWeeklyTxCount)}
+                        {getGrowthIndicator(
+                          snapshot.onchainWeeklyTxCount,
+                          previousSnapshot?.onchainWeeklyTxCount
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right hidden xl:table-cell">
+                      {formatVolume(snapshot.onchainDailyVolume)}
                     </TableCell>
                     <TableCell>
                       <Badge

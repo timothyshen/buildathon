@@ -57,9 +57,15 @@ CREATE TABLE traction_snapshots (
   reported_monthly_visits INTEGER,
 
   -- On-chain (automated via Dune)
-  onchain_tx_count INTEGER,
-  onchain_unique_addresses INTEGER,
+  onchain_tx_count INTEGER,              -- Total transaction count
+  onchain_unique_addresses INTEGER,      -- Total unique addresses
   onchain_tvl_usd NUMERIC(20,2),
+  onchain_daily_tx_count INTEGER,        -- Daily transaction count
+  onchain_weekly_tx_count INTEGER,       -- Weekly transaction count
+  onchain_daily_volume TEXT,             -- Daily volume in native token
+  onchain_weekly_volume TEXT,            -- Weekly volume in native token
+  onchain_daily_active_addresses INTEGER,  -- Daily active addresses
+  onchain_weekly_active_addresses INTEGER, -- Weekly active addresses
 
   -- Twitter (automated)
   twitter_followers INTEGER,
@@ -72,7 +78,7 @@ CREATE TABLE traction_snapshots (
   ga_sessions INTEGER,
   ga_pageviews INTEGER,
   ga_bounce_rate NUMERIC(5,2),    -- Percentage
-  ga_avg_session_duration INTEGER -- Seconds
+  ga_avg_session_duration INTEGER, -- Seconds
 
   -- Metadata
   data_source TEXT DEFAULT 'manual',  -- 'manual', 'api', 'both'
