@@ -11,7 +11,7 @@ interface ImageUploaderProps {
   value?: string;
   onChange: (url: string) => void;
   onRemove?: () => void;
-  bucket: "banners" | "screenshots";
+  bucket: "banners" | "screenshots" | "avatars";
   label?: string;
   aspectRatio?: string;
   maxSizeMB?: number;
@@ -42,7 +42,7 @@ export function ImageUploader({
       setIsUploading(true);
       try {
         const compressed = await compressImage(file, {
-          maxDimension: bucket === "banners" ? 2560 : 2048,
+          maxDimension: bucket === "banners" ? 2560 : bucket === "avatars" ? 512 : 2048,
         });
 
         if (compressed.size > maxSizeMB * 1024 * 1024) {

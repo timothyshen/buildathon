@@ -13,7 +13,7 @@ const ALLOWED_TYPES = [
 
 const MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
 
-const VALID_BUCKETS = ["banners", "screenshots"] as const;
+const VALID_BUCKETS = ["banners", "screenshots", "avatars"] as const;
 
 export async function POST(request: Request) {
   try {
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
 
     if (!bucket || !VALID_BUCKETS.includes(bucket as (typeof VALID_BUCKETS)[number])) {
       return NextResponse.json(
-        { error: "Invalid bucket. Must be 'banners' or 'screenshots'" },
+        { error: "Invalid bucket. Must be 'banners', 'screenshots', or 'avatars'" },
         { status: 400 }
       );
     }

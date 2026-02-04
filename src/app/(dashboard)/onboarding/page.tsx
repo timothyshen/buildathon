@@ -16,6 +16,7 @@ const STEPS = [
 
 interface OnboardingData {
   name: string;
+  avatar: string;
   bio: string;
   twitter: string;
   github: string;
@@ -28,6 +29,7 @@ export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [data, setData] = useState<OnboardingData>({
     name: user?.name || "",
+    avatar: user?.avatar || "",
     bio: "",
     twitter: "",
     github: "",
@@ -86,6 +88,7 @@ export default function OnboardingPage() {
     try {
       const success = await completeOnboarding({
         name: data.name.trim(),
+        avatar: data.avatar || undefined,
         bio: data.bio.trim() || undefined,
         twitter: data.twitter.trim() || undefined,
         github: data.github.trim() || undefined,
@@ -133,7 +136,7 @@ export default function OnboardingPage() {
       <div className="min-h-[300px]">
         {currentStep === 1 && (
           <StepProfile
-            data={{ name: data.name, bio: data.bio }}
+            data={{ name: data.name, bio: data.bio, avatar: data.avatar }}
             onChange={handleChange}
             errors={errors}
           />

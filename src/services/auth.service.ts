@@ -10,6 +10,7 @@ import { success, error } from "./types";
 
 export interface OnboardingData {
   name: string;
+  avatar?: string;
   bio?: string;
   twitter?: string;
   github?: string;
@@ -224,6 +225,7 @@ async function completeOnboarding(data: OnboardingData): Promise<ServiceResponse
     name: data.name,
     has_completed_onboarding: true,
   };
+  if (data.avatar !== undefined) updateData.avatar = data.avatar;
   if (data.bio !== undefined) updateData.bio = data.bio;
   if (data.twitter !== undefined) updateData.twitter = data.twitter;
   if (data.github !== undefined) updateData.github = data.github;
