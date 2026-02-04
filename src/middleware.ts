@@ -70,7 +70,25 @@ export async function middleware(request: NextRequest) {
       .from("users")
       .select("role")
       .eq("id", user.id)
-      .single();
+      .maybeSingle();
+
+    // Check if account was deleted (auth exists but no DB profile)
+    // Allow onboarding page for new accounts that may not have profile yet
+    if (!profile && !request.nextUrl.pathname.startsWith("/onboarding")) {
+      // Check if this is a new account (created within last 5 minutes)
+      const createdAt = new Date(user.created_at);
+      const accountAgeMs = Date.now() - createdAt.getTime();
+      const isNewAccount = accountAgeMs < 5 * 60 * 1000; // 5 minutes
+
+      if (!isNewAccount) {
+        // Old account with no profile = deleted account
+        // Sign out and redirect to login with error
+        await supabase.auth.signOut();
+        const redirectUrl = new URL("/login", request.url);
+        redirectUrl.searchParams.set("error", "account_deleted");
+        return NextResponse.redirect(redirectUrl);
+      }
+    }
 
     const role = profile?.role;
 

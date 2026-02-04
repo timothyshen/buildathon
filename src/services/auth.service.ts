@@ -176,9 +176,19 @@ async function getCurrentUser(): Promise<ServiceResponse<User | null>> {
     return error(userError.message, null);
   }
 
-  // If no profile exists but auth user does, return minimal user object
-  // This allows users to proceed to onboarding even if trigger failed
+  // If no profile exists but auth user does, check if account is old enough
+  // that it should have a profile (indicates deleted account)
   if (!userData) {
+    const createdAt = new Date(authUser.created_at);
+    const accountAgeMs = Date.now() - createdAt.getTime();
+    const isNewAccount = accountAgeMs < 5 * 60 * 1000; // 5 minutes
+
+    if (!isNewAccount) {
+      // Account is old but has no profile - likely deleted
+      return error("ACCOUNT_DELETED", null);
+    }
+
+    // New account - allow synthetic user for onboarding
     return success({
       id: authUser.id,
       email: authUser.email || "",
