@@ -4,7 +4,7 @@
  */
 
 import { createClient } from "@/lib/supabase/client";
-import type { Team, TeamMember, TeamInvite, User } from "@/types";
+import type { Team, TeamInvite, User } from "@/types";
 import type { ServiceResponse } from "./types";
 import { success, error } from "./types";
 

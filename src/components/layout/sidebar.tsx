@@ -180,8 +180,8 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
       return section.items.length > 0;
     });
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     router.push("/");
   };
 

@@ -93,7 +93,7 @@ export default function TeamDetailPage({ params }: TeamDetailPageProps) {
   if (!isMember) {
     return (
       <div className="py-16 text-center">
-        <h2 className="text-xl font-semibold">You're not a member of this team</h2>
+        <h2 className="text-xl font-semibold">You&apos;re not a member of this team</h2>
         <Button asChild className="mt-4">
           <Link href="/teams">Back to Teams</Link>
         </Button>
@@ -213,7 +213,6 @@ export default function TeamDetailPage({ params }: TeamDetailPageProps) {
             <>
               <hr />
               <InviteForm
-                teamId={teamId}
                 currentMemberCount={team.members.length + pendingInvites.length}
                 existingEmails={existingEmails}
                 onInvite={handleInvite}

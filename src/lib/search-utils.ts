@@ -4,7 +4,7 @@
  * Supports prefix syntax (tech:react) and symbol shortcuts (@react)
  */
 
-import type { Submission, Cohort, Track, Team } from "@/types";
+import type { Submission, Cohort, Track } from "@/types";
 import type { PrizeInfo } from "@/lib/prize-utils";
 export type { PrizeInfo } from "@/lib/prize-utils";
 
@@ -31,8 +31,8 @@ const SYMBOL_MAP: Record<string, string> = {
   "~": "team:",
 };
 
-// All valid prefixes
-const VALID_PREFIXES = ["tech:", "cohort:", "prize:", "team:", "track:"];
+// All valid prefixes (used for documentation)
+// const VALID_PREFIXES = ["tech:", "cohort:", "prize:", "team:", "track:"];
 
 /**
  * Convert symbol shortcuts to prefix syntax

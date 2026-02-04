@@ -17,6 +17,7 @@ export { tracksService } from "./tracks.service";
 export { workshopsService } from "./workshops.service";
 export { reviewsService } from "./reviews.service";
 export { sponsorsService } from "./sponsors.service";
+export { tractionService } from "./traction.service";
 
 // Export types
 export type { ServiceResponse, PaginatedResponse, QueryOptions } from "./types";
@@ -32,3 +33,4 @@ export type { TracksService } from "./tracks.service";
 export type { WorkshopsService } from "./workshops.service";
 export type { ReviewsService, ReviewScores, SubmitReviewData } from "./reviews.service";
 export type { SponsorsService, CohortSponsorWithOrg } from "./sponsors.service";
+export type { TractionService } from "./traction.service";

@@ -20,6 +20,7 @@ import {
   Loader2,
   ChevronLeft,
   ChevronRight,
+  BarChart3,
 } from "lucide-react";
 
 interface EnrichedSubmission extends Submission {
@@ -146,17 +147,26 @@ export default function SubmissionsPage() {
                         {submission.tagline}
                       </CardDescription>
                     </div>
-                    <Button variant="outline" asChild>
-                      <Link
-                        href={
-                          submission.status === "draft"
-                            ? `/submissions/${submission.id}/edit`
-                            : `/submissions/${submission.id}`
-                        }
-                      >
-                        {submission.status === "draft" ? "Continue Editing" : "View"}
-                      </Link>
-                    </Button>
+                    <div className="flex gap-2">
+                      {submission.status !== "draft" && (
+                        <Button variant="ghost" size="icon" asChild title="Traction">
+                          <Link href={`/submissions/${submission.id}/traction`}>
+                            <BarChart3 className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                      )}
+                      <Button variant="outline" asChild>
+                        <Link
+                          href={
+                            submission.status === "draft"
+                              ? `/submissions/${submission.id}/edit`
+                              : `/submissions/${submission.id}`
+                          }
+                        >
+                          {submission.status === "draft" ? "Continue Editing" : "View"}
+                        </Link>
+                      </Button>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>

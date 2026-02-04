@@ -254,3 +254,100 @@ export interface WorkshopRSVP {
   status: RSVPStatus;
   registeredAt: Date;
 }
+
+// Traction Tracking Types
+
+export type MilestoneType =
+  | "testnet_launch"
+  | "mainnet_launch"
+  | "first_100_users"
+  | "first_1000_users"
+  | "first_10000_users"
+  | "funding_raised"
+  | "partnership"
+  | "media_feature"
+  | "award"
+  | "other";
+
+export interface SubmissionTraction {
+  id: string;
+  submissionId: string;
+  submission?: Submission;
+
+  // Contract addresses (Story Protocol)
+  testnetContractAddress?: string;
+  mainnetContractAddress?: string;
+  contractDeployedAt?: Date;
+
+  // Twitter integration
+  twitterHandle?: string;
+  twitterUserId?: string;
+
+  // Website
+  websiteUrl?: string;
+
+  // Google Analytics
+  gaPropertyId?: string;
+  gaRefreshToken?: string;
+  gaConnectedAt?: Date;
+  gaConnectedBy?: string;
+
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface TractionSnapshot {
+  id: string;
+  submissionId: string;
+  snapshotDate: Date;
+
+  // Usage (self-reported)
+  reportedDau?: number;
+  reportedMau?: number;
+  reportedMonthlyVisits?: number;
+
+  // On-chain (automated via Dune)
+  onchainTxCount?: number;
+  onchainUniqueAddresses?: number;
+  onchainTvlUsd?: number;
+  onchainDailyTxCount?: number;
+  onchainWeeklyTxCount?: number;
+  onchainDailyVolume?: string;
+  onchainWeeklyVolume?: string;
+  onchainDailyActiveAddresses?: number;
+  onchainWeeklyActiveAddresses?: number;
+
+  // Twitter (automated)
+  twitterFollowers?: number;
+  twitterImpressions7d?: number;
+  twitterEngagement7d?: number;
+
+  // Google Analytics (automated)
+  gaActiveUsers?: number;
+  gaTotalUsers?: number;
+  gaSessions?: number;
+  gaPageviews?: number;
+  gaBounceRate?: number;
+  gaAvgSessionDuration?: number;
+
+  dataSource: "manual" | "api" | "both";
+  createdAt: Date;
+}
+
+export interface TractionMilestone {
+  id: string;
+  submissionId: string;
+
+  milestoneType: MilestoneType;
+  title: string;
+  description?: string;
+  achievedAt: Date;
+
+  // Verification
+  verified: boolean;
+  verifiedBy?: string;
+  verifiedAt?: Date;
+  proofUrl?: string;
+
+  createdAt: Date;
+}

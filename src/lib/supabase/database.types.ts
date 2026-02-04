@@ -940,6 +940,217 @@ export type Database = {
           }
         ];
       };
+      submission_traction: {
+        Row: {
+          id: string;
+          submission_id: string;
+          testnet_contract_address: string | null;
+          mainnet_contract_address: string | null;
+          contract_deployed_at: string | null;
+          twitter_handle: string | null;
+          twitter_user_id: string | null;
+          website_url: string | null;
+          ga_property_id: string | null;
+          ga_refresh_token: string | null;
+          ga_connected_at: string | null;
+          ga_connected_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          submission_id: string;
+          testnet_contract_address?: string | null;
+          mainnet_contract_address?: string | null;
+          contract_deployed_at?: string | null;
+          twitter_handle?: string | null;
+          twitter_user_id?: string | null;
+          website_url?: string | null;
+          ga_property_id?: string | null;
+          ga_refresh_token?: string | null;
+          ga_connected_at?: string | null;
+          ga_connected_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          submission_id?: string;
+          testnet_contract_address?: string | null;
+          mainnet_contract_address?: string | null;
+          contract_deployed_at?: string | null;
+          twitter_handle?: string | null;
+          twitter_user_id?: string | null;
+          website_url?: string | null;
+          ga_property_id?: string | null;
+          ga_refresh_token?: string | null;
+          ga_connected_at?: string | null;
+          ga_connected_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "submission_traction_submission_id_fkey";
+            columns: ["submission_id"];
+            isOneToOne: true;
+            referencedRelation: "submissions";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      traction_snapshots: {
+        Row: {
+          id: string;
+          submission_id: string;
+          snapshot_date: string;
+          reported_dau: number | null;
+          reported_mau: number | null;
+          reported_monthly_visits: number | null;
+          onchain_tx_count: number | null;
+          onchain_unique_addresses: number | null;
+          onchain_tvl_usd: number | null;
+          onchain_daily_tx_count: number | null;
+          onchain_weekly_tx_count: number | null;
+          onchain_daily_volume: string | null;
+          onchain_weekly_volume: string | null;
+          onchain_daily_active_addresses: number | null;
+          onchain_weekly_active_addresses: number | null;
+          twitter_followers: number | null;
+          twitter_impressions_7d: number | null;
+          twitter_engagement_7d: number | null;
+          ga_active_users: number | null;
+          ga_total_users: number | null;
+          ga_sessions: number | null;
+          ga_pageviews: number | null;
+          ga_bounce_rate: number | null;
+          ga_avg_session_duration: number | null;
+          data_source: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          submission_id: string;
+          snapshot_date: string;
+          reported_dau?: number | null;
+          reported_mau?: number | null;
+          reported_monthly_visits?: number | null;
+          onchain_tx_count?: number | null;
+          onchain_unique_addresses?: number | null;
+          onchain_tvl_usd?: number | null;
+          onchain_daily_tx_count?: number | null;
+          onchain_weekly_tx_count?: number | null;
+          onchain_daily_volume?: string | null;
+          onchain_weekly_volume?: string | null;
+          onchain_daily_active_addresses?: number | null;
+          onchain_weekly_active_addresses?: number | null;
+          twitter_followers?: number | null;
+          twitter_impressions_7d?: number | null;
+          twitter_engagement_7d?: number | null;
+          ga_active_users?: number | null;
+          ga_total_users?: number | null;
+          ga_sessions?: number | null;
+          ga_pageviews?: number | null;
+          ga_bounce_rate?: number | null;
+          ga_avg_session_duration?: number | null;
+          data_source?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          submission_id?: string;
+          snapshot_date?: string;
+          reported_dau?: number | null;
+          reported_mau?: number | null;
+          reported_monthly_visits?: number | null;
+          onchain_tx_count?: number | null;
+          onchain_unique_addresses?: number | null;
+          onchain_tvl_usd?: number | null;
+          onchain_daily_tx_count?: number | null;
+          onchain_weekly_tx_count?: number | null;
+          onchain_daily_volume?: string | null;
+          onchain_weekly_volume?: string | null;
+          onchain_daily_active_addresses?: number | null;
+          onchain_weekly_active_addresses?: number | null;
+          twitter_followers?: number | null;
+          twitter_impressions_7d?: number | null;
+          twitter_engagement_7d?: number | null;
+          ga_active_users?: number | null;
+          ga_total_users?: number | null;
+          ga_sessions?: number | null;
+          ga_pageviews?: number | null;
+          ga_bounce_rate?: number | null;
+          ga_avg_session_duration?: number | null;
+          data_source?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "traction_snapshots_submission_id_fkey";
+            columns: ["submission_id"];
+            isOneToOne: false;
+            referencedRelation: "submissions";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      traction_milestones: {
+        Row: {
+          id: string;
+          submission_id: string;
+          milestone_type: "testnet_launch" | "mainnet_launch" | "first_100_users" | "first_1000_users" | "first_10000_users" | "funding_raised" | "partnership" | "media_feature" | "award" | "other";
+          title: string;
+          description: string | null;
+          achieved_at: string;
+          verified: boolean;
+          verified_by: string | null;
+          verified_at: string | null;
+          proof_url: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          submission_id: string;
+          milestone_type: "testnet_launch" | "mainnet_launch" | "first_100_users" | "first_1000_users" | "first_10000_users" | "funding_raised" | "partnership" | "media_feature" | "award" | "other";
+          title: string;
+          description?: string | null;
+          achieved_at: string;
+          verified?: boolean;
+          verified_by?: string | null;
+          verified_at?: string | null;
+          proof_url?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          submission_id?: string;
+          milestone_type?: "testnet_launch" | "mainnet_launch" | "first_100_users" | "first_1000_users" | "first_10000_users" | "funding_raised" | "partnership" | "media_feature" | "award" | "other";
+          title?: string;
+          description?: string | null;
+          achieved_at?: string;
+          verified?: boolean;
+          verified_by?: string | null;
+          verified_at?: string | null;
+          proof_url?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "traction_milestones_submission_id_fkey";
+            columns: ["submission_id"];
+            isOneToOne: false;
+            referencedRelation: "submissions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "traction_milestones_verified_by_fkey";
+            columns: ["verified_by"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -983,6 +1194,7 @@ export type Database = {
       sponsor_tier: "platinum" | "gold" | "silver" | "bronze" | "community";
       rsvp_status: "registered" | "attended" | "cancelled";
       ip_license_type: "non-commercial" | "commercial-use" | "commercial-remix";
+      milestone_type: "testnet_launch" | "mainnet_launch" | "first_100_users" | "first_1000_users" | "first_10000_users" | "funding_raised" | "partnership" | "media_feature" | "award" | "other";
     };
     CompositeTypes: Record<string, never>;
   };

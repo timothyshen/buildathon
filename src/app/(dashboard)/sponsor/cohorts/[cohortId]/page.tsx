@@ -133,7 +133,7 @@ export default function SponsorCohortPage({ params }: SponsorCohortPageProps) {
         <div className="text-center">
           <h2 className="text-xl font-semibold">Cohort not found</h2>
           <p className="text-muted-foreground mt-2">
-            The cohort you're looking for doesn't exist.
+            The cohort you&apos;re looking for doesn&apos;t exist.
           </p>
           <Button asChild className="mt-4">
             <Link href="/sponsor/tracks">Back to Sponsor Home</Link>

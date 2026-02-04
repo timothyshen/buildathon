@@ -28,6 +28,7 @@ import {
   Calendar,
   Tag,
   Loader2,
+  BarChart3,
 } from "lucide-react";
 
 interface SubmissionDetailPageProps {
@@ -215,14 +216,22 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
             </p>
           )}
         </div>
-        {canEdit && (
-          <Button asChild>
-            <Link href={`/submissions/${submission.id}/edit`}>
-              <Edit className="mr-2 h-4 w-4" />
-              Edit
+        <div className="flex gap-2">
+          <Button variant="outline" asChild>
+            <Link href={`/submissions/${submission.id}/traction`}>
+              <BarChart3 className="mr-2 h-4 w-4" />
+              Traction
             </Link>
           </Button>
-        )}
+          {canEdit && (
+            <Button asChild>
+              <Link href={`/submissions/${submission.id}/edit`}>
+                <Edit className="mr-2 h-4 w-4" />
+                Edit
+              </Link>
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Status Banner */}

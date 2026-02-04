@@ -1,5 +1,6 @@
 "use client";
 
+import DOMPurify from "dompurify";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -236,13 +237,21 @@ interface RichTextDisplayProps {
 }
 
 export function RichTextDisplay({ content, className }: RichTextDisplayProps) {
+  // Sanitize HTML to prevent XSS attacks
+  const sanitizedContent = typeof window !== "undefined"
+    ? DOMPurify.sanitize(content, {
+        ALLOWED_TAGS: ["p", "br", "strong", "em", "ul", "ol", "li", "h1", "h2", "h3", "h4", "a", "blockquote", "code", "pre"],
+        ALLOWED_ATTR: ["href", "target", "rel"],
+      })
+    : content; // SSR fallback - will be sanitized on client hydration
+
   return (
     <div
       className={cn(
         "prose prose-sm dark:prose-invert max-w-none",
         className
       )}
-      dangerouslySetInnerHTML={{ __html: content }}
+      dangerouslySetInnerHTML={{ __html: sanitizedContent }}
     />
   );
 }

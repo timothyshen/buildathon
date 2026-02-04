@@ -120,7 +120,7 @@ export function WorkshopCard({
             {hasUserRsvp && (
               <Badge className="bg-status-active/10 text-status-active border-status-active/20">
                 <Check className="h-3 w-3 mr-1" />
-                RSVP'd
+                RSVP&apos;d
               </Badge>
             )}
             <Badge className={categoryBadge.className}>
