@@ -211,31 +211,53 @@ async function completeOnboarding(data: OnboardingData): Promise<ServiceResponse
     return error("No user logged in", null as unknown as User);
   }
 
-  // Fetch current role to preserve it (sponsor invites set role before onboarding)
+  // Check if profile exists
   const { data: existingProfile } = await supabase
     .from("users")
-    .select("role")
+    .select("id")
     .eq("id", authUser.id)
     .maybeSingle();
 
-  const dbData: Record<string, unknown> = {
-    id: authUser.id,
-    email: authUser.email,
+  // Build update data WITHOUT role - role should only be changed via admin/invites
+  // This prevents race conditions where onboarding overwrites a role set by concurrent invite
+  const updateData: Record<string, unknown> = {
     name: data.name,
-    role: existingProfile?.role || "participant",
     has_completed_onboarding: true,
   };
-  if (data.bio !== undefined) dbData.bio = data.bio;
-  if (data.twitter !== undefined) dbData.twitter = data.twitter;
-  if (data.github !== undefined) dbData.github = data.github;
+  if (data.bio !== undefined) updateData.bio = data.bio;
+  if (data.twitter !== undefined) updateData.twitter = data.twitter;
+  if (data.github !== undefined) updateData.github = data.github;
 
-  // Use upsert to create profile if it doesn't exist
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: userData, error: userError } = await (supabase as any)
-    .from("users")
-    .upsert(dbData, { onConflict: "id" })
-    .select()
-    .single();
+  let userData;
+  let userError;
+
+  if (existingProfile) {
+    // Profile exists - UPDATE without touching role (preserves sponsor/judge/admin roles)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result = await (supabase as any)
+      .from("users")
+      .update(updateData)
+      .eq("id", authUser.id)
+      .select()
+      .single();
+    userData = result.data;
+    userError = result.error;
+  } else {
+    // No profile - INSERT with default role "participant"
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result = await (supabase as any)
+      .from("users")
+      .insert({
+        id: authUser.id,
+        email: authUser.email,
+        role: "participant",
+        ...updateData,
+      })
+      .select()
+      .single();
+    userData = result.data;
+    userError = result.error;
+  }
 
   if (userError) {
     return error(userError.message, null as unknown as User);

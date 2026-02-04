@@ -104,28 +104,47 @@ export async function POST(_request: Request, context: RouteContext) {
       return NextResponse.json({ error: "This invite is for a different email address" }, { status: 403 });
     }
 
-    // Update the user's role and sponsor org
-    const { error: updateError } = await adminClient
-      .from("users")
-      .update({
-        role: "sponsor",
-        sponsor_org_id: invite.sponsor_org_id,
-      })
-      .eq("id", user.id);
-
-    if (updateError) {
-      console.error("[Invites] User update error:", updateError);
-      return NextResponse.json({ error: "Failed to assign sponsor role" }, { status: 500 });
-    }
-
-    // Mark invite as used
-    await adminClient
+    // ATOMIC OPERATION: Mark invite as used ONLY if it hasn't been used yet
+    // This prevents race conditions where multiple users try to use the same invite
+    const { data: claimedInvite, error: claimError } = await adminClient
       .from("sponsor_invites")
       .update({
         used_at: new Date().toISOString(),
         used_by: user.id,
       })
-      .eq("id", invite.id);
+      .eq("id", invite.id)
+      .is("used_at", null)  // Only update if not already used (atomic check)
+      .select("id, sponsor_org_id")
+      .maybeSingle();
+
+    if (claimError) {
+      console.error("[Invites] Claim error:", claimError);
+      return NextResponse.json({ error: "Failed to claim invite" }, { status: 500 });
+    }
+
+    // If no rows were updated, the invite was already claimed by another request
+    if (!claimedInvite) {
+      return NextResponse.json({ error: "This invite has already been used" }, { status: 410 });
+    }
+
+    // Now safely update the user's role - we have exclusive claim on the invite
+    const { error: updateError } = await adminClient
+      .from("users")
+      .update({
+        role: "sponsor",
+        sponsor_org_id: claimedInvite.sponsor_org_id,
+      })
+      .eq("id", user.id);
+
+    if (updateError) {
+      console.error("[Invites] User update error:", updateError);
+      // Rollback: unmark the invite since user update failed
+      await adminClient
+        .from("sponsor_invites")
+        .update({ used_at: null, used_by: null })
+        .eq("id", claimedInvite.id);
+      return NextResponse.json({ error: "Failed to assign sponsor role" }, { status: 500 });
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
