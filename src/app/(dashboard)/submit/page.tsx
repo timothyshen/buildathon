@@ -567,7 +567,7 @@ export default function SubmitPage() {
         )}
         {currentStep === 4 && (
           <StepTracks
-            data={{ cohortId: data.cohortId, trackIds: data.trackIds }}
+            data={{ cohortId: data.cohortId, trackIds: data.trackIds, submissionMode: data.submissionMode }}
             onChange={handleChange}
             errors={errors}
             cohorts={cohorts}

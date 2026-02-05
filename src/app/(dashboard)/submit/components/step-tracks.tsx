@@ -3,6 +3,13 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Trophy, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Cohort, Track, SponsorOrg } from "@/types";
@@ -11,6 +18,7 @@ interface StepTracksProps {
   data: {
     cohortId: string;
     trackIds: string[];
+    submissionMode?: "team" | "solo";
   };
   onChange: (field: string, value: string | string[]) => void;
   errors: Record<string, string>;
@@ -22,6 +30,13 @@ interface StepTracksProps {
 export function StepTracks({ data, onChange, errors, cohorts, tracks, sponsorOrgs }: StepTracksProps) {
   const cohortTracks = tracks.filter((t) => t.cohortId === data.cohortId);
   const cohort = cohorts.find((c) => c.id === data.cohortId);
+  const isTeamMode = data.submissionMode === "team";
+
+  const handleCohortChange = (cohortId: string) => {
+    onChange("cohortId", cohortId);
+    // Clear track selections when cohort changes
+    onChange("trackIds", []);
+  };
 
   const toggleTrack = (trackId: string) => {
     const newTrackIds = data.trackIds.includes(trackId)
@@ -41,20 +56,47 @@ export function StepTracks({ data, onChange, errors, cohorts, tracks, sponsorOrg
     <Card>
       <CardHeader>
         <CardTitle>Tracks</CardTitle>
-        <CardDescription>Select the tracks for your submission</CardDescription>
+        <CardDescription>Select the cohort and tracks for your submission</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="space-y-1">
-          <Label>Cohort</Label>
-          {cohort ? (
-            <p className="text-sm font-medium">{cohort.name}</p>
+        {/* Cohort selector */}
+        <div className="space-y-2">
+          <Label htmlFor="cohort-select">Cohort *</Label>
+          {isTeamMode ? (
+            // Team mode: cohort is tied to team, show read-only
+            cohort ? (
+              <p className="text-sm font-medium">{cohort.name}</p>
+            ) : (
+              <p className="text-sm text-amber-600">
+                Please select a team in the Details step first.
+              </p>
+            )
           ) : (
-            <p className="text-sm text-amber-600">
-              Please select a team or cohort first.
-            </p>
+            // Solo mode: allow changing cohort
+            <Select
+              value={data.cohortId}
+              onValueChange={handleCohortChange}
+            >
+              <SelectTrigger id="cohort-select">
+                <SelectValue placeholder="Select a cohort" />
+              </SelectTrigger>
+              <SelectContent>
+                {cohorts
+                  .filter((c) => c.status === "active")
+                  .map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          )}
+          {errors.cohortId && (
+            <p className="text-sm text-destructive">{errors.cohortId}</p>
           )}
         </div>
 
+        {/* Track selection */}
         {data.cohortId && cohortTracks.length > 0 && (
           <div className="space-y-3">
             <div>
@@ -156,6 +198,14 @@ export function StepTracks({ data, onChange, errors, cohorts, tracks, sponsorOrg
           <div className="rounded-lg bg-muted p-4">
             <p className="text-sm text-muted-foreground">
               No tracks available for this cohort. Your submission will be entered into the general pool.
+            </p>
+          </div>
+        )}
+
+        {!data.cohortId && (
+          <div className="rounded-lg bg-muted p-4">
+            <p className="text-sm text-muted-foreground">
+              Please select a cohort to see available tracks.
             </p>
           </div>
         )}
