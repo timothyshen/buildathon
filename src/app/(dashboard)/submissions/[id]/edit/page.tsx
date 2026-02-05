@@ -40,6 +40,7 @@ export default function EditSubmissionPage({ params }: EditSubmissionPageProps) 
   // Form state
   const [title, setTitle] = useState("");
   const [tagline, setTagline] = useState("");
+  const [logoUrl, setLogoUrl] = useState("");
   const [description, setDescription] = useState("");
   const [demoUrl, setDemoUrl] = useState("");
   const [repoUrl, setRepoUrl] = useState("");
@@ -66,6 +67,7 @@ export default function EditSubmissionPage({ params }: EditSubmissionPageProps) 
         setSubmission(s);
         setTitle(s.title);
         setTagline(s.tagline || "");
+        setLogoUrl(s.logoUrl || "");
         setDescription(s.description);
         setDemoUrl(s.demoUrl || "");
         setRepoUrl(s.repoUrl || "");
@@ -96,6 +98,9 @@ export default function EditSubmissionPage({ params }: EditSubmissionPageProps) 
           break;
         case "tagline":
           setTagline(value as string);
+          break;
+        case "logoUrl":
+          setLogoUrl(value as string);
           break;
         case "description":
           setDescription(value as string);
@@ -158,6 +163,7 @@ export default function EditSubmissionPage({ params }: EditSubmissionPageProps) 
       const result = await submissionsService.update(id, {
         title,
         tagline: tagline || undefined,
+        logoUrl: logoUrl || undefined,
         description,
         demoUrl: demoUrl || undefined,
         repoUrl: repoUrl || undefined,
@@ -265,7 +271,7 @@ export default function EditSubmissionPage({ params }: EditSubmissionPageProps) 
 
       <div className="space-y-6">
         <StepDetails
-          data={{ title, tagline, description }}
+          data={{ title, tagline, logoUrl, description }}
           onChange={handleChange}
           errors={errors}
         />

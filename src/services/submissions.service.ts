@@ -54,6 +54,7 @@ function toSubmission(
     tracks,
     title: row.title as string,
     tagline: row.tagline as string | undefined,
+    logoUrl: row.logo_url as string | undefined,
     description: row.description as string,
     demoUrl: row.demo_url as string | undefined,
     videoUrl: row.video_url as string | undefined,
@@ -252,6 +253,7 @@ async function create(
     created_by: data.createdBy,
     title: data.title,
     tagline: data.tagline,
+    logo_url: data.logoUrl,
     description: data.description,
     demo_url: data.demoUrl,
     video_url: data.videoUrl,
@@ -323,6 +325,7 @@ async function update(id: string, data: Partial<Submission>): Promise<ServiceRes
   const dbData: Record<string, unknown> = {};
   if (data.title !== undefined) dbData.title = data.title;
   if (data.tagline !== undefined) dbData.tagline = data.tagline;
+  if (data.logoUrl !== undefined) dbData.logo_url = data.logoUrl;
   if (data.description !== undefined) dbData.description = data.description;
   if (data.demoUrl !== undefined) dbData.demo_url = data.demoUrl;
   if (data.videoUrl !== undefined) dbData.video_url = data.videoUrl;

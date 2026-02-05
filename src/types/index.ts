@@ -95,6 +95,7 @@ export interface Submission {
   // Project details
   title: string;
   tagline?: string;
+  logoUrl?: string;
   description: string;
   demoUrl?: string;
   videoUrl?: string;

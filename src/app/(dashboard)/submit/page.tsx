@@ -42,6 +42,7 @@ interface SubmissionDraft {
   teamId: string;
   title: string;
   tagline: string;
+  logoUrl: string;
   description: string;
   demoUrl: string;
   repoUrl: string;
@@ -62,6 +63,7 @@ const initialData: SubmissionDraft = {
   teamId: "",
   title: "",
   tagline: "",
+  logoUrl: "",
   description: "",
   demoUrl: "",
   repoUrl: "",
@@ -270,6 +272,7 @@ export default function SubmitPage() {
         createdBy: user!.id,
         title: data.title,
         tagline: data.tagline || undefined,
+        logoUrl: data.logoUrl || undefined,
         description: data.description || "",
         demoUrl: data.demoUrl || undefined,
         repoUrl: data.repoUrl || undefined,
@@ -320,6 +323,7 @@ export default function SubmitPage() {
         createdBy: user!.id,
         title: data.title,
         tagline: data.tagline || undefined,
+        logoUrl: data.logoUrl || undefined,
         description: data.description,
         demoUrl: data.demoUrl || undefined,
         repoUrl: data.repoUrl || undefined,
@@ -534,7 +538,7 @@ export default function SubmitPage() {
               </CardContent>
             </Card>
             <StepDetails
-              data={{ title: data.title, tagline: data.tagline, description: data.description }}
+              data={{ title: data.title, tagline: data.tagline, logoUrl: data.logoUrl, description: data.description }}
               onChange={handleChange}
               errors={errors}
             />

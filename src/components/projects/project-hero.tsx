@@ -75,10 +75,19 @@ export function ProjectHero({ project, trackName, cohortName }: ProjectHeroProps
           )}
         </div>
 
-        {/* Title */}
-        <h1 className="text-4xl lg:text-5xl font-bold text-white leading-tight">
-          {project.title}
-        </h1>
+        {/* Title with Logo */}
+        <div className="flex items-center gap-5">
+          {project.logoUrl && (
+            <img
+              src={project.logoUrl}
+              alt={`${project.title} logo`}
+              className="h-16 w-16 lg:h-20 lg:w-20 rounded-2xl object-cover border-2 border-white/10 flex-shrink-0"
+            />
+          )}
+          <h1 className="text-4xl lg:text-5xl font-bold text-white leading-tight">
+            {project.title}
+          </h1>
+        </div>
 
         {/* Tagline */}
         {project.tagline && (
