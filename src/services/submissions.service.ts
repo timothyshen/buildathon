@@ -247,6 +247,7 @@ async function create(
     }
   }
 
+  const status = data.status || "draft";
   const dbData = {
     cohort_id: data.cohortId,
     team_id: data.teamId || null,
@@ -262,7 +263,9 @@ async function create(
     screenshots: data.screenshots,
     tech_stack: data.techStack,
     built_with_story: data.builtWithStory,
-    status: data.status || "draft",
+    status,
+    // Set submitted_at when creating with "submitted" status
+    ...(status === "submitted" ? { submitted_at: new Date().toISOString() } : {}),
   };
 
   const { data: created, error: dbError } = await supabase
@@ -285,7 +288,10 @@ async function create(
       submission_id: created.id,
       track_id: trackId,
     }));
-    await supabase.from("submission_tracks").insert(trackInserts);
+    const { error: trackError } = await supabase.from("submission_tracks").insert(trackInserts);
+    if (trackError) {
+      return error("Submission created but failed to add tracks: " + trackError.message, null as unknown as Submission);
+    }
   }
 
   const submission = await fetchSubmissionWithRelations(supabase, created.id);
@@ -334,24 +340,38 @@ async function update(id: string, data: Partial<Submission>): Promise<ServiceRes
   if (data.screenshots !== undefined) dbData.screenshots = data.screenshots;
   if (data.techStack !== undefined) dbData.tech_stack = data.techStack;
   if (data.builtWithStory !== undefined) dbData.built_with_story = data.builtWithStory;
-  if (data.status !== undefined) dbData.status = data.status;
+  if (data.status !== undefined) {
+    dbData.status = data.status;
+    // Set submitted_at when transitioning to "submitted"
+    if (data.status === "submitted") {
+      dbData.submitted_at = new Date().toISOString();
+    }
+  }
   if (data.ipAssetId !== undefined) dbData.ip_asset_id = data.ipAssetId;
   if (data.ipRegisteredAt !== undefined) dbData.ip_registered_at = data.ipRegisteredAt?.toISOString();
   if (data.ipLicenseType !== undefined) dbData.ip_license_type = data.ipLicenseType;
 
-  const { error: dbError } = await supabase
+  const { data: updatedRows, error: dbError } = await supabase
     .from("submissions")
     .update(dbData)
-    .eq("id", id);
+    .eq("id", id)
+    .select("id");
 
   if (dbError) {
     return error(dbError.message, null as unknown as Submission);
   }
 
+  if (!updatedRows || updatedRows.length === 0) {
+    return error("Submission not found or you don't have permission to update it", null as unknown as Submission);
+  }
+
   // Update track associations if provided
   if (data.trackIds !== undefined) {
     // Remove existing
-    await supabase.from("submission_tracks").delete().eq("submission_id", id);
+    const { error: deleteError } = await supabase.from("submission_tracks").delete().eq("submission_id", id);
+    if (deleteError) {
+      return error("Failed to update tracks: " + deleteError.message, null as unknown as Submission);
+    }
 
     // Add new
     if (data.trackIds.length > 0) {
@@ -359,7 +379,10 @@ async function update(id: string, data: Partial<Submission>): Promise<ServiceRes
         submission_id: id,
         track_id: trackId,
       }));
-      await supabase.from("submission_tracks").insert(trackInserts);
+      const { error: insertError } = await supabase.from("submission_tracks").insert(trackInserts);
+      if (insertError) {
+        return error("Failed to add tracks: " + insertError.message, null as unknown as Submission);
+      }
     }
   }
 

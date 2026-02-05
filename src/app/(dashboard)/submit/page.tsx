@@ -310,9 +310,13 @@ export default function SubmitPage() {
   };
 
   const handleSubmit = async () => {
-    if (!validateStep(4)) {
-      toast.error("Please complete all required fields");
-      return;
+    // Validate ALL steps before final submission
+    for (let step = 1; step <= 4; step++) {
+      if (!validateStep(step)) {
+        toast.error(`Please fix the errors in step ${step} before submitting`);
+        setCurrentStep(step);
+        return;
+      }
     }
 
     setIsLoading(true);
