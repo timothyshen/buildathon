@@ -1151,6 +1151,107 @@ export type Database = {
           }
         ];
       };
+      referral_codes: {
+        Row: {
+          id: string;
+          user_id: string;
+          cohort_id: string;
+          code: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          cohort_id: string;
+          code: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          cohort_id?: string;
+          code?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "referral_codes_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "referral_codes_cohort_id_fkey";
+            columns: ["cohort_id"];
+            isOneToOne: false;
+            referencedRelation: "cohorts";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      referrals: {
+        Row: {
+          id: string;
+          referral_code_id: string;
+          referrer_id: string;
+          referred_id: string;
+          cohort_id: string;
+          status: "pending" | "credited";
+          credited_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          referral_code_id: string;
+          referrer_id: string;
+          referred_id: string;
+          cohort_id: string;
+          status?: "pending" | "credited";
+          credited_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          referral_code_id?: string;
+          referrer_id?: string;
+          referred_id?: string;
+          cohort_id?: string;
+          status?: "pending" | "credited";
+          credited_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "referrals_referral_code_id_fkey";
+            columns: ["referral_code_id"];
+            isOneToOne: false;
+            referencedRelation: "referral_codes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "referrals_referrer_id_fkey";
+            columns: ["referrer_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "referrals_referred_id_fkey";
+            columns: ["referred_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "referrals_cohort_id_fkey";
+            columns: ["cohort_id"];
+            isOneToOne: false;
+            referencedRelation: "cohorts";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -1195,6 +1296,7 @@ export type Database = {
       rsvp_status: "registered" | "attended" | "cancelled";
       ip_license_type: "non-commercial" | "commercial-use" | "commercial-remix";
       milestone_type: "testnet_launch" | "mainnet_launch" | "first_100_users" | "first_1000_users" | "first_10000_users" | "funding_raised" | "partnership" | "media_feature" | "award" | "other";
+      referral_status: "pending" | "credited";
     };
     CompositeTypes: Record<string, never>;
   };

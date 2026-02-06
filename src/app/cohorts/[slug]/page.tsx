@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -6,6 +7,8 @@ import { stripHtml } from "@/lib/utils";
 import { CohortHero } from "@/components/cohorts/cohort-hero";
 import { CohortTimeline } from "@/components/cohorts/cohort-timeline";
 import { CohortTracks } from "@/components/cohorts/cohort-tracks";
+import { ReferralCapture } from "@/components/referrals/referral-capture";
+import { ReferralShareButton } from "@/components/referrals/referral-share-button";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -88,6 +91,11 @@ export default async function CohortDetailPage({
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+      {/* Capture referral code from URL */}
+      <Suspense>
+        <ReferralCapture />
+      </Suspense>
+
       {/* Breadcrumb */}
       <div className="mx-auto max-w-6xl px-4 pt-6">
         <Breadcrumb
@@ -110,9 +118,10 @@ export default async function CohortDetailPage({
 
       {/* Main Content */}
       <div className="mx-auto max-w-6xl px-4 py-8">
-        {/* Submit Button for Active Cohorts */}
+        {/* Action Buttons for Active Cohorts */}
         {cohort.status === "active" && (
-          <div className="flex justify-end mb-6">
+          <div className="flex justify-end gap-3 mb-6">
+            <ReferralShareButton cohortId={cohort.id} cohortSlug={cohort.slug} />
             <Link href="/submit">
               <Button size="lg">Submit Your Project</Button>
             </Link>

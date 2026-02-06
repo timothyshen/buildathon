@@ -19,6 +19,7 @@ import {
   Compass,
   BookOpen,
   Settings,
+  Share2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getRoleBadgeColor } from "@/lib/utils/colors";
@@ -111,6 +112,7 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
         },
         { href: "/submit", label: "New Submission", icon: PlusCircle },
         { href: "/teams", label: "My Teams", icon: Users2 },
+        { href: "/referrals", label: "Referrals", icon: Share2 },
       ],
     },
     {
@@ -153,6 +155,7 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
         { href: "/admin/judges", label: "Judges", icon: Users },
         { href: "/admin/sponsors", label: "Sponsors", icon: Users },
         { href: "/admin/workshops", label: "Workshops", icon: GraduationCap },
+        { href: "/admin/referrals", label: "Referrals", icon: Share2 },
       ],
     },
     {

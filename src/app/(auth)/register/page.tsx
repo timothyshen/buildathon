@@ -97,6 +97,13 @@ function RegisterForm() {
         }
       }
 
+      // Record pending referral if ref_code cookie exists (non-blocking)
+      try {
+        await fetch("/api/referrals/record", { method: "POST" });
+      } catch {
+        // Referral tracking failure should not block registration
+      }
+
       router.push("/onboarding");
     } else {
       setError(result.error || "Registration failed");

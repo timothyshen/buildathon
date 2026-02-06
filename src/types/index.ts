@@ -352,3 +352,39 @@ export interface TractionMilestone {
 
   createdAt: Date;
 }
+
+// ==================== Referrals ====================
+
+export type ReferralStatus = "pending" | "credited";
+
+export interface ReferralCode {
+  id: string;
+  userId: string;
+  cohortId: string;
+  code: string;
+  createdAt: Date;
+}
+
+export interface Referral {
+  id: string;
+  referralCodeId: string;
+  referrerId: string;
+  referredId: string;
+  cohortId: string;
+  status: ReferralStatus;
+  creditedAt?: Date;
+  createdAt: Date;
+  referrer?: User;
+  referred?: User;
+  cohort?: Cohort;
+}
+
+export interface ReferralLeaderboardEntry {
+  userId: string;
+  userName: string;
+  userAvatar?: string;
+  cohortId: string;
+  totalReferrals: number;
+  pendingReferrals: number;
+  rank: number;
+}

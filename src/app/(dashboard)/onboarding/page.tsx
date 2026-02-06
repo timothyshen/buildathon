@@ -95,6 +95,13 @@ export default function OnboardingPage() {
       });
 
       if (success) {
+        // Credit any pending referrals (non-blocking)
+        try {
+          await fetch("/api/referrals/credit", { method: "POST" });
+        } catch {
+          // Referral crediting failure should not block onboarding
+        }
+
         toast.success("Welcome aboard! Your profile is set up.");
         router.replace("/dashboard");
       } else {
