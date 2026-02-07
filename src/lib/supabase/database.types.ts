@@ -1252,6 +1252,183 @@ export type Database = {
           }
         ];
       };
+      feedback_posts: {
+        Row: {
+          id: string;
+          author_id: string;
+          title: string;
+          description: string;
+          category: "feature_request" | "bug_report" | "improvement";
+          status: "open" | "planned" | "in_progress" | "completed" | "declined";
+          vote_count: number;
+          comment_count: number;
+          status_changed_by: string | null;
+          status_changed_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          author_id: string;
+          title: string;
+          description: string;
+          category?: "feature_request" | "bug_report" | "improvement";
+          status?: "open" | "planned" | "in_progress" | "completed" | "declined";
+          vote_count?: number;
+          comment_count?: number;
+          status_changed_by?: string | null;
+          status_changed_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          author_id?: string;
+          title?: string;
+          description?: string;
+          category?: "feature_request" | "bug_report" | "improvement";
+          status?: "open" | "planned" | "in_progress" | "completed" | "declined";
+          vote_count?: number;
+          comment_count?: number;
+          status_changed_by?: string | null;
+          status_changed_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "feedback_posts_author_id_fkey";
+            columns: ["author_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "feedback_posts_status_changed_by_fkey";
+            columns: ["status_changed_by"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      feedback_votes: {
+        Row: {
+          id: string;
+          post_id: string;
+          user_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          post_id: string;
+          user_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          post_id?: string;
+          user_id?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "feedback_votes_post_id_fkey";
+            columns: ["post_id"];
+            isOneToOne: false;
+            referencedRelation: "feedback_posts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "feedback_votes_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      feedback_comments: {
+        Row: {
+          id: string;
+          post_id: string;
+          author_id: string;
+          parent_id: string | null;
+          body: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          post_id: string;
+          author_id: string;
+          parent_id?: string | null;
+          body: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          post_id?: string;
+          author_id?: string;
+          parent_id?: string | null;
+          body?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "feedback_comments_post_id_fkey";
+            columns: ["post_id"];
+            isOneToOne: false;
+            referencedRelation: "feedback_posts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "feedback_comments_author_id_fkey";
+            columns: ["author_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "feedback_comments_parent_id_fkey";
+            columns: ["parent_id"];
+            isOneToOne: false;
+            referencedRelation: "feedback_comments";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      event_rsvps: {
+        Row: {
+          id: string;
+          luma_event_id: string;
+          user_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          luma_event_id: string;
+          user_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          luma_event_id?: string;
+          user_id?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "event_rsvps_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -1297,6 +1474,8 @@ export type Database = {
       ip_license_type: "non-commercial" | "commercial-use" | "commercial-remix";
       milestone_type: "testnet_launch" | "mainnet_launch" | "first_100_users" | "first_1000_users" | "first_10000_users" | "funding_raised" | "partnership" | "media_feature" | "award" | "other";
       referral_status: "pending" | "credited";
+      feedback_status: "open" | "planned" | "in_progress" | "completed" | "declined";
+      feedback_category: "feature_request" | "bug_report" | "improvement";
     };
     CompositeTypes: Record<string, never>;
   };

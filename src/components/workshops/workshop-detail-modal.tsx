@@ -1,6 +1,6 @@
 "use client";
 
-import { Workshop, WorkshopRSVP } from "@/types";
+import { CalendarEvent } from "@/types";
 import {
   Dialog,
   DialogContent,
@@ -12,11 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Clock,
-  Users,
   MapPin,
   Calendar,
-  Video,
-  FileText,
   ExternalLink,
   GraduationCap,
   Sparkles,
@@ -25,11 +22,10 @@ import {
 } from "lucide-react";
 
 interface WorkshopDetailModalProps {
-  workshop: Workshop | null;
+  event: CalendarEvent | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  userRsvp?: WorkshopRSVP;
-  rsvpCount?: number;
+  isRsvped: boolean;
   onRsvp: () => void;
   onAddToCalendar: (type: "google" | "apple" | "ics") => void;
 }
@@ -71,51 +67,53 @@ function formatDateTime(date: Date): string {
   });
 }
 
-function formatDuration(workshop: Workshop): string {
-  if (workshop.duration) {
-    return workshop.duration;
+function formatDuration(event: CalendarEvent): string {
+  const start = new Date(event.startAt);
+  const end = new Date(event.endAt);
+  const diffMs = end.getTime() - start.getTime();
+  const diffMins = Math.round(diffMs / 60000);
+  if (diffMins >= 60) {
+    const hours = Math.floor(diffMins / 60);
+    const mins = diffMins % 60;
+    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
   }
-  if (workshop.scheduledAt && workshop.endTime) {
-    const start = new Date(workshop.scheduledAt);
-    const end = new Date(workshop.endTime);
-    const diffMs = end.getTime() - start.getTime();
-    const diffMins = Math.round(diffMs / 60000);
-    if (diffMins >= 60) {
-      const hours = Math.floor(diffMins / 60);
-      const mins = diffMins % 60;
-      return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
-    }
-    return `${diffMins} min`;
-  }
-  return "";
+  return `${diffMins} min`;
 }
 
 export function WorkshopDetailModal({
-  workshop,
+  event,
   open,
   onOpenChange,
-  userRsvp,
-  rsvpCount = 0,
+  isRsvped,
   onRsvp,
   onAddToCalendar,
 }: WorkshopDetailModalProps) {
-  if (!workshop) return null;
+  if (!event) return null;
 
-  const attendeeCount = rsvpCount;
-  const duration = formatDuration(workshop);
-  const hasUserRsvp = userRsvp && userRsvp.status === "registered";
-  const categoryBadge = getCategoryBadge(workshop.category);
+  const duration = formatDuration(event);
+  const categoryBadge = getCategoryBadge(event.category);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+        {/* Cover Image */}
+        {event.coverUrl && (
+          <div className="-mx-6 -mt-6 mb-4">
+            <img
+              src={event.coverUrl}
+              alt={event.title}
+              className="w-full h-48 object-cover rounded-t-lg"
+            />
+          </div>
+        )}
+
         <DialogHeader>
-          {/* Partner Logo and Title */}
+          {/* Host and Title */}
           <div className="flex items-start gap-4">
-            {workshop.partnerLogo ? (
+            {event.hostAvatar ? (
               <img
-                src={workshop.partnerLogo}
-                alt={workshop.partnerName || "Partner"}
+                src={event.hostAvatar}
+                alt={event.hostName || "Host"}
                 className="h-14 w-14 rounded-xl object-cover flex-shrink-0 bg-muted"
               />
             ) : (
@@ -127,9 +125,9 @@ export function WorkshopDetailModal({
               <div className="flex flex-wrap items-start gap-2 mb-1">
                 <Badge className={categoryBadge.className}>
                   {categoryBadge.icon}
-                  {workshop.category}
+                  {event.category}
                 </Badge>
-                {hasUserRsvp && (
+                {isRsvped && (
                   <Badge className="bg-status-active/10 text-status-active border-status-active/20">
                     <Check className="h-3 w-3 mr-1" />
                     RSVP&apos;d
@@ -137,11 +135,11 @@ export function WorkshopDetailModal({
                 )}
               </div>
               <DialogTitle className="text-xl leading-tight">
-                {workshop.title}
+                {event.title}
               </DialogTitle>
-              {workshop.partnerName && (
+              {event.hostName && (
                 <p className="text-sm text-muted-foreground mt-1">
-                  by {workshop.partnerName}
+                  by {event.hostName}
                 </p>
               )}
             </div>
@@ -150,73 +148,46 @@ export function WorkshopDetailModal({
 
         {/* Full Description */}
         <DialogDescription className="text-base text-foreground">
-          {workshop.description}
+          {event.description}
         </DialogDescription>
 
         {/* Info Section */}
         <div className="space-y-3 py-4 border-y">
-          {workshop.scheduledAt && (
-            <div className="flex items-center gap-3 text-sm">
-              <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <span>{formatDateTime(workshop.scheduledAt)}</span>
-            </div>
-          )}
+          <div className="flex items-center gap-3 text-sm">
+            <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <span>{formatDateTime(event.startAt)}</span>
+          </div>
           {duration && (
             <div className="flex items-center gap-3 text-sm">
               <Clock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
               <span>{duration}</span>
             </div>
           )}
-          {workshop.location && (
+          {event.location && (
             <div className="flex items-center gap-3 text-sm">
               <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <span>{workshop.location}</span>
+              <span>{event.location}</span>
             </div>
           )}
-          <div className="flex items-center gap-3 text-sm">
-            <Users className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            <span>
-              {attendeeCount}
-              {workshop.maxAttendees && ` / ${workshop.maxAttendees}`} attending
-            </span>
-          </div>
         </div>
 
-        {/* Resource Buttons */}
-        {(workshop.videoUrl || workshop.articleUrl) && (
-          <div className="flex flex-wrap gap-2">
-            {workshop.videoUrl && (
-              <Button variant="outline" size="sm" asChild>
-                <a
-                  href={workshop.videoUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <Video className="h-4 w-4 mr-2" />
-                  Watch Video
-                </a>
-              </Button>
-            )}
-            {workshop.articleUrl && (
-              <Button variant="outline" size="sm" asChild>
-                <a
-                  href={workshop.articleUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  Read Article
-                </a>
-              </Button>
-            )}
-          </div>
-        )}
+        {/* View on Luma */}
+        <Button variant="outline" className="w-full" asChild>
+          <a
+            href={event.eventUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <ExternalLink className="h-4 w-4 mr-2" />
+            View on Luma
+          </a>
+        </Button>
 
-        {/* Meeting Link Button (only if user has RSVP and meeting URL exists) */}
-        {hasUserRsvp && workshop.meetingUrl && (
+        {/* Meeting Link (only if RSVP'd) */}
+        {isRsvped && event.meetingUrl && (
           <Button variant="secondary" className="w-full" asChild>
             <a
-              href={workshop.meetingUrl}
+              href={event.meetingUrl}
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -227,7 +198,7 @@ export function WorkshopDetailModal({
         )}
 
         {/* Note about RSVP to receive meeting link */}
-        {!hasUserRsvp && workshop.meetingUrl && (
+        {!isRsvped && event.meetingUrl && (
           <p className="text-sm text-muted-foreground text-center py-2">
             RSVP to receive the meeting link
           </p>
@@ -236,12 +207,12 @@ export function WorkshopDetailModal({
         {/* Action Buttons */}
         <div className="flex flex-col gap-3 pt-4 border-t">
           <Button
-            variant={hasUserRsvp ? "outline" : "default"}
+            variant={isRsvped ? "outline" : "default"}
             size="lg"
             onClick={onRsvp}
-            className={hasUserRsvp ? "" : "bg-foreground text-background hover:bg-foreground/90"}
+            className={isRsvped ? "" : "bg-foreground text-background hover:bg-foreground/90"}
           >
-            {hasUserRsvp ? "Cancel RSVP" : "RSVP for this Workshop"}
+            {isRsvped ? "RSVP'd" : "RSVP for this Event"}
           </Button>
 
           <div className="flex gap-2">

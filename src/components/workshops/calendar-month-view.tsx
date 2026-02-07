@@ -1,13 +1,13 @@
 "use client";
 
-import { Workshop } from "@/types";
+import { CalendarEvent } from "@/types";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface CalendarMonthViewProps {
   currentDate: Date;
-  workshops: Workshop[];
+  events: CalendarEvent[];
   onDateChange: (date: Date) => void;
   onDateSelect: (date: Date) => void;
   selectedDate?: Date;
@@ -65,16 +65,13 @@ function getMonthDays(date: Date): Date[] {
   return days;
 }
 
-function getWorkshopsForDate(date: Date, workshops: Workshop[]): Workshop[] {
-  return workshops.filter((workshop) => {
-    if (!workshop.scheduledAt) return false;
-    return isSameDay(new Date(workshop.scheduledAt), date);
-  });
+function getEventsForDate(date: Date, events: CalendarEvent[]): CalendarEvent[] {
+  return events.filter((event) => isSameDay(new Date(event.startAt), date));
 }
 
 export function CalendarMonthView({
   currentDate,
-  workshops,
+  events,
   onDateChange,
   onDateSelect,
   selectedDate,
@@ -148,11 +145,11 @@ export function CalendarMonthView({
         {/* Day cells */}
         <div className="grid grid-cols-7 gap-px bg-border">
           {days.map((date, index) => {
-            const dayWorkshops = getWorkshopsForDate(date, workshops);
+            const dayEvents = getEventsForDate(date, events);
             const isToday = isSameDay(date, today);
             const isSelected = selectedDate && isSameDay(date, selectedDate);
             const isCurrentMonth = isSameMonth(date, currentDate);
-            const hasWorkshops = dayWorkshops.length > 0;
+            const hasEvents = dayEvents.length > 0;
 
             return (
               <button
@@ -175,32 +172,32 @@ export function CalendarMonthView({
                   {date.getDate()}
                 </span>
 
-                {/* Workshop indicators */}
-                {hasWorkshops && (
+                {/* Event indicators */}
+                {hasEvents && (
                   <div className="mt-1 space-y-1">
-                    {dayWorkshops.slice(0, 2).map((workshop) => (
+                    {dayEvents.slice(0, 2).map((event) => (
                       <div
-                        key={workshop.id}
+                        key={event.id}
                         className={cn(
                           "text-xs px-1.5 py-0.5 rounded truncate",
-                          workshop.category.toLowerCase() === "basics" &&
+                          event.category.toLowerCase() === "basics" &&
                             "bg-green-100 text-green-800",
-                          workshop.category.toLowerCase() === "advanced" &&
+                          event.category.toLowerCase() === "advanced" &&
                             "bg-purple-100 text-purple-800",
-                          workshop.category.toLowerCase() === "business" &&
+                          event.category.toLowerCase() === "business" &&
                             "bg-blue-100 text-blue-800",
                           !["basics", "advanced", "business"].includes(
-                            workshop.category.toLowerCase()
+                            event.category.toLowerCase()
                           ) && "bg-gray-100 text-gray-800"
                         )}
-                        title={workshop.title}
+                        title={event.title}
                       >
-                        {workshop.title}
+                        {event.title}
                       </div>
                     ))}
-                    {dayWorkshops.length > 2 && (
+                    {dayEvents.length > 2 && (
                       <div className="text-xs text-muted-foreground px-1.5">
-                        +{dayWorkshops.length - 2} more
+                        +{dayEvents.length - 2} more
                       </div>
                     )}
                   </div>

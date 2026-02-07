@@ -1,22 +1,21 @@
 "use client";
 
-import { Workshop, WorkshopRSVP } from "@/types";
+import { CalendarEvent } from "@/types";
 import { WorkshopCard } from "./workshop-card";
 import { Calendar } from "lucide-react";
 
 interface CalendarAgendaViewProps {
-  workshops: Workshop[];
-  userRsvps: WorkshopRSVP[];
-  rsvpCounts: Record<string, number>;
-  onViewDetails: (workshop: Workshop) => void;
-  onRsvp: (workshop: Workshop) => void;
-  onAddToCalendar: (workshop: Workshop, type: "google" | "outlook" | "ical") => void;
+  events: CalendarEvent[];
+  rsvpedEventIds: Set<string>;
+  onViewDetails: (event: CalendarEvent) => void;
+  onRsvp: (event: CalendarEvent) => void;
+  onAddToCalendar: (event: CalendarEvent, type: "google" | "outlook" | "ical") => void;
 }
 
-interface GroupedWorkshops {
+interface GroupedEvents {
   date: Date;
   label: string;
-  workshops: Workshop[];
+  events: CalendarEvent[];
 }
 
 function isSameDay(date1: Date, date2: Date): boolean {
@@ -47,61 +46,55 @@ function getDateLabel(date: Date): string {
   });
 }
 
-function groupWorkshopsByDate(workshops: Workshop[]): GroupedWorkshops[] {
-  // Filter only workshops with scheduledAt and sort by date
-  const scheduledWorkshops = workshops
-    .filter((w) => w.scheduledAt)
-    .sort(
-      (a, b) =>
-        new Date(a.scheduledAt!).getTime() - new Date(b.scheduledAt!).getTime()
-    );
+function groupEventsByDate(events: CalendarEvent[]): GroupedEvents[] {
+  const sorted = [...events].sort(
+    (a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime()
+  );
 
-  const groups: GroupedWorkshops[] = [];
-  let currentGroup: GroupedWorkshops | null = null;
+  const groups: GroupedEvents[] = [];
+  let currentGroup: GroupedEvents | null = null;
 
-  for (const workshop of scheduledWorkshops) {
-    const workshopDate = new Date(workshop.scheduledAt!);
-    // Normalize to start of day
+  for (const event of sorted) {
+    const eventDate = new Date(event.startAt);
     const normalizedDate = new Date(
-      workshopDate.getFullYear(),
-      workshopDate.getMonth(),
-      workshopDate.getDate()
+      eventDate.getFullYear(),
+      eventDate.getMonth(),
+      eventDate.getDate()
     );
 
     if (!currentGroup || !isSameDay(currentGroup.date, normalizedDate)) {
       currentGroup = {
         date: normalizedDate,
         label: getDateLabel(normalizedDate),
-        workshops: [],
+        events: [],
       };
       groups.push(currentGroup);
     }
 
-    currentGroup.workshops.push(workshop);
+    currentGroup.events.push(event);
   }
 
   return groups;
 }
 
 export function CalendarAgendaView({
-  workshops,
-  userRsvps,
-  rsvpCounts,
+  events,
+  rsvpedEventIds,
   onViewDetails,
   onRsvp,
   onAddToCalendar,
 }: CalendarAgendaViewProps) {
-  const groupedWorkshops = groupWorkshopsByDate(workshops);
+  const groupedEvents = groupEventsByDate(events);
 
-  if (groupedWorkshops.length === 0) {
+  if (groupedEvents.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
         <div className="rounded-full bg-muted p-4 mb-4">
           <Calendar className="h-8 w-8 text-muted-foreground" />
         </div>
-        <h3 className="text-lg font-semibold mb-2">No Upcoming Workshops</h3>
+        <h3 className="text-lg font-semibold mb-2">No Upcoming Events</h3>
         <p className="text-muted-foreground max-w-sm">
-          There are no workshops scheduled at this time. Check back later for
+          There are no events scheduled at this time. Check back later for
           new workshops and events.
         </p>
       </div>
@@ -110,36 +103,29 @@ export function CalendarAgendaView({
 
   return (
     <div className="space-y-8">
-      {groupedWorkshops.map((group) => (
+      {groupedEvents.map((group) => (
         <div key={group.date.toISOString()}>
           {/* Date Header */}
           <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-3 mb-4 border-b">
             <h2 className="text-lg font-semibold">{group.label}</h2>
             <p className="text-sm text-muted-foreground">
-              {group.workshops.length}{" "}
-              {group.workshops.length === 1 ? "workshop" : "workshops"}
+              {group.events.length}{" "}
+              {group.events.length === 1 ? "event" : "events"}
             </p>
           </div>
 
-          {/* Workshop Cards */}
+          {/* Event Cards */}
           <div className="space-y-4">
-            {group.workshops.map((workshop) => {
-              const userRsvp = userRsvps.find(
-                (r) => r.workshopId === workshop.id
-              );
-
-              return (
-                <WorkshopCard
-                  key={workshop.id}
-                  workshop={workshop}
-                  rsvpCount={rsvpCounts[workshop.id] || 0}
-                  userRsvp={userRsvp}
-                  onViewDetails={onViewDetails}
-                  onRsvp={onRsvp}
-                  onAddToCalendar={onAddToCalendar}
-                />
-              );
-            })}
+            {group.events.map((event) => (
+              <WorkshopCard
+                key={event.id}
+                event={event}
+                isRsvped={rsvpedEventIds.has(event.id)}
+                onViewDetails={onViewDetails}
+                onRsvp={onRsvp}
+                onAddToCalendar={onAddToCalendar}
+              />
+            ))}
           </div>
         </div>
       ))}

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { workshopsService } from "@/services";
 import type { Workshop } from "@/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,9 +14,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Play, FileText, Clock, Users, ArrowLeft, Loader2 } from "lucide-react";
+import { Search, Play, FileText, Clock, Users, Loader2, BookOpen, Lightbulb } from "lucide-react";
 
-export default function WorkshopResourcesPage() {
+export default function ResourcesPage() {
   const [workshops, setWorkshops] = useState<Workshop[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -26,7 +25,8 @@ export default function WorkshopResourcesPage() {
   useEffect(() => {
     async function loadData() {
       const { data } = await workshopsService.list();
-      setWorkshops(data);
+      // Filter to published resources (not scheduled events)
+      setWorkshops(data.filter((w) => w.status === "published"));
       setIsLoading(false);
     }
     loadData();
@@ -55,27 +55,80 @@ export default function WorkshopResourcesPage() {
   });
 
   return (
-    <div className="py-12">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Back link */}
-        <Link
-          href="/workshops"
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Workshop Calendar
-        </Link>
-
-        {/* Header */}
-        <div className="text-center">
-          <h1 className="text-4xl font-bold tracking-tight">Learning Resources</h1>
-          <p className="mt-4 text-lg text-muted-foreground">
-            Tutorials, guides, and educational content from our partners to help you build on Story Protocol.
+    <div className="min-h-screen bg-muted">
+      {/* Hero Section */}
+      <section className="relative overflow-hidden bg-slate-900 mx-4 mt-4 rounded-3xl">
+        <div
+          className="absolute inset-0 opacity-5"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          }}
+        />
+        <div className="relative max-w-6xl mx-auto px-8 py-16 text-center">
+          <Badge className="bg-category-business/20 text-category-business border-category-business/30 mb-4">
+            <BookOpen className="h-3 w-3 mr-1.5" />
+            Learning Hub
+          </Badge>
+          <h1 className="text-4xl lg:text-5xl font-bold text-white">
+            Resources
+          </h1>
+          <p className="mt-4 text-xl text-slate-400 max-w-2xl mx-auto">
+            Tutorials, guides, prompt libraries, and educational content from our partners to help you build on Story Protocol.
           </p>
+        </div>
+      </section>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Resource Type Quick Filters */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setSelectedCategory("all")}>
+            <CardContent className="flex items-center gap-3 p-4">
+              <div className="rounded-lg bg-primary/10 p-2">
+                <BookOpen className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="font-medium text-sm">All Resources</p>
+                <p className="text-xs text-muted-foreground">{workshops.length} items</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setSelectedCategory("all")}>
+            <CardContent className="flex items-center gap-3 p-4">
+              <div className="rounded-lg bg-red-100 p-2">
+                <Play className="h-5 w-5 text-red-600" />
+              </div>
+              <div>
+                <p className="font-medium text-sm">Videos</p>
+                <p className="text-xs text-muted-foreground">{workshops.filter(w => w.videoUrl).length} items</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setSelectedCategory("all")}>
+            <CardContent className="flex items-center gap-3 p-4">
+              <div className="rounded-lg bg-blue-100 p-2">
+                <FileText className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="font-medium text-sm">Articles</p>
+                <p className="text-xs text-muted-foreground">{workshops.filter(w => w.articleUrl).length} items</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setSelectedCategory("all")}>
+            <CardContent className="flex items-center gap-3 p-4">
+              <div className="rounded-lg bg-amber-100 p-2">
+                <Lightbulb className="h-5 w-5 text-amber-600" />
+              </div>
+              <div>
+                <p className="font-medium text-sm">Guides</p>
+                <p className="text-xs text-muted-foreground">{categories.length} categories</p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Filters */}
-        <div className="mt-8 flex flex-col gap-4 sm:flex-row">
+        <div className="flex flex-col gap-4 sm:flex-row">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -121,7 +174,7 @@ export default function WorkshopResourcesPage() {
           ))}
         </div>
 
-        {/* Workshops Grid */}
+        {/* Resources Grid */}
         <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {filteredWorkshops.map((workshop) => (
             <Card key={workshop.id} className="flex flex-col">
@@ -141,12 +194,14 @@ export default function WorkshopResourcesPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex flex-1 flex-col justify-end">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Users className="h-4 w-4" />
-                  <span>{workshop.partnerName}</span>
-                </div>
+                {workshop.partnerName && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+                    <Users className="h-4 w-4" />
+                    <span>{workshop.partnerName}</span>
+                  </div>
+                )}
 
-                <div className="mt-4 flex gap-2">
+                <div className="flex gap-2">
                   {workshop.videoUrl && (
                     <Button asChild className="flex-1">
                       <a
@@ -197,7 +252,7 @@ export default function WorkshopResourcesPage() {
           <p className="mt-2 text-muted-foreground">
             Are you a partner or expert? Share your knowledge with the community.
           </p>
-          <Button className="mt-4">Submit Workshop Content</Button>
+          <Button className="mt-4">Submit Content</Button>
         </div>
       </div>
     </div>

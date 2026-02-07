@@ -3,8 +3,8 @@
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
-import { workshopsService } from "@/services";
-import { Workshop, WorkshopRSVP } from "@/types";
+import { eventsService } from "@/services";
+import { CalendarEvent } from "@/types";
 import { CalendarMonthView } from "@/components/workshops/calendar-month-view";
 import { CalendarAgendaView } from "@/components/workshops/calendar-agenda-view";
 import { WorkshopDetailModal } from "@/components/workshops/workshop-detail-modal";
@@ -15,6 +15,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { generateGoogleCalendarUrl, downloadICSFile } from "@/lib/calendar-utils";
 import { Calendar, List, LogIn, BookOpen, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 function isSameDay(date1: Date, date2: Date): boolean {
   return (
@@ -28,7 +29,7 @@ export default function WorkshopsPage() {
   const { user } = useAuth();
 
   // Data loading state
-  const [workshops, setWorkshops] = useState<Workshop[]>([]);
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,45 +37,22 @@ export default function WorkshopsPage() {
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [view, setView] = useState<"month" | "agenda">("month");
-  const [selectedWorkshop, setSelectedWorkshop] = useState<Workshop | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [localRsvps, setLocalRsvps] = useState<WorkshopRSVP[]>([]);
-  const [rsvpCounts, setRsvpCounts] = useState<Record<string, number>>({});
+  const [rsvpedEventIds, setRsvpedEventIds] = useState<Set<string>>(new Set());
 
-  // Load workshops and RSVPs
+  // Load events from Luma via our API proxy
   useEffect(() => {
     async function loadData() {
       try {
-        const { data: workshopList, success, error: workshopsError } = await workshopsService.list();
-        if (!success) {
-          setError(workshopsError || "Failed to load workshops");
-          setIsLoading(false);
-          return;
+        const result = await eventsService.listEvents();
+        setEvents(result.events);
+
+        // Load user's existing RSVPs
+        if (user) {
+          const rsvps = await eventsService.getUserRsvps();
+          setRsvpedEventIds(new Set(rsvps));
         }
-
-        setWorkshops(workshopList);
-
-        // Load RSVPs for all published workshops
-        const publishedIds = workshopList
-          .filter((w) => w.status === "published" && w.scheduledAt)
-          .map((w) => w.id);
-
-        const rsvpPromises = publishedIds.map(async (id) => {
-          const { data } = await workshopsService.getRSVPs(id);
-          return { id, rsvps: data };
-        });
-
-        const rsvpResults = await Promise.all(rsvpPromises);
-
-        const counts: Record<string, number> = {};
-        const allRsvps: WorkshopRSVP[] = [];
-        for (const { id, rsvps } of rsvpResults) {
-          counts[id] = rsvps.length;
-          allRsvps.push(...rsvps);
-        }
-
-        setRsvpCounts(counts);
-        setLocalRsvps(allRsvps);
       } catch (err) {
         setError(err instanceof Error ? err.message : "An unexpected error occurred");
       } finally {
@@ -82,43 +60,28 @@ export default function WorkshopsPage() {
       }
     }
     loadData();
-  }, []);
+  }, [user]);
 
-  // Get published workshops only
-  const publishedWorkshops = useMemo(() => {
-    return workshops.filter((w) => w.status === "published" && w.scheduledAt);
-  }, [workshops]);
-
-  // Get upcoming workshops (next 5)
-  const upcomingWorkshops = useMemo(() => {
+  // Get upcoming events (next 5)
+  const upcomingEvents = useMemo(() => {
     const now = new Date();
-    return publishedWorkshops
-      .filter((w) => w.scheduledAt && new Date(w.scheduledAt) >= now)
-      .sort((a, b) => new Date(a.scheduledAt!).getTime() - new Date(b.scheduledAt!).getTime())
+    return events
+      .filter((e) => new Date(e.startAt) >= now)
+      .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime())
       .slice(0, 5);
-  }, [publishedWorkshops]);
+  }, [events]);
 
-  // Get workshops for selected date
-  const workshopsForSelectedDate = useMemo(() => {
+  // Get events for selected date
+  const eventsForSelectedDate = useMemo(() => {
     if (!selectedDate) return [];
-    return publishedWorkshops.filter((w) => {
-      if (!w.scheduledAt) return false;
-      return isSameDay(new Date(w.scheduledAt), selectedDate);
-    });
-  }, [selectedDate, publishedWorkshops]);
+    return events.filter((e) => isSameDay(new Date(e.startAt), selectedDate));
+  }, [selectedDate, events]);
 
-  // Get user's RSVPs
-  const userRsvps = useMemo(() => {
+  // Get events the user has RSVPed to
+  const rsvpedEvents = useMemo(() => {
     if (!user) return [];
-    return localRsvps.filter((r) => r.userId === user.id && r.status === "registered");
-  }, [user, localRsvps]);
-
-  // Get workshops the user has RSVPed to
-  const rsvpedWorkshops = useMemo(() => {
-    if (!user) return [];
-    const rsvpWorkshopIds = userRsvps.map((r) => r.workshopId);
-    return publishedWorkshops.filter((w) => rsvpWorkshopIds.includes(w.id));
-  }, [user, userRsvps, publishedWorkshops]);
+    return events.filter((e) => rsvpedEventIds.has(e.id));
+  }, [user, rsvpedEventIds, events]);
 
   if (isLoading) {
     return (
@@ -131,7 +94,7 @@ export default function WorkshopsPage() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
-        <div className="text-destructive text-lg">Failed to load workshops</div>
+        <div className="text-destructive text-lg">Failed to load events</div>
         <p className="text-muted-foreground text-sm">{error}</p>
         <Button variant="outline" onClick={() => window.location.reload()}>
           Try Again
@@ -140,64 +103,43 @@ export default function WorkshopsPage() {
     );
   }
 
-  // Get user's RSVP for a specific workshop
-  const getUserRsvpForWorkshop = (workshopId: string): WorkshopRSVP | undefined => {
-    if (!user) return undefined;
-    return localRsvps.find(
-      (r) => r.workshopId === workshopId && r.userId === user.id && r.status === "registered"
-    );
-  };
-
   // Handler functions
-  const handleViewDetails = (workshop: Workshop) => {
-    setSelectedWorkshop(workshop);
+  const handleViewDetails = (event: CalendarEvent) => {
+    setSelectedEvent(event);
     setModalOpen(true);
   };
 
-  const handleRsvp = (workshop: Workshop) => {
+  const handleRsvp = async (event: CalendarEvent) => {
     if (!user) {
-      // Redirect to login
       window.location.href = "/login";
       return;
     }
 
-    const existingRsvp = getUserRsvpForWorkshop(workshop.id);
+    if (rsvpedEventIds.has(event.id)) {
+      // Already RSVP'd — no cancel through Luma API, just show toast
+      toast.info("You're already registered for this event");
+      return;
+    }
 
-    if (existingRsvp) {
-      // Cancel RSVP - update status to cancelled
-      setLocalRsvps((prev) =>
-        prev.map((r) =>
-          r.id === existingRsvp.id ? { ...r, status: "cancelled" as const } : r
-        )
-      );
+    const result = await eventsService.rsvp(event.lumaApiId);
+
+    if (result.success) {
+      setRsvpedEventIds((prev) => new Set([...prev, event.id]));
+      toast.success("RSVP confirmed! You're registered for this event.");
     } else {
-      // Create new RSVP
-      const newRsvp: WorkshopRSVP = {
-        id: `rsvp-${Date.now()}`,
-        workshopId: workshop.id,
-        userId: user.id,
-        user: user,
-        status: "registered",
-        registeredAt: new Date(),
-      };
-      setLocalRsvps((prev) => [...prev, newRsvp]);
+      toast.error(result.error || "Failed to RSVP. Please try again.");
     }
   };
 
-  const handleAddToCalendar = (workshop: Workshop, type: "google" | "outlook" | "ical" | "apple" | "ics") => {
+  const handleAddToCalendar = (event: CalendarEvent, type: "google" | "outlook" | "ical" | "apple" | "ics") => {
     if (type === "google") {
-      const url = generateGoogleCalendarUrl(workshop);
-      if (url) {
-        window.open(url, "_blank");
-      }
+      const url = generateGoogleCalendarUrl(event);
+      if (url) window.open(url, "_blank");
     } else if (type === "ical" || type === "ics" || type === "apple") {
-      downloadICSFile(workshop);
+      downloadICSFile(event);
     } else if (type === "outlook") {
-      // Outlook Web also supports Google Calendar URL format
-      const url = generateGoogleCalendarUrl(workshop);
-      if (url) {
-        window.open(url, "_blank");
-      }
+      const url = generateGoogleCalendarUrl(event);
+      if (url) window.open(url, "_blank");
     }
   };
 
@@ -218,13 +160,13 @@ export default function WorkshopsPage() {
             Live Sessions
           </Badge>
           <h1 className="text-4xl lg:text-5xl font-bold text-white">
-            Workshops & Learning
+            Workshops & Events
           </h1>
           <p className="mt-4 text-xl text-slate-400 max-w-2xl mx-auto">
-            Join live sessions, RSVP for upcoming workshops, and learn from Story Protocol experts.
+            Join live sessions, RSVP for upcoming events, and learn from Story Protocol experts.
           </p>
           <Button asChild className="mt-8 bg-background text-foreground hover:bg-accent">
-            <Link href="/workshops/resources">
+            <Link href="/resources">
               <BookOpen className="h-4 w-4 mr-2" />
               Browse Learning Resources
             </Link>
@@ -257,17 +199,17 @@ export default function WorkshopsPage() {
                 <>
                   <CalendarMonthView
                     currentDate={currentDate}
-                    workshops={publishedWorkshops}
+                    events={events}
                     onDateChange={setCurrentDate}
                     onDateSelect={setSelectedDate}
                     selectedDate={selectedDate ?? undefined}
                   />
 
-                  {/* Workshops for selected date */}
+                  {/* Events for selected date */}
                   {selectedDate && (
                     <div className="space-y-4">
                       <h2 className="text-xl font-semibold">
-                        Workshops on{" "}
+                        Events on{" "}
                         {selectedDate.toLocaleDateString("en-US", {
                           weekday: "long",
                           month: "long",
@@ -275,18 +217,17 @@ export default function WorkshopsPage() {
                           year: "numeric",
                         })}
                       </h2>
-                      {workshopsForSelectedDate.length === 0 ? (
+                      {eventsForSelectedDate.length === 0 ? (
                         <p className="text-muted-foreground">
-                          No workshops scheduled for this date.
+                          No events scheduled for this date.
                         </p>
                       ) : (
                         <div className="space-y-4">
-                          {workshopsForSelectedDate.map((workshop) => (
+                          {eventsForSelectedDate.map((event) => (
                             <WorkshopCard
-                              key={workshop.id}
-                              workshop={workshop}
-                              rsvpCount={rsvpCounts[workshop.id] || 0}
-                              userRsvp={getUserRsvpForWorkshop(workshop.id)}
+                              key={event.id}
+                              event={event}
+                              isRsvped={rsvpedEventIds.has(event.id)}
                               onViewDetails={handleViewDetails}
                               onRsvp={handleRsvp}
                               onAddToCalendar={handleAddToCalendar}
@@ -299,9 +240,8 @@ export default function WorkshopsPage() {
                 </>
               ) : (
                 <CalendarAgendaView
-                  workshops={publishedWorkshops}
-                  userRsvps={userRsvps}
-                  rsvpCounts={rsvpCounts}
+                  events={events}
+                  rsvpedEventIds={rsvpedEventIds}
                   onViewDetails={handleViewDetails}
                   onRsvp={handleRsvp}
                   onAddToCalendar={handleAddToCalendar}
@@ -319,7 +259,7 @@ export default function WorkshopsPage() {
                   </CardHeader>
                   <CardContent>
                     <p className="text-sm text-muted-foreground mb-4">
-                      Sign in to RSVP for workshops and track your sessions.
+                      Sign in to RSVP for events and track your sessions.
                     </p>
                     <Button asChild className="w-full">
                       <Link href="/login">
@@ -337,32 +277,31 @@ export default function WorkshopsPage() {
                   <CardTitle className="text-lg">Upcoming Sessions</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {upcomingWorkshops.length === 0 ? (
+                  {upcomingEvents.length === 0 ? (
                     <p className="text-sm text-muted-foreground">
-                      No upcoming workshops scheduled.
+                      No upcoming events scheduled.
                     </p>
                   ) : (
-                    upcomingWorkshops.map((workshop) => (
+                    upcomingEvents.map((event) => (
                       <div
-                        key={workshop.id}
+                        key={event.id}
                         className="border-b last:border-b-0 pb-3 last:pb-0"
                       >
                         <button
-                          onClick={() => handleViewDetails(workshop)}
+                          onClick={() => handleViewDetails(event)}
                           className="text-left hover:text-primary transition-colors"
                         >
                           <p className="font-medium text-sm line-clamp-1">
-                            {workshop.title}
+                            {event.title}
                           </p>
                         </button>
                         <p className="text-xs text-muted-foreground mt-1">
-                          {workshop.scheduledAt &&
-                            new Date(workshop.scheduledAt).toLocaleDateString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                              hour: "numeric",
-                              minute: "2-digit",
-                            })}
+                          {new Date(event.startAt).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            hour: "numeric",
+                            minute: "2-digit",
+                          })}
                         </p>
                       </div>
                     ))
@@ -371,33 +310,32 @@ export default function WorkshopsPage() {
               </Card>
 
               {/* Your RSVPs Card (only if user has RSVPs) */}
-              {user && rsvpedWorkshops.length > 0 && (
+              {user && rsvpedEvents.length > 0 && (
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-lg">Your RSVPs</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {rsvpedWorkshops.map((workshop) => (
+                    {rsvpedEvents.map((event) => (
                       <div
-                        key={workshop.id}
+                        key={event.id}
                         className="border-b last:border-b-0 pb-3 last:pb-0"
                       >
                         <button
-                          onClick={() => handleViewDetails(workshop)}
+                          onClick={() => handleViewDetails(event)}
                           className="text-left hover:text-primary transition-colors"
                         >
                           <p className="font-medium text-sm line-clamp-1">
-                            {workshop.title}
+                            {event.title}
                           </p>
                         </button>
                         <p className="text-xs text-muted-foreground mt-1">
-                          {workshop.scheduledAt &&
-                            new Date(workshop.scheduledAt).toLocaleDateString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                              hour: "numeric",
-                              minute: "2-digit",
-                            })}
+                          {new Date(event.startAt).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            hour: "numeric",
+                            minute: "2-digit",
+                          })}
                         </p>
                       </div>
                     ))}
@@ -409,21 +347,20 @@ export default function WorkshopsPage() {
         </div>
       </section>
 
-      {/* Workshop Detail Modal */}
+      {/* Event Detail Modal */}
       <WorkshopDetailModal
-        workshop={selectedWorkshop}
+        event={selectedEvent}
         open={modalOpen}
         onOpenChange={setModalOpen}
-        userRsvp={selectedWorkshop ? getUserRsvpForWorkshop(selectedWorkshop.id) : undefined}
-        rsvpCount={selectedWorkshop ? (rsvpCounts[selectedWorkshop.id] || 0) : 0}
+        isRsvped={selectedEvent ? rsvpedEventIds.has(selectedEvent.id) : false}
         onRsvp={() => {
-          if (selectedWorkshop) {
-            handleRsvp(selectedWorkshop);
+          if (selectedEvent) {
+            handleRsvp(selectedEvent);
           }
         }}
         onAddToCalendar={(type) => {
-          if (selectedWorkshop) {
-            handleAddToCalendar(selectedWorkshop, type);
+          if (selectedEvent) {
+            handleAddToCalendar(selectedEvent, type);
           }
         }}
       />

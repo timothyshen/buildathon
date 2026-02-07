@@ -22,7 +22,9 @@ const navLinks = [
   { href: "/", label: "Home" },
   { href: "/cohorts", label: "Cohorts" },
   { href: "/explore", label: "Explore" },
-  { href: "/workshops", label: "Workshops" },
+  { href: "/workshops", label: "Events" },
+  { href: "/resources", label: "Resources" },
+  { href: "/feedback", label: "Feedback" },
   { href: "/about", label: "About" },
 ];
 

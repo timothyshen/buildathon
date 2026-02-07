@@ -130,9 +130,9 @@ export default function AdminWorkshopPage() {
 
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Workshop Content</h1>
+          <h1 className="text-3xl font-bold">Resource Management</h1>
           <p className="mt-2 text-muted-foreground">
-            Manage tutorials, videos, and learning resources
+            Manage learning resources, tutorials, and guides
           </p>
         </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>

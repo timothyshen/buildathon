@@ -20,6 +20,8 @@ import {
   BookOpen,
   Settings,
   Share2,
+  MessageSquare,
+  Calendar,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getRoleBadgeColor } from "@/lib/utils/colors";
@@ -138,7 +140,7 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
           icon: Star,
           badge: pendingReviews > 0 ? pendingReviews : undefined,
         },
-        { href: "/sponsor/workshops", label: "My Workshops", icon: GraduationCap },
+        { href: "/sponsor/workshops", label: "My Resources", icon: BookOpen },
       ],
     },
     {
@@ -154,7 +156,7 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
         },
         { href: "/admin/judges", label: "Judges", icon: Users },
         { href: "/admin/sponsors", label: "Sponsors", icon: Users },
-        { href: "/admin/workshops", label: "Workshops", icon: GraduationCap },
+        { href: "/admin/workshops", label: "Resources", icon: BookOpen },
         { href: "/admin/referrals", label: "Referrals", icon: Share2 },
       ],
     },
@@ -162,8 +164,10 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
       title: "Explore",
       items: [
         { href: "/cohorts", label: "Cohorts", icon: GraduationCap },
-        { href: "/workshops", label: "Workshops", icon: BookOpen },
+        { href: "/workshops", label: "Events", icon: Calendar },
+        { href: "/resources", label: "Resources", icon: BookOpen },
         { href: "/explore", label: "Projects", icon: Compass },
+        { href: "/feedback", label: "Feedback", icon: MessageSquare },
       ],
     },
   ];

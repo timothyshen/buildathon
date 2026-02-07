@@ -388,3 +388,72 @@ export interface ReferralLeaderboardEntry {
   pendingReferrals: number;
   rank: number;
 }
+
+// ==================== Calendar Events (Luma) ====================
+
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  description: string;
+  descriptionMd?: string;
+  startAt: Date;
+  endAt: Date;
+  timezone: string;
+  eventUrl: string; // lu.ma URL
+  coverUrl?: string;
+  meetingUrl?: string;
+  location?: string;
+  hostName?: string;
+  hostAvatar?: string;
+  category: string;
+  tags?: string[];
+  lumaApiId: string;
+}
+
+export interface EventRSVP {
+  id: string;
+  lumaEventId: string;
+  userId: string;
+  createdAt: Date;
+}
+
+// ==================== Feedback ====================
+
+export type FeedbackStatus = "open" | "planned" | "in_progress" | "completed" | "declined";
+export type FeedbackCategory = "feature_request" | "bug_report" | "improvement";
+
+export interface FeedbackPost {
+  id: string;
+  authorId: string;
+  author?: User;
+  title: string;
+  description: string;
+  category: FeedbackCategory;
+  status: FeedbackStatus;
+  voteCount: number;
+  commentCount: number;
+  statusChangedBy?: string;
+  statusChangedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+  hasVoted?: boolean;
+}
+
+export interface FeedbackVote {
+  id: string;
+  postId: string;
+  userId: string;
+  createdAt: Date;
+}
+
+export interface FeedbackComment {
+  id: string;
+  postId: string;
+  authorId: string;
+  author?: User;
+  parentId?: string;
+  body: string;
+  createdAt: Date;
+  updatedAt: Date;
+  replies?: FeedbackComment[];
+}

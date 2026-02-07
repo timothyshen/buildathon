@@ -1,6 +1,6 @@
 "use client";
 
-import { Workshop, WorkshopRSVP } from "@/types";
+import { CalendarEvent } from "@/types";
 import {
   Card,
   CardContent,
@@ -16,15 +16,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Clock, Users, MapPin, ChevronDown, Calendar, Sparkles, GraduationCap, Briefcase, Check } from "lucide-react";
+import { Clock, MapPin, ChevronDown, Calendar, Sparkles, GraduationCap, Briefcase, Check, ExternalLink } from "lucide-react";
 
 interface WorkshopCardProps {
-  workshop: Workshop;
-  rsvpCount: number;
-  userRsvp?: WorkshopRSVP;
-  onViewDetails: (workshop: Workshop) => void;
-  onRsvp: (workshop: Workshop) => void;
-  onAddToCalendar: (workshop: Workshop, type: "google" | "outlook" | "ical") => void;
+  event: CalendarEvent;
+  isRsvped: boolean;
+  onViewDetails: (event: CalendarEvent) => void;
+  onRsvp: (event: CalendarEvent) => void;
+  onAddToCalendar: (event: CalendarEvent, type: "google" | "outlook" | "ical") => void;
 }
 
 function getCategoryBadge(category: string) {
@@ -60,46 +59,38 @@ function formatTime(date: Date): string {
   });
 }
 
-function formatDuration(workshop: Workshop): string {
-  if (workshop.duration) {
-    return workshop.duration;
+function formatDuration(event: CalendarEvent): string {
+  const start = new Date(event.startAt);
+  const end = new Date(event.endAt);
+  const diffMs = end.getTime() - start.getTime();
+  const diffMins = Math.round(diffMs / 60000);
+  if (diffMins >= 60) {
+    const hours = Math.floor(diffMins / 60);
+    const mins = diffMins % 60;
+    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
   }
-  if (workshop.scheduledAt && workshop.endTime) {
-    const start = new Date(workshop.scheduledAt);
-    const end = new Date(workshop.endTime);
-    const diffMs = end.getTime() - start.getTime();
-    const diffMins = Math.round(diffMs / 60000);
-    if (diffMins >= 60) {
-      const hours = Math.floor(diffMins / 60);
-      const mins = diffMins % 60;
-      return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
-    }
-    return `${diffMins} min`;
-  }
-  return "";
+  return `${diffMins} min`;
 }
 
 export function WorkshopCard({
-  workshop,
-  rsvpCount,
-  userRsvp,
+  event,
+  isRsvped,
   onViewDetails,
   onRsvp,
   onAddToCalendar,
 }: WorkshopCardProps) {
-  const duration = formatDuration(workshop);
-  const hasUserRsvp = userRsvp && userRsvp.status === "registered";
-  const categoryBadge = getCategoryBadge(workshop.category);
+  const duration = formatDuration(event);
+  const categoryBadge = getCategoryBadge(event.category);
 
   return (
     <Card className="overflow-hidden transition-all hover:shadow-lg bg-card">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
-            {workshop.partnerLogo ? (
+            {event.hostAvatar ? (
               <img
-                src={workshop.partnerLogo}
-                alt={workshop.partnerName || "Partner"}
+                src={event.hostAvatar}
+                alt={event.hostName || "Host"}
                 className="h-12 w-12 rounded-xl object-cover bg-muted"
               />
             ) : (
@@ -108,16 +99,16 @@ export function WorkshopCard({
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <CardTitle className="text-lg leading-tight">{workshop.title}</CardTitle>
-              {workshop.partnerName && (
+              <CardTitle className="text-lg leading-tight">{event.title}</CardTitle>
+              {event.hostName && (
                 <p className="text-sm text-muted-foreground mt-0.5">
-                  by {workshop.partnerName}
+                  by {event.hostName}
                 </p>
               )}
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {hasUserRsvp && (
+            {isRsvped && (
               <Badge className="bg-status-active/10 text-status-active border-status-active/20">
                 <Check className="h-3 w-3 mr-1" />
                 RSVP&apos;d
@@ -125,43 +116,34 @@ export function WorkshopCard({
             )}
             <Badge className={categoryBadge.className}>
               {categoryBadge.icon}
-              {workshop.category}
+              {event.category}
             </Badge>
           </div>
         </div>
         <CardDescription className="line-clamp-2 mt-3">
-          {workshop.description}
+          {event.description}
         </CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {/* Workshop Details */}
+        {/* Event Details */}
         <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-          {workshop.scheduledAt && (
-            <div className="flex items-center gap-1.5">
-              <Clock className="h-4 w-4" />
-              <span>{formatTime(workshop.scheduledAt)}</span>
-            </div>
-          )}
+          <div className="flex items-center gap-1.5">
+            <Clock className="h-4 w-4" />
+            <span>{formatTime(event.startAt)}</span>
+          </div>
           {duration && (
             <div className="flex items-center gap-1.5 text-muted-foreground">
-              <span>•</span>
+              <span>&bull;</span>
               <span>{duration}</span>
             </div>
           )}
-          {workshop.location && (
+          {event.location && (
             <div className="flex items-center gap-1.5">
               <MapPin className="h-4 w-4" />
-              <span>{workshop.location}</span>
+              <span>{event.location}</span>
             </div>
           )}
-          <div className="flex items-center gap-1.5">
-            <Users className="h-4 w-4" />
-            <span>
-              {rsvpCount}
-              {workshop.maxAttendees && ` / ${workshop.maxAttendees}`} attending
-            </span>
-          </div>
         </div>
 
         {/* Action Buttons */}
@@ -169,37 +151,42 @@ export function WorkshopCard({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => onViewDetails(workshop)}
+            onClick={() => onViewDetails(event)}
           >
             View Details
           </Button>
           <Button
-            variant={hasUserRsvp ? "outline" : "default"}
+            variant={isRsvped ? "outline" : "default"}
             size="sm"
-            onClick={() => onRsvp(workshop)}
+            onClick={() => onRsvp(event)}
           >
-            {hasUserRsvp ? "Cancel RSVP" : "RSVP"}
+            {isRsvped ? "RSVP'd" : "RSVP"}
+          </Button>
+          <Button variant="ghost" size="sm" className="ml-auto" asChild>
+            <a href={event.eventUrl} target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="h-4 w-4" />
+            </a>
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="ml-auto">
+              <Button variant="ghost" size="sm">
                 <Calendar className="h-4 w-4" />
                 <ChevronDown className="h-3 w-3 ml-1" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem
-                onClick={() => onAddToCalendar(workshop, "google")}
+                onClick={() => onAddToCalendar(event, "google")}
               >
                 Google Calendar
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => onAddToCalendar(workshop, "outlook")}
+                onClick={() => onAddToCalendar(event, "outlook")}
               >
                 Outlook
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => onAddToCalendar(workshop, "ical")}
+                onClick={() => onAddToCalendar(event, "ical")}
               >
                 iCal / Apple Calendar
               </DropdownMenuItem>
