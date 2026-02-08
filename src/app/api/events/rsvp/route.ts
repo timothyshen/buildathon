@@ -42,13 +42,21 @@ export async function POST(request: Request) {
 
     // Track RSVP locally for fast lookups
     const adminClient = createAdminClient();
-    await adminClient.from("event_rsvps").upsert(
+    const { error: dbError } = await adminClient.from("event_rsvps").upsert(
       {
         luma_event_id: eventApiId,
         user_id: user.id,
       },
       { onConflict: "luma_event_id,user_id" }
     );
+
+    if (dbError) {
+      console.error("[RSVP] Database error:", dbError);
+      return NextResponse.json(
+        { error: "Failed to save RSVP" },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({ success: true });
   } catch (err) {
@@ -85,10 +93,15 @@ export async function GET() {
     }
 
     const adminClient = createAdminClient();
-    const { data: rsvps } = await adminClient
+    const { data: rsvps, error } = await adminClient
       .from("event_rsvps")
       .select("luma_event_id, created_at")
       .eq("user_id", user.id);
+
+    if (error) {
+      console.error("[RSVP GET] Database error:", error);
+      return NextResponse.json({ rsvps: [] });
+    }
 
     return NextResponse.json({
       rsvps: (rsvps || []).map((r) => r.luma_event_id),

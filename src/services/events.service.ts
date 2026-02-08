@@ -1,5 +1,10 @@
 import type { CalendarEvent } from "@/types";
 
+type SerializedCalendarEvent = Omit<CalendarEvent, "startAt" | "endAt"> & {
+  startAt: string;
+  endAt: string;
+};
+
 export interface EventsListResponse {
   events: CalendarEvent[];
   hasMore: boolean;
@@ -21,8 +26,8 @@ async function listEvents(options?: {
   if (!res.ok) throw new Error(data.error || "Failed to fetch events");
 
   return {
-    events: data.events.map(
-      (e: CalendarEvent & { startAt: string; endAt: string }) => ({
+    events: (data.events as SerializedCalendarEvent[]).map(
+      (e) => ({
         ...e,
         startAt: new Date(e.startAt),
         endAt: new Date(e.endAt),
