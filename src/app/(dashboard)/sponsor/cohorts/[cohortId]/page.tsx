@@ -5,11 +5,9 @@ import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
 import { cohortsService, sponsorsService, tracksService } from "@/services";
 import type { Cohort, CohortSponsor, Track, SponsorOrg } from "@/types";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import {
@@ -25,11 +23,7 @@ import {
 import { toast } from "sonner";
 import {
   ArrowLeft,
-  Save,
   Loader2,
-  Trophy,
-  Calendar,
-  PlusCircle,
   Pencil,
   Trash2,
   Target,
@@ -46,14 +40,6 @@ function formatCurrency(value: string): string {
   // Format with commas and prepend $
   return "$" + Number(digits).toLocaleString("en-US");
 }
-
-const tierColors: Record<string, string> = {
-  platinum: "bg-slate-200 text-slate-800",
-  gold: "bg-amber-100 text-amber-800",
-  silver: "bg-slate-100 text-slate-600",
-  bronze: "bg-orange-100 text-orange-800",
-  community: "bg-green-100 text-green-800",
-};
 
 export default function SponsorCohortPage({ params }: SponsorCohortPageProps) {
   const { cohortId } = use(params);
@@ -121,7 +107,7 @@ export default function SponsorCohortPage({ params }: SponsorCohortPageProps) {
   if (!sponsor) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <p className="text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           You are not associated with a sponsor organization.
         </p>
       </div>
@@ -130,32 +116,28 @@ export default function SponsorCohortPage({ params }: SponsorCohortPageProps) {
 
   if (!cohort) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold">Cohort not found</h2>
-          <p className="text-muted-foreground mt-2">
-            The cohort you&apos;re looking for doesn&apos;t exist.
-          </p>
-          <Button asChild className="mt-4">
-            <Link href="/sponsor/tracks">Back to Sponsor Home</Link>
-          </Button>
-        </div>
+      <div className="py-16 text-center">
+        <p className="text-sm font-medium">Cohort not found</p>
+        <p className="text-xs text-muted-foreground mt-1">
+          The cohort you&apos;re looking for doesn&apos;t exist.
+        </p>
+        <Button asChild variant="ghost" size="sm" className="mt-4">
+          <Link href="/sponsor/tracks">Back to Sponsorships</Link>
+        </Button>
       </div>
     );
   }
 
   if (!cohortSponsor) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold">Not Sponsoring This Cohort</h2>
-          <p className="text-muted-foreground mt-2">
-            {sponsor.name} is not a sponsor of {cohort.name}.
-          </p>
-          <Button asChild className="mt-4">
-            <Link href="/sponsor/tracks">Back to Sponsor Home</Link>
-          </Button>
-        </div>
+      <div className="py-16 text-center">
+        <p className="text-sm font-medium">Not Sponsoring This Cohort</p>
+        <p className="text-xs text-muted-foreground mt-1">
+          {sponsor.name} is not a sponsor of {cohort.name}.
+        </p>
+        <Button asChild variant="ghost" size="sm" className="mt-4">
+          <Link href="/sponsor/tracks">Back to Sponsorships</Link>
+        </Button>
       </div>
     );
   }
@@ -266,117 +248,103 @@ export default function SponsorCohortPage({ params }: SponsorCohortPageProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <Breadcrumb
         items={[
-          { label: "Sponsor", href: "/sponsor/tracks" },
+          { label: "Sponsorships", href: "/sponsor/tracks" },
           { label: cohort.name },
         ]}
+        showHome={false}
       />
 
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" asChild>
-            <Link href="/sponsor/tracks">
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
-          </Button>
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold">{cohort.name}</h1>
-              <Badge className={tierColors[cohortSponsor.tier]}>
-                {cohortSponsor.tier}
-              </Badge>
-              <Badge
-                className={
-                  cohort.status === "active"
-                    ? "bg-green-100 text-green-800"
-                    : cohort.status === "judging"
-                    ? "bg-purple-100 text-purple-800"
-                    : "bg-slate-100 text-slate-700"
-                }
-              >
-                {cohort.status}
-              </Badge>
-            </div>
-            <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <Calendar className="h-4 w-4" />
-                {formatDate(cohort.startDate)} - {formatDate(cohort.endDate)}
-              </span>
-              <span className="flex items-center gap-1">
-                <Trophy className="h-4 w-4" />
-                ${cohortSponsor.prizePoolContribution.toLocaleString()} contribution
-              </span>
+      <div className="flex items-center gap-3">
+        <Link
+          href="/sponsor/tracks"
+          className="text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Link>
+        <div>
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1 className="text-2xl font-semibold tracking-tight">{cohort.name}</h1>
+            <span className="capitalize text-sm text-muted-foreground">{cohortSponsor.tier}</span>
+            <div className="flex items-center gap-1.5">
+              <span className={`h-1.5 w-1.5 rounded-full ${
+                cohort.status === "active" ? "bg-emerald-500"
+                  : cohort.status === "judging" ? "bg-violet-500"
+                  : "bg-muted-foreground"
+              }`} />
+              <span className="text-xs text-muted-foreground capitalize">{cohort.status}</span>
             </div>
           </div>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {formatDate(cohort.startDate)} – {formatDate(cohort.endDate)} &middot; ${cohortSponsor.prizePoolContribution.toLocaleString()} contribution
+          </p>
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-8 lg:grid-cols-3">
         {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-8">
           {/* Sponsor Description */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Your Sponsor Message</CardTitle>
-              <CardDescription>
-                Describe your sponsorship, bounty focus, or message to participants
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <section>
+            <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-1.5">
+              Your Sponsor Message
+            </h2>
+            <p className="text-xs text-muted-foreground mb-3">
+              Describe your sponsorship, bounty focus, or message to participants
+            </p>
+            <div className="rounded-xl border p-5 space-y-4">
               <RichTextEditor
                 value={description}
                 onChange={setDescription}
                 placeholder="Tell participants about your company, what you're looking for, and any special requirements for your track..."
               />
               <div className="flex justify-end">
-                <Button onClick={handleSaveDescription} disabled={isLoading}>
+                <Button
+                  onClick={handleSaveDescription}
+                  disabled={isLoading}
+                  className="bg-foreground text-background hover:bg-foreground/90"
+                >
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Saving...
                     </>
                   ) : (
-                    <>
-                      <Save className="mr-2 h-4 w-4" />
-                      Save Description
-                    </>
+                    "Save Description"
                   )}
                 </Button>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </section>
 
           {/* Tracks */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Your Tracks</CardTitle>
-                  <CardDescription>
-                    Bounty tracks for this cohort
-                  </CardDescription>
-                </div>
-                <Button
-                  size="sm"
-                  onClick={() => setShowNewTrackForm(true)}
-                  disabled={showNewTrackForm}
-                >
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Add Track
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <section>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">
+                Your Tracks
+              </h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowNewTrackForm(true)}
+                disabled={showNewTrackForm}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                + Add Track
+              </Button>
+            </div>
+
+            <div className="space-y-2">
               {/* New Track Form */}
               {showNewTrackForm && (
-                <div className="rounded-lg border p-4 space-y-4 bg-muted/50">
-                  <h4 className="font-medium">New Track</h4>
+                <div className="rounded-xl border p-4 space-y-4">
+                  <p className="text-xs font-medium">New Track</p>
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="trackName">Track Name *</Label>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="trackName" className="text-xs text-muted-foreground">Track Name *</Label>
                       <Input
                         id="trackName"
                         value={newTrack.name}
@@ -386,8 +354,8 @@ export default function SponsorCohortPage({ params }: SponsorCohortPageProps) {
                         placeholder="Best Use of..."
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="prizePool">Prize Pool</Label>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="prizePool" className="text-xs text-muted-foreground">Prize Pool</Label>
                       <Input
                         id="prizePool"
                         value={newTrack.prizePool}
@@ -398,8 +366,8 @@ export default function SponsorCohortPage({ params }: SponsorCohortPageProps) {
                       />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="trackDescription">Description</Label>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="trackDescription" className="text-xs text-muted-foreground">Description</Label>
                     <Input
                       id="trackDescription"
                       value={newTrack.description}
@@ -409,8 +377,13 @@ export default function SponsorCohortPage({ params }: SponsorCohortPageProps) {
                       placeholder="What are you looking for?"
                     />
                   </div>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <Button size="sm" onClick={handleAddTrack} disabled={!newTrack.name || isMutating}>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={handleAddTrack}
+                      disabled={!newTrack.name || isMutating}
+                      className="bg-foreground text-background hover:bg-foreground/90"
+                    >
                       {isMutating ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -422,7 +395,7 @@ export default function SponsorCohortPage({ params }: SponsorCohortPageProps) {
                     </Button>
                     <Button
                       size="sm"
-                      variant="outline"
+                      variant="ghost"
                       onClick={() => {
                         setShowNewTrackForm(false);
                         setNewTrack({ name: "", prizePool: "", description: "" });
@@ -436,164 +409,173 @@ export default function SponsorCohortPage({ params }: SponsorCohortPageProps) {
 
               {/* Track List */}
               {sponsorTracks.length === 0 && !showNewTrackForm ? (
-                <div className="py-8 text-center">
-                  <Target className="mx-auto h-12 w-12 text-muted-foreground" />
-                  <h3 className="mt-4 text-lg font-semibold">No Tracks Yet</h3>
-                  <p className="mt-2 text-sm text-muted-foreground">
+                <div className="text-center py-12 text-muted-foreground">
+                  <Target className="mx-auto h-8 w-8 mb-2 opacity-50" />
+                  <p className="text-sm">No Tracks Yet</p>
+                  <p className="text-xs mt-1">
                     Create a bounty track for participants to submit to.
                   </p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {sponsorTracks.map((track) =>
-                    editingTrackId === track.id ? (
-                      <div key={track.id} className="rounded-lg border p-4 space-y-4 bg-muted/50">
-                        <h4 className="font-medium">Edit Track</h4>
-                        <div className="grid gap-4 sm:grid-cols-2">
-                          <div className="space-y-2">
-                            <Label htmlFor={`editName-${track.id}`}>Track Name *</Label>
-                            <Input
-                              id={`editName-${track.id}`}
-                              value={editTrack.name}
-                              onChange={(e) => setEditTrack({ ...editTrack, name: e.target.value })}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor={`editPrize-${track.id}`}>Prize Pool</Label>
-                            <Input
-                              id={`editPrize-${track.id}`}
-                              value={editTrack.prizePool}
-                              onChange={(e) => setEditTrack({ ...editTrack, prizePool: formatCurrency(e.target.value) })}
-                            />
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor={`editDesc-${track.id}`}>Description</Label>
+                sponsorTracks.map((track) =>
+                  editingTrackId === track.id ? (
+                    <div key={track.id} className="rounded-xl border p-4 space-y-4">
+                      <p className="text-xs font-medium">Edit Track</p>
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-1.5">
+                          <Label htmlFor={`editName-${track.id}`} className="text-xs text-muted-foreground">Track Name *</Label>
                           <Input
-                            id={`editDesc-${track.id}`}
-                            value={editTrack.description}
-                            onChange={(e) => setEditTrack({ ...editTrack, description: e.target.value })}
+                            id={`editName-${track.id}`}
+                            value={editTrack.name}
+                            onChange={(e) => setEditTrack({ ...editTrack, name: e.target.value })}
                           />
                         </div>
-                        <div className="flex flex-col sm:flex-row gap-2">
-                          <Button size="sm" onClick={handleSaveTrack} disabled={!editTrack.name || isMutating}>
-                            {isMutating ? (
-                              <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Saving...
-                              </>
-                            ) : (
-                              "Save"
-                            )}
-                          </Button>
-                          <Button size="sm" variant="outline" onClick={() => setEditingTrackId(null)}>
-                            Cancel
-                          </Button>
+                        <div className="space-y-1.5">
+                          <Label htmlFor={`editPrize-${track.id}`} className="text-xs text-muted-foreground">Prize Pool</Label>
+                          <Input
+                            id={`editPrize-${track.id}`}
+                            value={editTrack.prizePool}
+                            onChange={(e) => setEditTrack({ ...editTrack, prizePool: formatCurrency(e.target.value) })}
+                          />
                         </div>
                       </div>
-                    ) : (
-                      <div
-                        key={track.id}
-                        className="flex items-center justify-between rounded-lg border p-4"
-                      >
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <h4 className="font-medium">{track.name}</h4>
-                            {track.prizePool && (
-                              <Badge variant="secondary">{track.prizePool}</Badge>
-                            )}
-                          </div>
-                          {track.description && (
-                            <p className="text-sm text-muted-foreground mt-1">
-                              {track.description}
-                            </p>
+                      <div className="space-y-1.5">
+                        <Label htmlFor={`editDesc-${track.id}`} className="text-xs text-muted-foreground">Description</Label>
+                        <Input
+                          id={`editDesc-${track.id}`}
+                          value={editTrack.description}
+                          onChange={(e) => setEditTrack({ ...editTrack, description: e.target.value })}
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={handleSaveTrack}
+                          disabled={!editTrack.name || isMutating}
+                          className="bg-foreground text-background hover:bg-foreground/90"
+                        >
+                          {isMutating ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Saving...
+                            </>
+                          ) : (
+                            "Save"
+                          )}
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => setEditingTrackId(null)}>
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      key={track.id}
+                      className="flex items-center justify-between rounded-xl border py-3 px-4 hover:bg-muted/50 transition-colors group"
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">{track.name}</span>
+                          {track.prizePool && (
+                            <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                              {track.prizePool}
+                            </span>
                           )}
                         </div>
-                        <div className="flex flex-col sm:flex-row gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            disabled={isMutating}
-                            onClick={() => startEditingTrack(track.id)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-red-600"
-                            disabled={isMutating}
-                            onClick={() => handleDeleteTrack(track.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
+                        {track.description && (
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {track.description}
+                          </p>
+                        )}
                       </div>
-                    )
-                  )}
-                </div>
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          disabled={isMutating}
+                          onClick={() => startEditingTrack(track.id)}
+                          className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          disabled={isMutating}
+                          onClick={() => handleDeleteTrack(track.id)}
+                          className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  )
+                )
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </section>
         </div>
 
         {/* Sidebar */}
         <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Sponsorship Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Tier</span>
-                <Badge className={tierColors[cohortSponsor.tier]}>
-                  {cohortSponsor.tier}
-                </Badge>
+          {/* Sponsorship Details */}
+          <section>
+            <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
+              Sponsorship Details
+            </h2>
+            <div className="rounded-xl border p-5 divide-y">
+              <div className="flex items-center justify-between pb-3">
+                <span className="text-xs text-muted-foreground">Tier</span>
+                <span className="text-sm font-medium capitalize">{cohortSponsor.tier}</span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Contribution</span>
-                <span className="font-medium">
+              <div className="flex items-center justify-between py-3">
+                <span className="text-xs text-muted-foreground">Contribution</span>
+                <span className="font-mono text-sm font-medium tabular-nums">
                   ${cohortSponsor.prizePoolContribution.toLocaleString()}
                 </span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Dedicated Track</span>
-                <Badge variant={cohortSponsor.hasDedicatedTrack ? "default" : "outline"}>
-                  {cohortSponsor.hasDedicatedTrack ? "Yes" : "No"}
-                </Badge>
+              <div className="flex items-center justify-between py-3">
+                <span className="text-xs text-muted-foreground">Dedicated Track</span>
+                <div className="flex items-center gap-1.5">
+                  <span className={`h-1.5 w-1.5 rounded-full ${
+                    cohortSponsor.hasDedicatedTrack ? "bg-emerald-500" : "bg-muted-foreground"
+                  }`} />
+                  <span className="text-sm">{cohortSponsor.hasDedicatedTrack ? "Yes" : "No"}</span>
+                </div>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Your Tracks</span>
-                <span className="font-medium">{sponsorTracks.length}</span>
+              <div className="flex items-center justify-between pt-3">
+                <span className="text-xs text-muted-foreground">Your Tracks</span>
+                <span className="font-mono text-sm font-medium tabular-nums">{sponsorTracks.length}</span>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </section>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Cohort Timeline</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Start</span>
+          {/* Cohort Timeline */}
+          <section>
+            <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
+              Cohort Timeline
+            </h2>
+            <div className="rounded-xl border p-5 divide-y text-sm">
+              <div className="flex justify-between pb-3">
+                <span className="text-xs text-muted-foreground">Start</span>
                 <span>{formatDate(cohort.startDate)}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Submissions Due</span>
+              <div className="flex justify-between py-3">
+                <span className="text-xs text-muted-foreground">Submissions Due</span>
                 <span>{formatDate(cohort.submissionDeadline)}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Judging</span>
+              <div className="flex justify-between py-3">
+                <span className="text-xs text-muted-foreground">Judging</span>
                 <span>
-                  {formatDate(cohort.judgingStart)} - {formatDate(cohort.judgingEnd)}
+                  {formatDate(cohort.judgingStart)} – {formatDate(cohort.judgingEnd)}
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">End</span>
+              <div className="flex justify-between pt-3">
+                <span className="text-xs text-muted-foreground">End</span>
                 <span>{formatDate(cohort.endDate)}</span>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </section>
 
           <Button variant="outline" className="w-full" asChild>
             <Link href={`/cohorts/${cohort.slug}`}>View Public Page</Link>

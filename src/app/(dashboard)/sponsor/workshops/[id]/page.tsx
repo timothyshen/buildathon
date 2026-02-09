@@ -6,11 +6,9 @@ import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
 import { workshopsService, sponsorsService } from "@/services";
 import type { Workshop, SponsorOrg } from "@/types";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -30,7 +28,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
-import { ArrowLeft, Save, Loader2, Trash2 } from "lucide-react";
+import { ArrowLeft, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 const categories = ["Basics", "Advanced", "Business", "Technical"];
@@ -100,7 +98,7 @@ export default function WorkshopEditPage({ params }: WorkshopEditPageProps) {
   if (!sponsor) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <p className="text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           You are not associated with a sponsor organization.
         </p>
       </div>
@@ -109,16 +107,14 @@ export default function WorkshopEditPage({ params }: WorkshopEditPageProps) {
 
   if (!workshop) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold">Workshop not found</h2>
-          <p className="text-muted-foreground mt-2">
-            The workshop you&apos;re looking for doesn&apos;t exist.
-          </p>
-          <Button asChild className="mt-4">
-            <Link href="/sponsor/workshops">Back to Workshops</Link>
-          </Button>
-        </div>
+      <div className="py-16 text-center">
+        <p className="text-sm font-medium">Workshop not found</p>
+        <p className="text-xs text-muted-foreground mt-1">
+          The workshop you&apos;re looking for doesn&apos;t exist.
+        </p>
+        <Button asChild variant="ghost" size="sm" className="mt-4">
+          <Link href="/sponsor/workshops">Back to Workshops</Link>
+        </Button>
       </div>
     );
   }
@@ -126,16 +122,14 @@ export default function WorkshopEditPage({ params }: WorkshopEditPageProps) {
   // Check if user owns this workshop
   if (workshop.sponsorOrgId !== sponsor.id) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold">Access Denied</h2>
-          <p className="text-muted-foreground mt-2">
-            You don&apos;t have permission to edit this workshop.
-          </p>
-          <Button asChild className="mt-4">
-            <Link href="/sponsor/workshops">Back to Workshops</Link>
-          </Button>
-        </div>
+      <div className="py-16 text-center">
+        <p className="text-sm font-medium">Access Denied</p>
+        <p className="text-xs text-muted-foreground mt-1">
+          You don&apos;t have permission to edit this workshop.
+        </p>
+        <Button asChild variant="ghost" size="sm" className="mt-4">
+          <Link href="/sponsor/workshops">Back to Workshops</Link>
+        </Button>
       </div>
     );
   }
@@ -184,57 +178,60 @@ export default function WorkshopEditPage({ params }: WorkshopEditPageProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <Breadcrumb
         items={[
-          { label: "Sponsor", href: "/sponsor/tracks" },
           { label: "Workshops", href: "/sponsor/workshops" },
           { label: workshop.title },
         ]}
+        showHome={false}
       />
 
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" asChild>
-            <Link href="/sponsor/workshops">
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
-          </Button>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/sponsor/workshops"
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-3xl font-bold">Edit Workshop</h1>
-              <Badge
-                className={
-                  status === "published"
-                    ? "bg-status-active text-status-active-foreground border border-status-active/30"
-                    : status === "archived"
-                    ? "bg-status-completed text-status-completed-foreground border border-status-completed/30"
-                    : "bg-status-draft text-status-draft-foreground border border-status-draft/30"
-                }
-              >
-                {status}
-              </Badge>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-semibold tracking-tight">Edit Workshop</h1>
+              <div className="flex items-center gap-1.5">
+                <span className={`h-1.5 w-1.5 rounded-full ${
+                  status === "published" ? "bg-emerald-500"
+                    : status === "archived" ? "bg-muted-foreground"
+                    : "bg-amber-500"
+                }`} />
+                <span className="text-xs text-muted-foreground capitalize">{status}</span>
+              </div>
             </div>
-            <p className="text-muted-foreground">{sponsor.name}</p>
+            <p className="text-sm text-muted-foreground mt-0.5">{sponsor.name}</p>
           </div>
         </div>
-        <Button variant="destructive" size="sm" onClick={handleDelete}>
-          <Trash2 className="mr-2 h-4 w-4" />
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleDelete}
+          className="text-muted-foreground hover:text-destructive"
+        >
+          <Trash2 className="mr-1.5 h-3.5 w-3.5" />
           Delete
         </Button>
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-8 lg:grid-cols-3">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Workshop Details</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="title">Title *</Label>
+            <section>
+              <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
+                Workshop Details
+              </h2>
+              <div className="rounded-xl border p-5 space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="title" className="text-xs text-muted-foreground">Title *</Label>
                   <Input
                     id="title"
                     value={title}
@@ -244,24 +241,24 @@ export default function WorkshopEditPage({ params }: WorkshopEditPageProps) {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Description *</Label>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Description *</Label>
                   <RichTextEditor
                     value={description}
                     onChange={setDescription}
                     placeholder="Describe what participants will learn..."
                   />
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </section>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Resources</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="videoUrl">Video URL</Label>
+            <section>
+              <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
+                Resources
+              </h2>
+              <div className="rounded-xl border p-5 space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="videoUrl" className="text-xs text-muted-foreground">Video URL</Label>
                   <Input
                     id="videoUrl"
                     type="url"
@@ -271,8 +268,8 @@ export default function WorkshopEditPage({ params }: WorkshopEditPageProps) {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="articleUrl">Article URL</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="articleUrl" className="text-xs text-muted-foreground">Article URL</Label>
                   <Input
                     id="articleUrl"
                     type="url"
@@ -281,19 +278,19 @@ export default function WorkshopEditPage({ params }: WorkshopEditPageProps) {
                     placeholder="https://docs.example.com/..."
                   />
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </section>
           </div>
 
           {/* Sidebar */}
           <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Settings</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="category">Category *</Label>
+            <section>
+              <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
+                Settings
+              </h2>
+              <div className="rounded-xl border p-5 space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="category" className="text-xs text-muted-foreground">Category *</Label>
                   <Select value={category} onValueChange={setCategory} required>
                     <SelectTrigger>
                       <SelectValue placeholder="Select category" />
@@ -308,8 +305,8 @@ export default function WorkshopEditPage({ params }: WorkshopEditPageProps) {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="duration">Duration</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="duration" className="text-xs text-muted-foreground">Duration</Label>
                   <Input
                     id="duration"
                     value={duration}
@@ -318,8 +315,8 @@ export default function WorkshopEditPage({ params }: WorkshopEditPageProps) {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="status">Status</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="status" className="text-xs text-muted-foreground">Status</Label>
                   <Select
                     value={status}
                     onValueChange={(v) =>
@@ -336,31 +333,28 @@ export default function WorkshopEditPage({ params }: WorkshopEditPageProps) {
                     </SelectContent>
                   </Select>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </section>
 
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex flex-col gap-2">
-                  <Button type="submit" disabled={isLoading || !title || !category}>
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="mr-2 h-4 w-4" />
-                        Save Changes
-                      </>
-                    )}
-                  </Button>
-                  <Button type="button" variant="outline" asChild>
-                    <Link href="/sponsor/workshops">Cancel</Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="flex flex-col gap-2">
+              <Button
+                type="submit"
+                disabled={isLoading || !title || !category}
+                className="w-full bg-foreground text-background hover:bg-foreground/90"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  "Save Changes"
+                )}
+              </Button>
+              <Button type="button" variant="outline" className="w-full" asChild>
+                <Link href="/sponsor/workshops">Cancel</Link>
+              </Button>
+            </div>
           </div>
         </div>
       </form>

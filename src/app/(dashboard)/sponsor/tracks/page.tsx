@@ -5,11 +5,8 @@ import Link from "next/link";
 import { tracksService, cohortsService, sponsorsService } from "@/services";
 import { useAuth } from "@/contexts/auth-context";
 import type { Track, Cohort, SponsorOrg, CohortSponsor } from "@/types";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Target, Trophy, Calendar, ArrowRight, Loader2 } from "lucide-react";
-import { getSponsorTierColor, getCohortStatusColor } from "@/lib/utils/colors";
+import { Target, ChevronRight, Loader2 } from "lucide-react";
 
 export default function SponsorTracksPage() {
   const { user } = useAuth();
@@ -61,7 +58,7 @@ export default function SponsorTracksPage() {
   if (!sponsor) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <p className="text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           You are not associated with a sponsor organization.
         </p>
       </div>
@@ -82,59 +79,45 @@ export default function SponsorTracksPage() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       <div>
-        <h1 className="text-3xl font-bold">My Sponsorships</h1>
-        <p className="mt-2 text-muted-foreground">
+        <h1 className="text-2xl font-semibold tracking-tight">My Sponsorships</h1>
+        <p className="text-sm text-muted-foreground mt-1">
           Manage your tracks and sponsorship details for each cohort
         </p>
       </div>
 
-      {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Active Cohorts</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{sponsorCohortLinks.length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Tracks</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{sponsorTracks.length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Prize Pool</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {totalPrizePool > 0 ? `$${totalPrizePool.toLocaleString()}` : "-"}
-            </div>
-          </CardContent>
-        </Card>
+      {/* Stats strip */}
+      <div className="flex items-center divide-x">
+        <div className="pr-8">
+          <div className="text-3xl font-mono font-semibold tabular-nums">
+            {sponsorCohortLinks.length}
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">Cohorts</div>
+        </div>
+        <div className="px-8">
+          <div className="text-3xl font-mono font-semibold tabular-nums">
+            {sponsorTracks.length}
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">Tracks</div>
+        </div>
+        <div className="pl-8">
+          <div className="text-3xl font-mono font-semibold tabular-nums text-emerald-600">
+            {totalPrizePool > 0 ? `$${totalPrizePool.toLocaleString()}` : "—"}
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">Total Prize Pool</div>
+        </div>
       </div>
 
       {/* Cohort List */}
       {sponsorCohortLinks.length === 0 ? (
-        <Card>
-          <CardContent className="py-12">
-            <div className="text-center">
-              <Target className="mx-auto h-12 w-12 text-muted-foreground" />
-              <h3 className="mt-4 text-lg font-semibold">No Sponsorships Yet</h3>
-              <p className="mt-2 text-sm text-muted-foreground">
-                You are not sponsoring any cohorts yet.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="text-center py-12 text-muted-foreground">
+          <Target className="mx-auto h-8 w-8 mb-2 opacity-50" />
+          <p className="text-sm">No Sponsorships Yet</p>
+          <p className="text-xs mt-1">You are not sponsoring any cohorts yet.</p>
+        </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-2">
           {sponsorCohortLinks.map((cohortSponsor) => {
             const cohort = cohorts.find((c) => c.id === cohortSponsor.cohortId);
             if (!cohort) return null;
@@ -142,58 +125,41 @@ export default function SponsorTracksPage() {
             const cohortTracks = sponsorTracks.filter((t) => t.cohortId === cohort.id);
 
             return (
-              <Card key={cohortSponsor.id} className="overflow-hidden">
-                <div className="flex flex-col md:flex-row md:items-center justify-between p-6 gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-xl font-semibold">{cohort.name}</h3>
-                      <Badge className={getSponsorTierColor(cohortSponsor.tier)}>
-                        {cohortSponsor.tier}
-                      </Badge>
-                      <Badge className={getCohortStatusColor(cohort.status)}>
-                        {cohort.status}
-                      </Badge>
+              <Link
+                key={cohortSponsor.id}
+                href={`/sponsor/cohorts/${cohort.id}`}
+                className="flex items-center justify-between rounded-xl border p-5 hover:bg-muted/50 transition-colors group"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span className="text-sm font-medium">{cohort.name}</span>
+                    <span className="capitalize text-xs text-muted-foreground">{cohortSponsor.tier}</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`h-1.5 w-1.5 rounded-full ${
+                        cohort.status === "active" ? "bg-emerald-500"
+                          : cohort.status === "judging" ? "bg-violet-500"
+                          : "bg-muted-foreground"
+                      }`} />
+                      <span className="text-xs text-muted-foreground capitalize">{cohort.status}</span>
                     </div>
-                    <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        {formatDate(cohort.startDate)} - {formatDate(cohort.endDate)}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Trophy className="h-4 w-4" />
-                        ${cohortSponsor.prizePoolContribution.toLocaleString()} contribution
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Target className="h-4 w-4" />
-                        {cohortTracks.length} track{cohortTracks.length !== 1 ? "s" : ""}
-                      </span>
-                    </div>
-
-                    {/* Track Preview */}
-                    {cohortTracks.length > 0 && (
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {cohortTracks.map((track) => (
-                          <Badge key={track.id} variant="outline">
-                            {track.name}
-                            {track.prizePool && (
-                              <span className="ml-1 text-muted-foreground">
-                                ({track.prizePool})
-                              </span>
-                            )}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3 mt-1.5 text-[11px] text-muted-foreground">
+                    <span>{formatDate(cohort.startDate)} – {formatDate(cohort.endDate)}</span>
+                    <span>&middot;</span>
+                    <span>${cohortSponsor.prizePoolContribution.toLocaleString()} contribution</span>
+                    <span>&middot;</span>
+                    <span>{cohortTracks.length} track{cohortTracks.length !== 1 ? "s" : ""}</span>
                   </div>
 
-                  <Button asChild>
-                    <Link href={`/sponsor/cohorts/${cohort.id}`}>
-                      Manage
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Link>
-                  </Button>
+                  {cohortTracks.length > 0 && (
+                    <p className="text-[11px] text-muted-foreground mt-1.5">
+                      {cohortTracks.map((t) => `${t.name}${t.prizePool ? ` (${t.prizePool})` : ""}`).join(", ")}
+                    </p>
+                  )}
                 </div>
-              </Card>
+
+                <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-4" />
+              </Link>
             );
           })}
         </div>
