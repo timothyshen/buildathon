@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -16,6 +17,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Trophy, ExternalLink } from "lucide-react";
 import type { SponsorOrg, SponsorTier } from "@/types";
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  return {
+    title: `${slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())} - SWA.XYZ`,
+    description: `Details for the ${slug.replace(/-/g, " ")} cohort on SWA.XYZ.`,
+  };
+}
 
 // Type for sponsor with cohort-specific data
 type CohortSponsor = SponsorOrg & {

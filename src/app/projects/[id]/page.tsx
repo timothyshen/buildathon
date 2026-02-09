@@ -1,5 +1,7 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { submissionsService, tracksService, cohortsService } from "@/services";
 import { ProjectHero } from "@/components/projects/project-hero";
 import { ProjectGallery } from "@/components/projects/project-gallery";
@@ -9,6 +11,11 @@ import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Shield, FileCheck } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "Project Details - SWA.XYZ",
+  description: "View project details, team info, and submission information on SWA.XYZ.",
+};
 
 interface ProjectPageProps {
   params: Promise<{ id: string }>;
@@ -158,10 +165,13 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                   {projectTrack.sponsorName && (
                     <div className="flex items-center gap-2 pt-2 border-t">
                       {projectTrack.sponsorLogo && (
-                        <img
+                        <Image
+                          unoptimized
                           src={projectTrack.sponsorLogo}
                           alt={projectTrack.sponsorName}
-                          className="h-6 w-6 rounded"
+                          width={24}
+                          height={24}
+                          className="rounded"
                         />
                       )}
                       <span className="text-sm text-muted-foreground">

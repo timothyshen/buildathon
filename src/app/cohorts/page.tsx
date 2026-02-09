@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { cohortsService, tracksService, sponsorsService, submissionsService } from "@/services";
 import type { Cohort, Track, Submission } from "@/types";
 import type { CohortSponsorWithOrg } from "@/services/sponsors.service";
@@ -101,9 +102,9 @@ function HeroCard({ cohort }: { cohort: EnrichedCohort }) {
                   {sponsors.slice(0, 4).map((sponsor) => (
                     <div
                       key={sponsor.id}
-                      className="h-12 w-12 rounded-xl bg-slate-800 p-2 flex items-center justify-center"
+                      className="relative h-12 w-12 rounded-xl bg-slate-800 p-2"
                     >
-                      <img src={sponsor.logo} alt={sponsor.name} className="h-full w-full object-contain" />
+                      <Image unoptimized src={sponsor.logo} alt={sponsor.name} fill className="object-contain p-2" />
                     </div>
                   ))}
                 </div>
@@ -123,10 +124,12 @@ function HeroCard({ cohort }: { cohort: EnrichedCohort }) {
           <div className="relative hidden lg:block">
             <div className="absolute -right-8 -top-8 h-[120%] w-[120%] rounded-2xl bg-slate-800 border border-slate-700 overflow-hidden transform rotate-3 group-hover:rotate-1 transition-transform duration-500">
               {featuredProject?.screenshots?.[0] ? (
-                <img
+                <Image
+                  unoptimized
                   src={featuredProject.screenshots[0]}
                   alt={`Screenshot from ${featuredProject.title}`}
-                  className="h-full w-full object-cover"
+                  fill
+                  className="object-cover"
                 />
               ) : (
                 <div className="h-full w-full flex items-center justify-center">
@@ -157,9 +160,9 @@ function ListCard({ cohort }: { cohort: EnrichedCohort }) {
     <Link href={`/cohorts/${cohort.slug}`} className="group block">
       <div className="flex gap-6 rounded-2xl border bg-card p-6 transition-all hover:shadow-lg hover:border-foreground/20">
         {/* Thumbnail */}
-        <div className="hidden sm:block h-32 w-32 shrink-0 rounded-xl bg-muted overflow-hidden">
+        <div className="relative hidden sm:block h-32 w-32 shrink-0 rounded-xl bg-muted overflow-hidden">
           {cohort.bannerImage ? (
-            <img src={cohort.bannerImage} alt={`${cohort.name} banner`} className="h-full w-full object-cover" />
+            <Image unoptimized src={cohort.bannerImage} alt={`${cohort.name} banner`} fill className="object-cover" />
           ) : (
             <div className="h-full w-full flex items-center justify-center">
               <Calendar className="h-8 w-8 text-muted-foreground" />
@@ -206,7 +209,7 @@ function ListCard({ cohort }: { cohort: EnrichedCohort }) {
             {sponsors.length > 0 && (
               <div className="ml-auto flex items-center -space-x-2">
                 {sponsors.slice(0, 3).map((s) => (
-                  <img key={s.id} src={s.logo} alt={`${s.name} logo`} className="h-6 w-6 rounded-full border-2 border-background bg-background" />
+                  <Image key={s.id} unoptimized src={s.logo} alt={`${s.name} logo`} width={24} height={24} className="rounded-full border-2 border-background bg-background" />
                 ))}
               </div>
             )}
