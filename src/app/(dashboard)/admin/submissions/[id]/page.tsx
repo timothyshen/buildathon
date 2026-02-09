@@ -69,6 +69,12 @@ export default function AdminSubmissionDetailPage({ params }: AdminSubmissionDet
 
   useEffect(() => {
     async function loadData() {
+      if (authLoading) return;
+      if (user?.role !== "admin") {
+        setIsLoading(false);
+        return;
+      }
+
       const { data: submissionData } = await submissionsService.getById(id);
 
       if (!submissionData) {
@@ -96,7 +102,7 @@ export default function AdminSubmissionDetailPage({ params }: AdminSubmissionDet
       setIsLoading(false);
     }
     loadData();
-  }, [id]);
+  }, [id, user, authLoading]);
 
   const submissionTrack = tracks.find((t) => t.id === submission?.trackId);
 

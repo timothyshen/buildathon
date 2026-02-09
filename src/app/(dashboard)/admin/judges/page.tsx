@@ -37,6 +37,10 @@ export default function AdminJudgesPage() {
   const [search, setSearch] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
+  // Invite judge state
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteName, setInviteName] = useState("");
+
   // Assign reviews state
   const [assignJudge, setAssignJudge] = useState<User | null>(null);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
@@ -58,6 +62,17 @@ export default function AdminJudgesPage() {
     }
     loadData();
   }, []);
+
+  const handleInviteJudge = () => {
+    if (!inviteEmail.trim()) {
+      toast.error("Email is required");
+      return;
+    }
+    toast.warning("Judge invitation is not yet implemented");
+    setIsAddDialogOpen(false);
+    setInviteEmail("");
+    setInviteName("");
+  };
 
   const handleOpenAssignDialog = async (judge: User) => {
     setAssignJudge(judge);
@@ -121,6 +136,7 @@ export default function AdminJudgesPage() {
     let successCount = 0;
     let failCount = 0;
 
+    const newReviews: Review[] = [];
     for (const submissionId of selectedSubmissionIds) {
       const result = await reviewsService.create({
         submissionId,
@@ -128,11 +144,15 @@ export default function AdminJudgesPage() {
       });
       if (result.success) {
         successCount++;
-        // Add to local reviews state
-        setReviews((prev) => [...prev, result.data]);
+        newReviews.push(result.data);
       } else {
         failCount++;
       }
+    }
+
+    // Update state once after all assignments
+    if (newReviews.length > 0) {
+      setReviews((prev) => [...prev, ...newReviews]);
     }
 
     setIsAssigning(false);
@@ -202,17 +222,28 @@ export default function AdminJudgesPage() {
             <div className="space-y-4 pt-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="judge@example.com" />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="judge@example.com"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="name">Name</Label>
-                <Input id="name" placeholder="Judge Name" />
+                <Input
+                  id="name"
+                  placeholder="Judge Name"
+                  value={inviteName}
+                  onChange={(e) => setInviteName(e.target.value)}
+                />
               </div>
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={() => setIsAddDialogOpen(false)}>
+                <Button onClick={handleInviteJudge}>
                   Send Invitation
                 </Button>
               </div>

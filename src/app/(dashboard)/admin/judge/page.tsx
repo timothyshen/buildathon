@@ -58,8 +58,12 @@ export default function AdminJudgePage() {
 
   useEffect(() => {
     async function loadData() {
-      if (!user) {
+      if (!user || authLoading) {
         setIsLoading(false);
+        return;
+      }
+      if (user.role !== "admin") {
+        router.push("/dashboard");
         return;
       }
 
@@ -92,7 +96,7 @@ export default function AdminJudgePage() {
       setIsLoading(false);
     }
     loadData();
-  }, [user]);
+  }, [user, authLoading, router]);
 
   const handleJudge = async (item: SubmissionWithReview) => {
     if (!user) return;

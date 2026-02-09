@@ -70,12 +70,18 @@ export default function AdminReviewDetailPage({ params }: AdminReviewDetailPageP
 
   useEffect(() => {
     async function loadData() {
+      if (authLoading) return;
+      if (user?.role !== "admin") {
+        setIsLoading(false);
+        return;
+      }
+
       const { data, success } = await reviewsService.getById(id);
       if (success && data) {
         setReview(data);
 
         // Check if admin already has their own review for this submission
-        if (user && data.submissionId) {
+        if (data.submissionId) {
           const reviewsResult = await reviewsService.getBySubmission(data.submissionId);
           if (reviewsResult.success) {
             const existing = reviewsResult.data.find((r) => r.judgeId === user.id);
@@ -88,7 +94,7 @@ export default function AdminReviewDetailPage({ params }: AdminReviewDetailPageP
       setIsLoading(false);
     }
     loadData();
-  }, [id, user]);
+  }, [id, user, authLoading]);
 
   if (isLoading || authLoading) {
     return (

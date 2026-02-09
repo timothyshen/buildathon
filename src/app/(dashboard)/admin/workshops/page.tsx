@@ -106,14 +106,28 @@ export default function AdminWorkshopPage() {
     setIsDeleteDialogOpen(true);
   };
 
-  const confirmDelete = () => {
-    toast.error(`"${selectedWorkshop?.title}" has been deleted`);
+  const confirmDelete = async () => {
+    if (!selectedWorkshop) return;
+    const result = await workshopsService.delete(selectedWorkshop.id);
+    if (result.success) {
+      setWorkshops(prev => prev.filter(w => w.id !== selectedWorkshop.id));
+      toast.success(`"${selectedWorkshop.title}" has been deleted`);
+    } else {
+      toast.error(result.error || "Failed to delete workshop");
+    }
     setIsDeleteDialogOpen(false);
     setSelectedWorkshop(null);
   };
 
-  const saveEdit = () => {
-    toast.success(`"${selectedWorkshop?.title}" updated successfully`);
+  const saveEdit = async () => {
+    if (!selectedWorkshop) return;
+    const result = await workshopsService.update(selectedWorkshop.id, selectedWorkshop);
+    if (result.success) {
+      setWorkshops(prev => prev.map(w => w.id === selectedWorkshop.id ? result.data : w));
+      toast.success(`"${selectedWorkshop.title}" updated successfully`);
+    } else {
+      toast.error(result.error || "Failed to update workshop");
+    }
     setIsEditDialogOpen(false);
     setSelectedWorkshop(null);
   };

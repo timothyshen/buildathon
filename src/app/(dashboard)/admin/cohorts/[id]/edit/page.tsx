@@ -78,27 +78,38 @@ export default function EditCohortPage({ params }: EditCohortPageProps) {
         return;
       }
 
-      // Sync sponsors - fetch current state from DB to diff
+      // Sync sponsors: fetch all junction records in parallel, then diff
       const currentResult = await sponsorsService.getCohortSponsors(cohort.id);
       const currentSponsors = currentResult.success ? currentResult.data : [];
       const newSponsorOrgIds = sponsors.map((s) => s.sponsorOrgId);
 
+      // Fetch all junction records in parallel to build a lookup map
+      const allOrgIds = Array.from(new Set([
+        ...currentSponsors.map((s) => s.id),
+        ...newSponsorOrgIds,
+      ]));
+      const junctionResults = await Promise.all(
+        allOrgIds.map((orgId) => sponsorsService.getCohortSponsor(cohort.id, orgId))
+      );
+      const junctionMap = new Map(
+        allOrgIds.map((orgId, i) => [orgId, junctionResults[i].success ? junctionResults[i].data : null])
+      );
+
       // Remove sponsors that are no longer in the list
       for (const existingSponsor of currentSponsors) {
         if (!newSponsorOrgIds.includes(existingSponsor.id)) {
-          const csResult = await sponsorsService.getCohortSponsor(cohort.id, existingSponsor.id);
-          if (csResult.success && csResult.data) {
-            await sponsorsService.deleteCohortSponsor(csResult.data.id);
+          const cs = junctionMap.get(existingSponsor.id);
+          if (cs) {
+            await sponsorsService.deleteCohortSponsor(cs.id);
           }
         }
       }
 
       // Add or update sponsors
       for (const sponsor of sponsors) {
-        const existingCs = await sponsorsService.getCohortSponsor(cohort.id, sponsor.sponsorOrgId);
-
-        if (existingCs.success && existingCs.data) {
-          await sponsorsService.updateCohortSponsor(existingCs.data.id, {
+        const existingCs = junctionMap.get(sponsor.sponsorOrgId);
+        if (existingCs) {
+          await sponsorsService.updateCohortSponsor(existingCs.id, {
             tier: sponsor.tier,
             prizePoolContribution: sponsor.prizePoolContribution,
             hasDedicatedTrack: sponsor.hasDedicatedTrack,

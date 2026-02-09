@@ -65,6 +65,12 @@ export default function AdminCohortDetailPage({ params }: AdminCohortDetailPageP
 
   useEffect(() => {
     async function loadData() {
+      if (authLoading) return;
+      if (user?.role !== "admin") {
+        setIsLoading(false);
+        return;
+      }
+
       const cohortResult = await cohortsService.getById(id);
 
       if (!cohortResult.success || !cohortResult.data) {
@@ -87,7 +93,7 @@ export default function AdminCohortDetailPage({ params }: AdminCohortDetailPageP
       setIsLoading(false);
     }
     loadData();
-  }, [id]);
+  }, [id, user, authLoading]);
 
   if (isLoading || authLoading) {
     return (
