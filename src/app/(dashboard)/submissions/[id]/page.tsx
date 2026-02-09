@@ -7,10 +7,10 @@ import { useAuth } from "@/contexts/auth-context";
 import { submissionsService, reviewsService, tracksService } from "@/services";
 import type { Submission, Review, Track } from "@/types";
 import { getSubmissionPrizes, type PrizeInfo } from "@/lib/prize-utils";
+import { getSubmissionStatusLabel } from "@/lib/utils/status";
 import { ProjectGallery } from "@/components/projects/project-gallery";
 import { ProjectTeam } from "@/components/projects/project-team";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -25,77 +25,66 @@ import {
   Github,
   Video,
   Presentation,
-  Calendar,
-  Tag,
   Loader2,
   BarChart3,
+  ChevronRight,
 } from "lucide-react";
 
 interface SubmissionDetailPageProps {
   params: Promise<{ id: string }>;
 }
 
+const statusDot: Record<string, string> = {
+  draft: "bg-muted-foreground",
+  submitted: "bg-blue-500",
+  under_review: "bg-amber-500",
+  accepted: "bg-violet-500",
+  winner: "bg-emerald-500",
+};
+
 function getStatusBanner(status: string) {
   switch (status) {
     case "draft":
       return {
         message: "Your submission is in draft. Complete and submit when ready.",
-        variant: "warning" as const,
+        className: "border-amber-200 bg-amber-50/50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/20 dark:text-amber-200",
         icon: AlertCircle,
       };
     case "submitted":
       return {
         message: "Your submission has been received and is awaiting review.",
-        variant: "info" as const,
+        className: "border-blue-200 bg-blue-50/50 text-blue-800 dark:border-blue-800 dark:bg-blue-950/20 dark:text-blue-200",
         icon: FileCheck,
       };
     case "under_review":
       return {
         message: "Judges are currently reviewing your submission.",
-        variant: "info" as const,
+        className: "border-blue-200 bg-blue-50/50 text-blue-800 dark:border-blue-800 dark:bg-blue-950/20 dark:text-blue-200",
         icon: AlertCircle,
       };
     case "accepted":
       return {
         message: "Congratulations! Your submission has been accepted.",
-        variant: "success" as const,
+        className: "border-emerald-200 bg-emerald-50/50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/20 dark:text-emerald-200",
         icon: FileCheck,
       };
     case "winner":
       return {
         message: "Congratulations! Your submission is a winner!",
-        variant: "success" as const,
+        className: "border-emerald-200 bg-emerald-50/50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/20 dark:text-emerald-200",
         icon: Star,
       };
     default:
       return {
         message: "Status unknown",
-        variant: "default" as const,
+        className: "border-border bg-muted/50 text-muted-foreground",
         icon: AlertCircle,
       };
   }
 }
 
-function getStatusBannerStyles(variant: "warning" | "info" | "success" | "default") {
-  switch (variant) {
-    case "warning":
-      return "bg-yellow-50 border-yellow-200 text-yellow-800";
-    case "info":
-      return "bg-blue-50 border-blue-200 text-blue-800";
-    case "success":
-      return "bg-green-50 border-green-200 text-green-800";
-    default:
-      return "bg-gray-50 border-gray-200 text-gray-800";
-  }
-}
-
 function getInitials(name: string): string {
-  return name
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
+  return name.split(" ").map((part) => part[0]).join("").toUpperCase().slice(0, 2);
 }
 
 const scoreCategories = [
@@ -128,10 +117,7 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
         return;
       }
 
-      // Auth check BEFORE exposing data to render
-      const isTeamMember = submissionData.team?.members.some(
-        (m) => m.userId === user.id
-      );
+      const isTeamMember = submissionData.team?.members.some((m) => m.userId === user.id);
       const isSoloOwner = !submissionData.teamId && submissionData.createdBy === user.id;
       const isAdmin = user.role === "admin";
       if (!isTeamMember && !isSoloOwner && !isAdmin) {
@@ -139,7 +125,6 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
         return;
       }
 
-      // Only set state that triggers render after auth check passes
       setSubmission(submissionData);
 
       const [reviewsResult, tracksResult] = await Promise.all([
@@ -166,7 +151,6 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
 
   const submissionTrack = tracks.find((t) => t.id === submission?.trackId);
 
-  // Handle loading state
   if (isLoading || authLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -175,7 +159,6 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
     );
   }
 
-  // Handle not found
   if (!submission) {
     notFound();
   }
@@ -190,7 +173,7 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
   const canEdit = canEditByStatus && !deadlinePassed;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Breadcrumb */}
       <Breadcrumb
         items={[
@@ -201,31 +184,35 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
       />
 
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-3xl font-bold">{submission.title}</h1>
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${statusDot[submission.status] || statusDot.draft}`} />
+            <h1 className="text-2xl font-semibold tracking-tight">{submission.title}</h1>
+            <span className="text-sm text-muted-foreground">
+              {getSubmissionStatusLabel(submission.status)}
+            </span>
             {prizes.length > 0 && (
               <PrizeBadges prizes={prizes} maxVisible={5} size="md" />
             )}
           </div>
           {submission.tagline && (
-            <p className="mt-2 text-lg text-muted-foreground">
+            <p className="mt-1 text-sm text-muted-foreground">
               {submission.tagline}
             </p>
           )}
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" asChild>
+        <div className="flex gap-2 shrink-0">
+          <Button variant="ghost" size="sm" asChild>
             <Link href={`/submissions/${submission.id}/traction`}>
-              <BarChart3 className="mr-2 h-4 w-4" />
+              <BarChart3 className="h-3.5 w-3.5 mr-1.5" />
               Traction
             </Link>
           </Button>
           {canEdit && (
-            <Button asChild>
+            <Button size="sm" className="bg-foreground text-background hover:bg-foreground/90" asChild>
               <Link href={`/submissions/${submission.id}/edit`}>
-                <Edit className="mr-2 h-4 w-4" />
+                <Edit className="h-3.5 w-3.5 mr-1.5" />
                 Edit
               </Link>
             </Button>
@@ -234,13 +221,9 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
       </div>
 
       {/* Status Banner */}
-      <div
-        className={`flex items-center gap-3 p-4 rounded-lg border ${getStatusBannerStyles(
-          statusBanner.variant
-        )}`}
-      >
-        <StatusIcon className="h-5 w-5 flex-shrink-0" />
-        <p className="font-medium">{statusBanner.message}</p>
+      <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border text-sm ${statusBanner.className}`}>
+        <StatusIcon className="h-4 w-4 shrink-0" />
+        <p>{statusBanner.message}</p>
       </div>
 
       {/* Main Content Grid */}
@@ -253,94 +236,78 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
             videoUrl={submission.videoUrl}
           />
 
-          {/* About Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle>About</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground whitespace-pre-wrap">
-                {submission.description}
-              </p>
-            </CardContent>
-          </Card>
+          {/* About */}
+          <section>
+            <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
+              About
+            </h2>
+            <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
+              {submission.description}
+            </p>
+          </section>
 
           {/* Tech Stack */}
           {submission.techStack.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Tech Stack</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {submission.techStack.map((tech) => (
-                    <Badge key={tech} variant="secondary">
-                      {tech}
-                    </Badge>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            <section>
+              <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
+                Tech Stack
+              </h2>
+              <div className="flex flex-wrap gap-1.5">
+                {submission.techStack.map((tech) => (
+                  <span
+                    key={tech}
+                    className="px-2.5 py-1 text-xs rounded-md bg-muted text-muted-foreground"
+                  >
+                    {tech}
+                  </span>
+                ))}
+              </div>
+            </section>
           )}
 
-          {/* Reviews Section */}
+          {/* Reviews */}
           {completedReviews.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Star className="h-5 w-5" />
-                  Reviews
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
+            <section>
+              <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-4">
+                Reviews
+              </h2>
+              <div className="space-y-3">
                 {completedReviews.map((review) => (
-                  <div
-                    key={review.id}
-                    className="border rounded-lg p-4 space-y-4"
-                  >
+                  <div key={review.id} className="rounded-xl border p-4 space-y-4">
                     {/* Judge Info */}
                     <div className="flex items-center gap-3">
-                      <Avatar>
+                      <Avatar className="h-8 w-8">
                         {review.judge?.avatar && (
-                          <AvatarImage
-                            src={review.judge.avatar}
-                            alt={review.judge.name}
-                          />
+                          <AvatarImage src={review.judge.avatar} alt={review.judge.name} />
                         )}
-                        <AvatarFallback>
+                        <AvatarFallback className="text-xs">
                           {review.judge ? getInitials(review.judge.name) : "JD"}
                         </AvatarFallback>
                       </Avatar>
-                      <div>
-                        <p className="font-medium">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium">
                           {review.judge?.name || "Anonymous Judge"}
                         </p>
-                        <p className="text-sm text-muted-foreground">Judge</p>
                       </div>
                       {review.overallScore && (
-                        <div className="ml-auto text-right">
-                          <p className="text-2xl font-bold">
+                        <div className="text-right">
+                          <span className="text-2xl font-mono font-bold tabular-nums">
                             {review.overallScore.toFixed(1)}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            Overall Score
-                          </p>
+                          </span>
                         </div>
                       )}
                     </div>
 
                     {/* Score Breakdown */}
-                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+                    <div className="grid grid-cols-5 gap-3">
                       {scoreCategories.map(({ key, label }) => {
                         const score = review[key];
                         return (
                           <div key={key} className="text-center">
-                            <p className="text-lg font-semibold">
-                              {score ?? "-"}
+                            <p className="text-lg font-mono font-semibold tabular-nums">
+                              {score ?? "—"}
                             </p>
-                            <p className="text-xs text-muted-foreground">
-                              {label}
-                            </p>
+                            <p className="text-[10px] text-muted-foreground">{label}</p>
                           </div>
                         );
                       })}
@@ -348,144 +315,124 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
 
                     {/* Feedback */}
                     {review.feedback && (
-                      <div className="pt-4 border-t">
-                        <p className="text-sm font-medium mb-2">Feedback</p>
-                        <p className="text-muted-foreground whitespace-pre-wrap">
+                      <div className="pt-3 border-t">
+                        <p className="text-xs text-muted-foreground whitespace-pre-wrap">
                           {review.feedback}
                         </p>
                       </div>
                     )}
                   </div>
                 ))}
-              </CardContent>
-            </Card>
+              </div>
+            </section>
           )}
         </div>
 
-        {/* Sidebar (1 column) */}
+        {/* Sidebar */}
         <div className="space-y-6">
-          {/* Team Card or Solo Badge */}
+          {/* Team */}
           {submission.team ? (
             <ProjectTeam team={submission.team} />
           ) : (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Submitted by</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Badge variant="secondary">Solo submission</Badge>
-              </CardContent>
-            </Card>
+            <section>
+              <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
+                Submitted by
+              </h2>
+              <span className="px-2.5 py-1 text-xs rounded-md bg-muted text-muted-foreground">
+                Solo submission
+              </span>
+            </section>
           )}
 
-          {/* Track Card */}
+          {/* Track */}
           {submissionTrack && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Tag className="h-5 w-5" />
-                  Track
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="font-medium">{submissionTrack.name}</p>
-                <p className="text-sm text-muted-foreground mt-1">
+            <section>
+              <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
+                Track
+              </h2>
+              <div className="rounded-xl border p-4">
+                <p className="text-sm font-medium">{submissionTrack.name}</p>
+                <p className="text-xs text-muted-foreground mt-1">
                   {submissionTrack.description}
                 </p>
                 {submissionTrack.prizePool && (
-                  <p className="text-sm font-medium text-green-600 mt-2">
-                    Prize Pool: {submissionTrack.prizePool}
+                  <p className="text-xs font-mono text-emerald-600 mt-2">
+                    {submissionTrack.prizePool} prize pool
                   </p>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </section>
           )}
 
-          {/* IP Registration Card */}
+          {/* IP Registration */}
           {submission.ipAssetId && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5" />
-                  IP Registration
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="rounded-lg bg-green-50 p-3">
-                  <p className="text-sm font-medium text-green-800">
-                    Registered on Story Protocol
-                  </p>
+            <section>
+              <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
+                IP Registration
+              </h2>
+              <div className="rounded-xl border p-4 space-y-3">
+                <div className="flex items-center gap-2 text-xs text-emerald-600">
+                  <Shield className="h-3.5 w-3.5" />
+                  <span>Registered on Story Protocol</span>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Asset ID</p>
-                  <p className="text-sm font-mono break-all">
-                    {submission.ipAssetId}
-                  </p>
+                  <p className="text-[10px] text-muted-foreground">Asset ID</p>
+                  <p className="text-xs font-mono break-all mt-0.5">{submission.ipAssetId}</p>
                 </div>
                 {submission.ipRegisteredAt && (
                   <div>
-                    <p className="text-xs text-muted-foreground">
-                      Registered At
-                    </p>
-                    <p className="text-sm">
-                      {submission.ipRegisteredAt.toLocaleDateString()}
-                    </p>
+                    <p className="text-[10px] text-muted-foreground">Registered</p>
+                    <p className="text-xs mt-0.5">{submission.ipRegisteredAt.toLocaleDateString()}</p>
                   </div>
                 )}
                 {submission.ipLicenseType && (
                   <div>
-                    <p className="text-xs text-muted-foreground">License</p>
-                    <Badge variant="outline" className="mt-1">
+                    <p className="text-[10px] text-muted-foreground">License</p>
+                    <span className="inline-block mt-0.5 px-2 py-0.5 text-[10px] rounded border text-muted-foreground">
                       {submission.ipLicenseType}
-                    </Badge>
+                    </span>
                   </div>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </section>
           )}
 
-          {/* Cohort Card */}
+          {/* Cohort */}
           {submission.cohort && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
-                  Cohort
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Link
-                  href={`/cohorts/${submission.cohort.slug}`}
-                  className="font-medium hover:underline"
-                >
-                  {submission.cohort.name}
-                </Link>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {submission.cohort.startDate.toLocaleDateString()} -{" "}
-                  {submission.cohort.endDate.toLocaleDateString()}
-                </p>
-              </CardContent>
-            </Card>
+            <section>
+              <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
+                Cohort
+              </h2>
+              <Link
+                href={`/cohorts/${submission.cohort.slug}`}
+                className="flex items-center justify-between rounded-xl border p-4 hover:bg-muted/50 transition-colors group"
+              >
+                <div>
+                  <p className="text-sm font-medium">{submission.cohort.name}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {new Date(submission.cohort.startDate).toLocaleDateString()} — {new Date(submission.cohort.endDate).toLocaleDateString()}
+                  </p>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+              </Link>
+            </section>
           )}
 
-          {/* Links Card */}
-          {(submission.demoUrl ||
-            submission.repoUrl ||
-            submission.videoUrl ||
-            submission.presentationUrl) && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Links</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
+          {/* Links */}
+          {(submission.demoUrl || submission.repoUrl || submission.videoUrl || submission.presentationUrl) && (
+            <section>
+              <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
+                Links
+              </h2>
+              <div className="space-y-1">
                 {submission.demoUrl && (
                   <a
                     href={submission.demoUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    className="flex items-center gap-2 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    <ExternalLink className="h-4 w-4" />
+                    <ExternalLink className="h-3.5 w-3.5" />
                     Live Demo
                   </a>
                 )}
@@ -494,9 +441,9 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
                     href={submission.repoUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    className="flex items-center gap-2 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    <Github className="h-4 w-4" />
+                    <Github className="h-3.5 w-3.5" />
                     Repository
                   </a>
                 )}
@@ -505,9 +452,9 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
                     href={submission.videoUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    className="flex items-center gap-2 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    <Video className="h-4 w-4" />
+                    <Video className="h-3.5 w-3.5" />
                     Video
                   </a>
                 )}
@@ -516,14 +463,14 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
                     href={submission.presentationUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    className="flex items-center gap-2 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    <Presentation className="h-4 w-4" />
+                    <Presentation className="h-3.5 w-3.5" />
                     Presentation
                   </a>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </section>
           )}
         </div>
       </div>

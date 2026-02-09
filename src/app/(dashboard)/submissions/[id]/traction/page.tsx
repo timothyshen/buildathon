@@ -13,13 +13,12 @@ import type {
   TractionMilestone,
 } from "@/types";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TractionConfigForm } from "@/components/traction/traction-config-form";
 import { MetricsForm } from "@/components/traction/metrics-form";
 import { MetricsHistory } from "@/components/traction/metrics-history";
 import { MilestonesList } from "@/components/traction/milestones-list";
-import { ArrowLeft, Loader2, BarChart3, Settings, Trophy } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 
 interface TractionPageProps {
   params: Promise<{ id: string }>;
@@ -41,7 +40,6 @@ export default function TractionPage({ params }: TractionPageProps) {
   useEffect(() => {
     if (searchParams.get("ga_connected") === "true") {
       toast.success("Google Analytics connected successfully");
-      // Remove query param from URL
       router.replace(`/submissions/${id}/traction`, { scroll: false });
     }
   }, [searchParams, id, router]);
@@ -57,7 +55,6 @@ export default function TractionPage({ params }: TractionPageProps) {
 
       setSubmission(submissionData);
 
-      // Load traction data in parallel
       const [tractionResult, snapshotsResult, milestonesResult] = await Promise.all([
         tractionService.getTraction(id),
         tractionService.getSnapshots(id),
@@ -73,7 +70,6 @@ export default function TractionPage({ params }: TractionPageProps) {
     loadData();
   }, [id]);
 
-  // Handle loading state
   if (isLoading || authLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -82,18 +78,15 @@ export default function TractionPage({ params }: TractionPageProps) {
     );
   }
 
-  // Handle not found
   if (!submission) {
     notFound();
   }
 
-  // Check if user is team member, solo owner, or admin
   const isTeamMember = submission.team?.members.some((m) => m.userId === user?.id);
   const isSoloOwner = !submission.teamId && submission.createdBy === user?.id;
   const isAdmin = user?.role === "admin";
   const hasAccess = isTeamMember || isSoloOwner || isAdmin;
 
-  // Redirect if not authorized
   if (!hasAccess) {
     router.push("/submissions");
     return null;
@@ -112,7 +105,7 @@ export default function TractionPage({ params }: TractionPageProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-10">
       {/* Breadcrumb */}
       <Breadcrumb
         items={[
@@ -124,42 +117,52 @@ export default function TractionPage({ params }: TractionPageProps) {
       />
 
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-center gap-3">
+        <Link
+          href={`/submissions/${id}`}
+          className="text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Link>
         <div>
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" asChild>
-              <Link href={`/submissions/${id}`}>
-                <ArrowLeft className="h-4 w-4" />
-              </Link>
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold">Traction Tracking</h1>
-              <p className="text-muted-foreground">{submission.title}</p>
-            </div>
+          <h1 className="text-2xl font-semibold tracking-tight">Traction</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">{submission.title}</p>
+        </div>
+      </div>
+
+      {/* Stats strip */}
+      <div className="flex items-center divide-x">
+        <div className="pr-8">
+          <div className="text-3xl font-mono font-semibold tabular-nums">
+            {snapshots.length}
           </div>
+          <div className="text-xs text-muted-foreground mt-1">Snapshots</div>
+        </div>
+        <div className="px-8">
+          <div className="text-3xl font-mono font-semibold tabular-nums">
+            {milestones.length}
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">Milestones</div>
+        </div>
+        <div className="pl-8">
+          <div className="text-3xl font-mono font-semibold tabular-nums text-emerald-600">
+            {milestones.filter((m) => m.achievedAt).length}
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">Completed</div>
         </div>
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="metrics" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="metrics" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            Metrics
-          </TabsTrigger>
-          <TabsTrigger value="milestones" className="flex items-center gap-2">
-            <Trophy className="h-4 w-4" />
-            Milestones
-          </TabsTrigger>
+      <Tabs defaultValue="metrics" className="space-y-8">
+        <TabsList variant="line">
+          <TabsTrigger value="metrics">Metrics</TabsTrigger>
+          <TabsTrigger value="milestones">Milestones</TabsTrigger>
           {!isAdmin && (
-            <TabsTrigger value="settings" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              Settings
-            </TabsTrigger>
+            <TabsTrigger value="settings">Settings</TabsTrigger>
           )}
         </TabsList>
 
-        <TabsContent value="metrics" className="space-y-6">
+        <TabsContent value="metrics" className="space-y-8">
           {!isAdmin && (
             <MetricsForm
               submissionId={id}
@@ -180,7 +183,7 @@ export default function TractionPage({ params }: TractionPageProps) {
         </TabsContent>
 
         {!isAdmin && (
-          <TabsContent value="settings">
+          <TabsContent value="settings" className="space-y-8">
             <TractionConfigForm
               submissionId={id}
               traction={traction}

@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
 import { teamsService, cohortsService } from "@/services";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -19,7 +18,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Users, LogOut, Trash2, Clock, Loader2 } from "lucide-react";
+import { ArrowLeft, Users, LogOut, Trash2, Clock, Loader2, Crown } from "lucide-react";
 import { TeamMemberList, InviteForm } from "@/components/teams";
 import { toast } from "sonner";
 import type { Team, Cohort, TeamInvite } from "@/types";
@@ -51,11 +50,9 @@ export default function TeamDetailPage({ params }: TeamDetailPageProps) {
       if (teamResult.success && teamResult.data) {
         setTeam(teamResult.data);
 
-        // Load cohort
         const { data: cohortData } = await cohortsService.getById(teamResult.data.cohortId);
         setCohort(cohortData);
 
-        // Load pending invites
         const { data: invites } = await teamsService.getInvites(teamId);
         setPendingInvites(invites.filter((i) => i.status === "pending"));
       }
@@ -80,8 +77,8 @@ export default function TeamDetailPage({ params }: TeamDetailPageProps) {
   if (!user || !team) {
     return (
       <div className="py-16 text-center">
-        <h2 className="text-xl font-semibold">Team not found</h2>
-        <Button asChild className="mt-4">
+        <h2 className="text-sm font-medium">Team not found</h2>
+        <Button asChild size="sm" className="mt-4" variant="ghost">
           <Link href="/teams">Back to Teams</Link>
         </Button>
       </div>
@@ -93,8 +90,8 @@ export default function TeamDetailPage({ params }: TeamDetailPageProps) {
   if (!isMember) {
     return (
       <div className="py-16 text-center">
-        <h2 className="text-xl font-semibold">You&apos;re not a member of this team</h2>
-        <Button asChild className="mt-4">
+        <h2 className="text-sm font-medium">You&apos;re not a member of this team</h2>
+        <Button asChild size="sm" className="mt-4" variant="ghost">
           <Link href="/teams">Back to Teams</Link>
         </Button>
       </div>
@@ -114,7 +111,6 @@ export default function TeamDetailPage({ params }: TeamDetailPageProps) {
     });
 
     if (success) {
-      // Reload invites
       const { data: invites } = await teamsService.getInvites(teamId);
       setPendingInvites(invites.filter((i) => i.status === "pending"));
     } else {
@@ -131,7 +127,6 @@ export default function TeamDetailPage({ params }: TeamDetailPageProps) {
   };
 
   const handleLeaveTeam = async () => {
-    // If lead and more than one member, transfer lead first
     if (isLead && team.members.length > 1) {
       const nextMember = team.members.find((m) => m.userId !== user.id);
       if (nextMember) {
@@ -139,11 +134,9 @@ export default function TeamDetailPage({ params }: TeamDetailPageProps) {
       }
     }
 
-    // Remove self from team
     const { success } = await teamsService.removeMember(teamId, user.id);
 
     if (success) {
-      // If was last member, delete team
       if (team.members.length === 1) {
         await teamsService.delete(teamId);
       }
@@ -161,98 +154,131 @@ export default function TeamDetailPage({ params }: TeamDetailPageProps) {
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-8">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild>
-          <Link href="/teams" aria-label="Back to teams">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        </Button>
-        <div className="flex-1">
-          <h1 className="text-3xl font-bold">{team.name}</h1>
-          <p className="mt-1 text-muted-foreground">
+    <div className="mx-auto max-w-3xl space-y-10">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <Link
+          href="/teams"
+          className="text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Link>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-semibold tracking-tight">{team.name}</h1>
+            {isLead && <Crown className="h-4 w-4 text-amber-500 shrink-0" />}
+          </div>
+          <p className="text-sm text-muted-foreground mt-0.5">
             {cohort?.name || "Unknown Cohort"}
+            {cohort?.status === "active" && (
+              <span className="inline-flex items-center ml-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              </span>
+            )}
           </p>
         </div>
       </div>
 
+      {/* Stats strip */}
+      <div className="flex items-center divide-x">
+        <div className="pr-8">
+          <div className="text-3xl font-mono font-semibold tabular-nums">
+            {team.members.length}
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">Members</div>
+        </div>
+        <div className="px-8">
+          <div className="text-3xl font-mono font-semibold tabular-nums text-violet-600">
+            {pendingInvites.length}
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">Pending invites</div>
+        </div>
+        <div className="pl-8">
+          <div className="text-3xl font-mono font-semibold tabular-nums">
+            5
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">Max size</div>
+        </div>
+      </div>
+
+      {/* Description */}
       {team.description && (
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-muted-foreground">{team.description}</p>
-          </CardContent>
-        </Card>
+        <section>
+          <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
+            Description
+          </h2>
+          <p className="text-sm text-muted-foreground">{team.description}</p>
+        </section>
       )}
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              <CardTitle>Team Members</CardTitle>
-            </div>
-            <Badge variant="secondary">
-              {team.members.length}/5 members
-            </Badge>
-          </div>
-          <CardDescription>
-            {isLead
-              ? "Manage your team members and send invitations"
-              : "View your team members"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
+      {/* Members */}
+      <section>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">
+            Members
+          </h2>
+          <span className="text-xs text-muted-foreground font-mono tabular-nums">
+            {team.members.length}/5
+          </span>
+        </div>
+        <div className="rounded-xl border overflow-hidden">
           <TeamMemberList
             members={team.members}
             currentUserId={user.id}
             isLead={isLead}
             onRemove={isLead ? handleRemoveMember : undefined}
           />
+        </div>
+      </section>
 
-          {isLead && (
-            <>
-              <hr />
-              <InviteForm
-                currentMemberCount={team.members.length + pendingInvites.length}
-                existingEmails={existingEmails}
-                onInvite={handleInvite}
-              />
+      {/* Invite form (lead only) */}
+      {isLead && (
+        <section>
+          <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-4">
+            Invite Members
+          </h2>
+          <div className="rounded-xl border p-4">
+            <InviteForm
+              currentMemberCount={team.members.length + pendingInvites.length}
+              existingEmails={existingEmails}
+              onInvite={handleInvite}
+            />
+          </div>
 
-              {pendingInvites.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Pending Invitations
-                  </p>
-                  {pendingInvites.map((invite) => (
-                    <div
-                      key={invite.id}
-                      className="flex items-center justify-between rounded-lg border border-dashed p-3"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">{invite.email}</span>
-                      </div>
-                      <Badge variant="outline">Pending</Badge>
-                    </div>
-                  ))}
+          {pendingInvites.length > 0 && (
+            <div className="mt-4 space-y-2">
+              <p className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">
+                Pending
+              </p>
+              {pendingInvites.map((invite) => (
+                <div
+                  key={invite.id}
+                  className="flex items-center justify-between rounded-lg border border-dashed py-2.5 px-3"
+                >
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">{invite.email}</span>
+                  </div>
+                  <Badge variant="outline" className="text-[10px]">Pending</Badge>
                 </div>
-              )}
-            </>
+              ))}
+            </div>
           )}
-        </CardContent>
-      </Card>
+        </section>
+      )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-destructive">Danger Zone</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
+      {/* Danger zone */}
+      <section>
+        <h2 className="text-[11px] uppercase tracking-widest text-destructive font-medium mb-4">
+          Danger Zone
+        </h2>
+        <div className="space-y-2">
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="outline" className="w-full justify-start">
-                <LogOut className="mr-2 h-4 w-4" />
+              <button className="flex items-center gap-2 w-full rounded-xl border py-3 px-4 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
+                <LogOut className="h-4 w-4" />
                 Leave Team
-              </Button>
+              </button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
@@ -277,13 +303,10 @@ export default function TeamDetailPage({ params }: TeamDetailPageProps) {
           {isLead && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start text-destructive hover:text-destructive"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
+                <button className="flex items-center gap-2 w-full rounded-xl border border-destructive/20 py-3 px-4 text-sm text-destructive hover:bg-destructive/5 transition-colors">
+                  <Trash2 className="h-4 w-4" />
                   Delete Team
-                </Button>
+                </button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
@@ -305,8 +328,8 @@ export default function TeamDetailPage({ params }: TeamDetailPageProps) {
               </AlertDialogContent>
             </AlertDialog>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </section>
     </div>
   );
 }
