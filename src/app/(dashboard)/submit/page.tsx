@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -94,6 +94,7 @@ export default function SubmitPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
+  const isSubmittingRef = useRef(false);
 
   // Load teams, cohorts, tracks, and sponsors
   useEffect(() => {
@@ -310,11 +311,15 @@ export default function SubmitPage() {
   };
 
   const handleSubmit = async () => {
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+
     // Validate ALL steps before final submission
     for (let step = 1; step <= 4; step++) {
       if (!validateStep(step)) {
         toast.error(`Please fix the errors in step ${step} before submitting`);
         setCurrentStep(step);
+        isSubmittingRef.current = false;
         return;
       }
     }
@@ -356,6 +361,7 @@ export default function SubmitPage() {
       toast.success("Project submitted successfully!");
       router.push("/submissions");
     } finally {
+      isSubmittingRef.current = false;
       setIsLoading(false);
     }
   };

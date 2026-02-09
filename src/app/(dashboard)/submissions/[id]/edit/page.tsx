@@ -54,6 +54,8 @@ export default function EditSubmissionPage({ params }: EditSubmissionPageProps) 
 
   useEffect(() => {
     async function loadData() {
+      if (!user || authLoading) return;
+
       const [subResult, cohortsResult, tracksResult, sponsorsResult] =
         await Promise.all([
           submissionsService.getById(id),
@@ -62,23 +64,37 @@ export default function EditSubmissionPage({ params }: EditSubmissionPageProps) 
           sponsorsService.listOrgs(),
         ]);
 
-      if (subResult.success && subResult.data) {
-        const s = subResult.data;
-        setSubmission(s);
-        setTitle(s.title);
-        setTagline(s.tagline || "");
-        setLogoUrl(s.logoUrl || "");
-        setDescription(s.description);
-        setDemoUrl(s.demoUrl || "");
-        setRepoUrl(s.repoUrl || "");
-        setVideoUrl(s.videoUrl || "");
-        setPresentationUrl(s.presentationUrl || "");
-        setScreenshots(s.screenshots || []);
-        setTechStack(s.techStack || []);
-        setBuiltWithStory(s.builtWithStory);
-        setCohortId(s.cohortId);
-        setTrackIds(s.trackIds || []);
+      if (!subResult.success || !subResult.data) {
+        toast.error("Submission not found");
+        router.push("/submissions");
+        return;
       }
+
+      // Auth check BEFORE exposing data to render
+      const s = subResult.data;
+      const isTeamMember = s.team?.members.some((m) => m.userId === user.id);
+      const isSoloOwner = !s.teamId && s.createdBy === user.id;
+      const isAdmin = user.role === "admin";
+      if (!isTeamMember && !isSoloOwner && !isAdmin) {
+        router.push("/submissions");
+        return;
+      }
+
+      // Only set state that triggers render after auth check passes
+      setSubmission(s);
+      setTitle(s.title);
+      setTagline(s.tagline || "");
+      setLogoUrl(s.logoUrl || "");
+      setDescription(s.description);
+      setDemoUrl(s.demoUrl || "");
+      setRepoUrl(s.repoUrl || "");
+      setVideoUrl(s.videoUrl || "");
+      setPresentationUrl(s.presentationUrl || "");
+      setScreenshots(s.screenshots || []);
+      setTechStack(s.techStack || []);
+      setBuiltWithStory(s.builtWithStory);
+      setCohortId(s.cohortId);
+      setTrackIds(s.trackIds || []);
 
       if (cohortsResult.success) setCohorts(cohortsResult.data);
       if (tracksResult.success) setTracks(tracksResult.data);
@@ -87,7 +103,7 @@ export default function EditSubmissionPage({ params }: EditSubmissionPageProps) 
       setIsLoadingData(false);
     }
     loadData();
-  }, [id]);
+  }, [id, user, authLoading, router]);
 
   const handleChange = useCallback(
     (field: string, value: string | string[] | boolean) => {
@@ -231,17 +247,6 @@ export default function EditSubmissionPage({ params }: EditSubmissionPageProps) 
         </div>
       </div>
     );
-  }
-
-  // Check access
-  const isTeamMember = submission.team?.members.some(
-    (m) => m.userId === user?.id
-  );
-  const isSoloOwner = !submission.teamId && submission.createdBy === user?.id;
-  const isAdmin = user?.role === "admin";
-  if (!isTeamMember && !isSoloOwner && !isAdmin) {
-    router.push("/submissions");
-    return null;
   }
 
   return (

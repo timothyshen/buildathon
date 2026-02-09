@@ -119,6 +119,8 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
 
   useEffect(() => {
     async function loadData() {
+      if (!user || authLoading) return;
+
       const { data: submissionData } = await submissionsService.getById(id);
 
       if (!submissionData) {
@@ -126,6 +128,18 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
         return;
       }
 
+      // Auth check BEFORE exposing data to render
+      const isTeamMember = submissionData.team?.members.some(
+        (m) => m.userId === user.id
+      );
+      const isSoloOwner = !submissionData.teamId && submissionData.createdBy === user.id;
+      const isAdmin = user.role === "admin";
+      if (!isTeamMember && !isSoloOwner && !isAdmin) {
+        router.push("/submissions");
+        return;
+      }
+
+      // Only set state that triggers render after auth check passes
       setSubmission(submissionData);
 
       const [reviewsResult, tracksResult] = await Promise.all([
@@ -140,7 +154,6 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
       }
       if (tracksResult.success) {
         setTracks(tracksResult.data);
-        // Compute prizes
         const track = tracksResult.data.find((t: Track) => t.id === submissionData.trackId);
         const submissionPrizes = getSubmissionPrizes(submissionData, submissionData.cohort, track);
         setPrizes(submissionPrizes);
@@ -149,7 +162,7 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
       setIsLoading(false);
     }
     loadData();
-  }, [id]);
+  }, [id, user, authLoading, router]);
 
   const submissionTrack = tracks.find((t) => t.id === submission?.trackId);
 
@@ -165,20 +178,6 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
   // Handle not found
   if (!submission) {
     notFound();
-  }
-
-  // Check if user is team member, solo owner, or admin
-  const isTeamMember = submission.team?.members.some(
-    (m) => m.userId === user?.id
-  );
-  const isSoloOwner = !submission.teamId && submission.createdBy === user?.id;
-  const isAdmin = user?.role === "admin";
-  const hasAccess = isTeamMember || isSoloOwner || isAdmin;
-
-  // Redirect if not authorized
-  if (!hasAccess) {
-    router.push("/submissions");
-    return null;
   }
 
   const statusBanner = getStatusBanner(submission.status);

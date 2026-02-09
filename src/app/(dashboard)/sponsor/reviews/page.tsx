@@ -61,32 +61,42 @@ export default function SponsorReviewsPage() {
         return;
       }
 
-      // For each track, get submissions and check for existing reviews
-      const allTrackSubmissions: TrackSubmission[] = [];
-      const seenSubmissionIds = new Set<string>();
+      // Fetch all track submissions in parallel
+      const trackSubmissionResults = await Promise.all(
+        tracksResult.data.map((track) => submissionsService.getByTrack(track.id))
+      );
 
-      for (const track of tracksResult.data) {
-        const subResult = await submissionsService.getByTrack(track.id);
-        if (!subResult.success) continue;
+      // Deduplicate submissions across tracks
+      const seenSubmissionIds = new Set<string>();
+      const uniqueSubmissions: { submission: Submission; track: Track }[] = [];
+
+      tracksResult.data.forEach((track, index) => {
+        const subResult = trackSubmissionResults[index];
+        if (!subResult.success) return;
 
         for (const submission of subResult.data) {
-          // Avoid duplicates if submission is in multiple tracks from same sponsor
           if (seenSubmissionIds.has(submission.id)) continue;
           seenSubmissionIds.add(submission.id);
+          uniqueSubmissions.push({ submission, track });
+        }
+      });
 
-          // Check for existing review by this user
-          const reviewsResult = await reviewsService.getBySubmission(submission.id);
+      // Fetch all reviews in parallel
+      const reviewResults = await Promise.all(
+        uniqueSubmissions.map(({ submission }) =>
+          reviewsService.getBySubmission(submission.id)
+        )
+      );
+
+      const allTrackSubmissions: TrackSubmission[] = uniqueSubmissions.map(
+        ({ submission, track }, index) => {
+          const reviewsResult = reviewResults[index];
           const existingReview = reviewsResult.success
             ? reviewsResult.data.find((r) => r.judgeId === user.id)
             : null;
-
-          allTrackSubmissions.push({
-            submission,
-            track,
-            review: existingReview || null,
-          });
+          return { submission, track, review: existingReview || null };
         }
-      }
+      );
 
       setTrackSubmissions(allTrackSubmissions);
       setIsLoading(false);

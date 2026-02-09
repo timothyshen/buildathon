@@ -66,6 +66,7 @@ export default function SponsorCohortPage({ params }: SponsorCohortPageProps) {
   const [isLoadingData, setIsLoadingData] = useState(true);
 
   const [isLoading, setIsLoading] = useState(false);
+  const [isMutating, setIsMutating] = useState(false);
   const [description, setDescription] = useState("");
   const [editingTrackId, setEditingTrackId] = useState<string | null>(null);
   const [editTrack, setEditTrack] = useState({ name: "", prizePool: "", description: "" });
@@ -176,25 +177,30 @@ export default function SponsorCohortPage({ params }: SponsorCohortPageProps) {
   };
 
   const handleAddTrack = async () => {
-    if (!newTrack.name) return;
-    const result = await tracksService.create({
-      cohortId,
-      sponsorOrgId: sponsor.id,
-      name: newTrack.name,
-      description: newTrack.description || "",
-      prizePool: newTrack.prizePool || undefined,
-      requirements: [],
-      sponsorName: sponsor.name,
-      sponsorLogo: sponsor.logo,
-    });
-    if (!result.success) {
-      toast.error(result.error || "Failed to create track");
-      return;
+    if (!newTrack.name || isMutating) return;
+    setIsMutating(true);
+    try {
+      const result = await tracksService.create({
+        cohortId,
+        sponsorOrgId: sponsor.id,
+        name: newTrack.name,
+        description: newTrack.description || "",
+        prizePool: newTrack.prizePool || undefined,
+        requirements: [],
+        sponsorName: sponsor.name,
+        sponsorLogo: sponsor.logo,
+      });
+      if (!result.success) {
+        toast.error(result.error || "Failed to create track");
+        return;
+      }
+      setSponsorTracks((prev) => [...prev, result.data]);
+      setNewTrack({ name: "", prizePool: "", description: "" });
+      setShowNewTrackForm(false);
+      toast.success("Track created");
+    } finally {
+      setIsMutating(false);
     }
-    setSponsorTracks((prev) => [...prev, result.data]);
-    setNewTrack({ name: "", prizePool: "", description: "" });
-    setShowNewTrackForm(false);
-    toast.success("Track created");
   };
 
   const startEditingTrack = (trackId: string) => {
@@ -206,19 +212,24 @@ export default function SponsorCohortPage({ params }: SponsorCohortPageProps) {
   };
 
   const handleSaveTrack = async () => {
-    if (!editingTrackId || !editTrack.name) return;
-    const result = await tracksService.update(editingTrackId, {
-      name: editTrack.name,
-      description: editTrack.description || "",
-      prizePool: editTrack.prizePool || undefined,
-    });
-    if (!result.success) {
-      toast.error(result.error || "Failed to update track");
-      return;
+    if (!editingTrackId || !editTrack.name || isMutating) return;
+    setIsMutating(true);
+    try {
+      const result = await tracksService.update(editingTrackId, {
+        name: editTrack.name,
+        description: editTrack.description || "",
+        prizePool: editTrack.prizePool || undefined,
+      });
+      if (!result.success) {
+        toast.error(result.error || "Failed to update track");
+        return;
+      }
+      setSponsorTracks((prev) => prev.map((t) => (t.id === editingTrackId ? result.data : t)));
+      setEditingTrackId(null);
+      toast.success("Track updated");
+    } finally {
+      setIsMutating(false);
     }
-    setSponsorTracks((prev) => prev.map((t) => (t.id === editingTrackId ? result.data : t)));
-    setEditingTrackId(null);
-    toast.success("Track updated");
   };
 
   const handleDeleteTrack = (trackId: string) => {
@@ -229,7 +240,9 @@ export default function SponsorCohortPage({ params }: SponsorCohortPageProps) {
   };
 
   const confirmDeleteTrack = async () => {
-    if (deleteTrackTarget) {
+    if (!deleteTrackTarget || isMutating) return;
+    setIsMutating(true);
+    try {
       const result = await tracksService.delete(deleteTrackTarget.id);
       if (!result.success) {
         toast.error(result.error || "Failed to delete track");
@@ -239,6 +252,8 @@ export default function SponsorCohortPage({ params }: SponsorCohortPageProps) {
       setSponsorTracks((prev) => prev.filter((t) => t.id !== deleteTrackTarget.id));
       setDeleteTrackTarget(null);
       toast.success("Track deleted");
+    } finally {
+      setIsMutating(false);
     }
   };
 
@@ -395,8 +410,15 @@ export default function SponsorCohortPage({ params }: SponsorCohortPageProps) {
                     />
                   </div>
                   <div className="flex flex-col sm:flex-row gap-2">
-                    <Button size="sm" onClick={handleAddTrack} disabled={!newTrack.name}>
-                      Add Track
+                    <Button size="sm" onClick={handleAddTrack} disabled={!newTrack.name || isMutating}>
+                      {isMutating ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Adding...
+                        </>
+                      ) : (
+                        "Add Track"
+                      )}
                     </Button>
                     <Button
                       size="sm"
@@ -454,8 +476,15 @@ export default function SponsorCohortPage({ params }: SponsorCohortPageProps) {
                           />
                         </div>
                         <div className="flex flex-col sm:flex-row gap-2">
-                          <Button size="sm" onClick={handleSaveTrack} disabled={!editTrack.name}>
-                            Save
+                          <Button size="sm" onClick={handleSaveTrack} disabled={!editTrack.name || isMutating}>
+                            {isMutating ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Saving...
+                              </>
+                            ) : (
+                              "Save"
+                            )}
                           </Button>
                           <Button size="sm" variant="outline" onClick={() => setEditingTrackId(null)}>
                             Cancel
@@ -484,6 +513,7 @@ export default function SponsorCohortPage({ params }: SponsorCohortPageProps) {
                           <Button
                             variant="ghost"
                             size="icon"
+                            disabled={isMutating}
                             onClick={() => startEditingTrack(track.id)}
                           >
                             <Pencil className="h-4 w-4" />
@@ -492,6 +522,7 @@ export default function SponsorCohortPage({ params }: SponsorCohortPageProps) {
                             variant="ghost"
                             size="icon"
                             className="text-red-600"
+                            disabled={isMutating}
                             onClick={() => handleDeleteTrack(track.id)}
                           >
                             <Trash2 className="h-4 w-4" />
@@ -580,7 +611,7 @@ export default function SponsorCohortPage({ params }: SponsorCohortPageProps) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDeleteTrack} className="bg-destructive text-white hover:bg-destructive/90">
+            <AlertDialogAction onClick={confirmDeleteTrack} disabled={isMutating} className="bg-destructive text-white hover:bg-destructive/90">
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
