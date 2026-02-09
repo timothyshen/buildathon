@@ -5,11 +5,8 @@ import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
 import { reviewsService } from "@/services";
 import type { Review } from "@/types";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Star, Clock, CheckCircle, Loader2 } from "lucide-react";
+import { Loader2, CheckCircle, ChevronRight } from "lucide-react";
 
 export default function ReviewsPage() {
   const { user } = useAuth();
@@ -42,146 +39,117 @@ export default function ReviewsPage() {
   const inProgressReviews = judgeReviews.filter((r) => r.status === "in_progress");
   const completedReviews = judgeReviews.filter((r) => r.status === "completed");
 
-  const ReviewCard = ({ review }: { review: Review }) => (
-    <Card>
-      <CardContent className="p-6">
-        <div className="flex items-start justify-between">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <h3 className="font-semibold">{review.submission?.title}</h3>
-              {review.status === "completed" && review.overallScore && (
-                <Badge className="bg-green-100 text-green-800">
-                  {review.overallScore.toFixed(1)}/10
-                </Badge>
-              )}
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {review.submission?.tagline || review.submission?.description?.slice(0, 100)}
-            </p>
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <span>Team: {review.submission?.team?.name || "Solo"}</span>
-              <span>Track: {review.submission?.track?.name || "Open"}</span>
-            </div>
-            {review.submission?.techStack && (
-              <div className="flex flex-wrap gap-1">
-                {review.submission.techStack.slice(0, 5).map((tech) => (
-                  <Badge key={tech} variant="outline" className="text-xs">
-                    {tech}
-                  </Badge>
-                ))}
-              </div>
-            )}
-          </div>
-          <Button asChild>
-            <Link href={`/reviews/${review.id}`}>
-              {review.status === "completed" ? "View Review" : "Review Now"}
-            </Link>
-          </Button>
+  const ReviewRow = ({ review }: { review: Review }) => (
+    <Link
+      href={`/reviews/${review.id}`}
+      className="flex items-start justify-between rounded-xl border py-3 px-4 hover:bg-muted/50 transition-colors group"
+    >
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-sm font-medium">{review.submission?.title}</span>
+          {review.status === "completed" && review.overallScore && (
+            <span className="font-mono text-xs tabular-nums text-emerald-600">
+              {review.overallScore.toFixed(1)}/10
+            </span>
+          )}
         </div>
-      </CardContent>
-    </Card>
+        {review.submission?.tagline && (
+          <p className="text-xs text-muted-foreground truncate mt-0.5">
+            {review.submission.tagline}
+          </p>
+        )}
+        <div className="flex items-center gap-2 mt-1 flex-wrap">
+          <span className="text-[11px] text-muted-foreground">
+            {review.submission?.team?.name || "Solo"}
+          </span>
+          <span className="text-[11px] text-muted-foreground">&middot;</span>
+          <span className="text-[11px] text-muted-foreground">
+            {review.submission?.track?.name || "Open"}
+          </span>
+          {review.submission?.techStack && review.submission.techStack.length > 0 && (
+            <>
+              <span className="text-[11px] text-muted-foreground">&middot;</span>
+              <span className="text-[11px] text-muted-foreground">
+                {review.submission.techStack.slice(0, 3).join(", ")}
+                {review.submission.techStack.length > 3 && ` +${review.submission.techStack.length - 3}`}
+              </span>
+            </>
+          )}
+        </div>
+      </div>
+      <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-0.5" />
+    </Link>
   );
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold">Review Queue</h1>
-        <p className="mt-2 text-muted-foreground">
-          Review assigned submissions and provide feedback
-        </p>
+    <div className="space-y-10">
+      {/* Header */}
+      <h1 className="text-2xl font-semibold tracking-tight">Review Queue</h1>
+
+      {/* Stats strip */}
+      <div className="flex items-center divide-x">
+        <div className="pr-8">
+          <div className="text-3xl font-mono font-semibold tabular-nums text-amber-600">
+            {pendingReviews.length}
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">Pending</div>
+        </div>
+        <div className="px-8">
+          <div className="text-3xl font-mono font-semibold tabular-nums text-blue-600">
+            {inProgressReviews.length}
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">In Progress</div>
+        </div>
+        <div className="pl-8">
+          <div className="text-3xl font-mono font-semibold tabular-nums text-emerald-600">
+            {completedReviews.length}
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">Completed</div>
+        </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Pending</CardTitle>
-            <Clock className="h-4 w-4 text-yellow-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{pendingReviews.length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">In Progress</CardTitle>
-            <Star className="h-4 w-4 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{inProgressReviews.length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Completed</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{completedReviews.length}</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Reviews Tabs */}
-      <Tabs defaultValue="pending">
-        <TabsList>
-          <TabsTrigger value="pending">
-            Pending ({pendingReviews.length})
-          </TabsTrigger>
-          <TabsTrigger value="in_progress">
-            In Progress ({inProgressReviews.length})
-          </TabsTrigger>
-          <TabsTrigger value="completed">
-            Completed ({completedReviews.length})
-          </TabsTrigger>
+      {/* Tabs */}
+      <Tabs defaultValue="pending" className="space-y-8">
+        <TabsList variant="line">
+          <TabsTrigger value="pending">Pending</TabsTrigger>
+          <TabsTrigger value="in_progress">In Progress</TabsTrigger>
+          <TabsTrigger value="completed">Completed</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="pending" className="mt-6 space-y-4">
+        <TabsContent value="pending" className="space-y-2">
           {pendingReviews.length === 0 ? (
-            <Card>
-              <CardContent className="py-8 text-center">
-                <CheckCircle className="mx-auto h-12 w-12 text-green-500" />
-                <h3 className="mt-4 font-semibold">No pending reviews</h3>
-                <p className="text-sm text-muted-foreground">
-                  You&apos;re all caught up!
-                </p>
-              </CardContent>
-            </Card>
+            <div className="text-center py-12 text-muted-foreground">
+              <CheckCircle className="mx-auto h-8 w-8 mb-2 opacity-50" />
+              <p className="text-sm">No pending reviews</p>
+              <p className="text-xs mt-1">You&apos;re all caught up!</p>
+            </div>
           ) : (
             pendingReviews.map((review) => (
-              <ReviewCard key={review.id} review={review} />
+              <ReviewRow key={review.id} review={review} />
             ))
           )}
         </TabsContent>
 
-        <TabsContent value="in_progress" className="mt-6 space-y-4">
+        <TabsContent value="in_progress" className="space-y-2">
           {inProgressReviews.length === 0 ? (
-            <Card>
-              <CardContent className="py-8 text-center">
-                <p className="text-sm text-muted-foreground">
-                  No reviews in progress
-                </p>
-              </CardContent>
-            </Card>
+            <div className="text-center py-12 text-muted-foreground">
+              <p className="text-sm">No reviews in progress</p>
+            </div>
           ) : (
             inProgressReviews.map((review) => (
-              <ReviewCard key={review.id} review={review} />
+              <ReviewRow key={review.id} review={review} />
             ))
           )}
         </TabsContent>
 
-        <TabsContent value="completed" className="mt-6 space-y-4">
+        <TabsContent value="completed" className="space-y-2">
           {completedReviews.length === 0 ? (
-            <Card>
-              <CardContent className="py-8 text-center">
-                <p className="text-sm text-muted-foreground">
-                  No completed reviews yet
-                </p>
-              </CardContent>
-            </Card>
+            <div className="text-center py-12 text-muted-foreground">
+              <p className="text-sm">No completed reviews yet</p>
+            </div>
           ) : (
             completedReviews.map((review) => (
-              <ReviewCard key={review.id} review={review} />
+              <ReviewRow key={review.id} review={review} />
             ))
           )}
         </TabsContent>

@@ -3,18 +3,14 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
-import { reviewsService, cohortsService } from "@/services";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { reviewsService } from "@/services";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Star, CheckCircle, Clock, FileText } from "lucide-react";
-import { Loading } from "@/components/ui/loading";
-import type { Review, Cohort } from "@/types";
+import { Star, CheckCircle, Loader2, ChevronRight } from "lucide-react";
+import type { Review } from "@/types";
 
 export function JudgeDashboard() {
   const { user } = useAuth();
   const [reviews, setReviews] = useState<Review[]>([]);
-  const [cohorts, setCohorts] = useState<Cohort[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -24,13 +20,8 @@ export function JudgeDashboard() {
         return;
       }
 
-      const [reviewsResult, cohortsResult] = await Promise.all([
-        reviewsService.getByJudge(user.id),
-        cohortsService.list(),
-      ]);
-
+      const reviewsResult = await reviewsService.getByJudge(user.id);
       if (reviewsResult.success) setReviews(reviewsResult.data);
-      if (cohortsResult.success) setCohorts(cohortsResult.data);
 
       setIsLoading(false);
     }
@@ -38,155 +29,143 @@ export function JudgeDashboard() {
   }, [user?.id]);
 
   if (isLoading) {
-    return <Loading />;
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
   }
 
-  // Get judge's reviews
-  const judgeReviews = reviews;
-  const pendingReviews = judgeReviews.filter((r) => r.status === "pending");
-  const completedReviews = judgeReviews.filter((r) => r.status === "completed");
-
-  // Get active judging cohorts
-  const judgingCohorts = cohorts.filter((c) => c.status === "judging" || c.status === "active");
+  const pendingReviews = reviews.filter((r) => r.status === "pending");
+  const completedReviews = reviews.filter((r) => r.status === "completed");
+  const avgScore =
+    completedReviews.length > 0
+      ? (
+          completedReviews.reduce((acc, r) => acc + (r.overallScore || 0), 0) /
+          completedReviews.length
+        ).toFixed(1)
+      : "—";
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold">Judge Dashboard</h1>
-        <p className="mt-2 text-muted-foreground">
-          Review submissions and help select the winners.
-        </p>
-      </div>
-
-      {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Pending Reviews</CardTitle>
-            <Clock className="h-4 w-4 text-warning-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{pendingReviews.length}</div>
-            <p className="text-xs text-muted-foreground">Awaiting your review</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Completed</CardTitle>
-            <CheckCircle className="h-4 w-4 text-success-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{completedReviews.length}</div>
-            <p className="text-xs text-muted-foreground">Reviews completed</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Assigned</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{judgeReviews.length}</div>
-            <p className="text-xs text-muted-foreground">Submissions to review</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Avg Score Given</CardTitle>
-            <Star className="h-4 w-4 text-prize-grand" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {completedReviews.length > 0
-                ? (
-                    completedReviews.reduce((acc, r) => acc + (r.overallScore || 0), 0) /
-                    completedReviews.length
-                  ).toFixed(1)
-                : "-"}
-            </div>
-            <p className="text-xs text-muted-foreground">Out of 10</p>
-          </CardContent>
-        </Card>
+    <div className="space-y-10">
+      {/* Stats strip */}
+      <div className="flex items-center divide-x">
+        <div className="pr-8">
+          <div className="text-3xl font-mono font-semibold tabular-nums text-amber-600">
+            {pendingReviews.length}
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">Pending</div>
+        </div>
+        <div className="px-8">
+          <div className="text-3xl font-mono font-semibold tabular-nums text-emerald-600">
+            {completedReviews.length}
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">Completed</div>
+        </div>
+        <div className="px-8">
+          <div className="text-3xl font-mono font-semibold tabular-nums">
+            {reviews.length}
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">Total</div>
+        </div>
+        <div className="pl-8">
+          <div className="text-3xl font-mono font-semibold tabular-nums text-violet-600">
+            {avgScore}
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">Avg Score</div>
+        </div>
       </div>
 
       {/* Pending Reviews */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Pending Reviews</CardTitle>
-          <CardDescription>Submissions waiting for your review</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {pendingReviews.length === 0 ? (
-            <div className="py-8 text-center">
-              <CheckCircle className="mx-auto h-12 w-12 text-success-foreground" />
-              <h3 className="mt-4 text-lg font-semibold">All caught up!</h3>
-              <p className="mt-2 text-sm text-muted-foreground">
-                You&apos;ve reviewed all assigned submissions.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {pendingReviews.map((review) => (
-                <div
-                  key={review.id}
-                  className="flex items-center justify-between rounded-lg border p-4"
-                >
-                  <div>
-                    <h3 className="font-semibold">{review.submission?.title}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {review.submission?.tagline || review.submission?.team?.name || "Solo"}
-                    </p>
-                    <div className="mt-2 flex items-center gap-2">
-                      <Badge variant="outline">
-                        {review.submission?.track?.name || "Open Track"}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">
-                        {review.submission?.cohort?.name}
-                      </span>
-                    </div>
-                  </div>
-                  <Button asChild>
-                    <Link href={`/reviews/${review.id}`}>Review Now</Link>
-                  </Button>
-                </div>
-              ))}
-            </div>
+      <section>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">
+            Pending Reviews
+          </h2>
+          {pendingReviews.length > 0 && (
+            <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-foreground">
+              <Link href="/reviews">View all</Link>
+            </Button>
           )}
-        </CardContent>
-      </Card>
+        </div>
+
+        {pendingReviews.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground">
+            <CheckCircle className="mx-auto h-8 w-8 mb-2 opacity-50" />
+            <p className="text-sm">All caught up!</p>
+            <p className="text-xs mt-1">You&apos;ve reviewed all assigned submissions.</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {pendingReviews.map((review) => (
+              <Link
+                key={review.id}
+                href={`/reviews/${review.id}`}
+                className="flex items-center justify-between rounded-xl border py-3 px-4 hover:bg-muted/50 transition-colors group"
+              >
+                <div className="min-w-0 flex-1">
+                  <span className="text-sm font-medium">
+                    {review.submission?.title}
+                  </span>
+                  {review.submission?.tagline && (
+                    <p className="text-xs text-muted-foreground truncate mt-0.5">
+                      {review.submission.tagline}
+                    </p>
+                  )}
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-[11px] text-muted-foreground">
+                      {review.submission?.team?.name || "Solo"}
+                    </span>
+                    <span className="text-[11px] text-muted-foreground">&middot;</span>
+                    <span className="text-[11px] text-muted-foreground">
+                      {review.submission?.track?.name || "Open Track"}
+                    </span>
+                  </div>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
 
       {/* Completed Reviews */}
       {completedReviews.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Completed Reviews</CardTitle>
-            <CardDescription>Your submitted reviews</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {completedReviews.map((review) => (
-                <div
-                  key={review.id}
-                  className="flex items-center justify-between rounded-lg border p-4"
-                >
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-semibold">{review.submission?.title}</h3>
-                      <Badge className="bg-status-completed text-status-completed-foreground">Reviewed</Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Score: {review.overallScore?.toFixed(1)}/10
-                    </p>
+        <section>
+          <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-4">
+            Completed Reviews
+          </h2>
+          <div className="space-y-2">
+            {completedReviews.map((review) => (
+              <Link
+                key={review.id}
+                href={`/reviews/${review.id}`}
+                className="flex items-center justify-between rounded-xl border py-3 px-4 hover:bg-muted/50 transition-colors group"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">
+                      {review.submission?.title}
+                    </span>
+                    <span className="font-mono text-xs tabular-nums text-emerald-600">
+                      {review.overallScore?.toFixed(1)}/10
+                    </span>
                   </div>
-                  <Button variant="outline" asChild>
-                    <Link href={`/reviews/${review.id}`}>View Review</Link>
-                  </Button>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-[11px] text-muted-foreground">
+                      {review.submission?.team?.name || "Solo"}
+                    </span>
+                    <span className="text-[11px] text-muted-foreground">&middot;</span>
+                    <span className="text-[11px] text-muted-foreground">
+                      {review.submission?.track?.name || "Open Track"}
+                    </span>
+                  </div>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+              </Link>
+            ))}
+          </div>
+        </section>
       )}
     </div>
   );

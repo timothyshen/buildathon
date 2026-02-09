@@ -7,18 +7,16 @@ import { reviewsService } from "@/services";
 import type { Review } from "@/types";
 import { toast } from "sonner";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import {
   ExternalLink,
   Github,
   Play,
   Loader2,
   Star,
+  ArrowLeft,
 } from "lucide-react";
 
 const scoreCategories = [
@@ -85,9 +83,9 @@ export default function ReviewDetailPage({ params }: ReviewDetailPageProps) {
 
   if (!review || !review.submission) {
     return (
-      <div className="py-8 text-center">
-        <p>Review not found</p>
-        <Button asChild className="mt-4">
+      <div className="py-16 text-center">
+        <p className="text-sm text-muted-foreground">Review not found</p>
+        <Button asChild variant="ghost" size="sm" className="mt-4">
           <Link href={backHref}>Back to {backLabel}</Link>
         </Button>
       </div>
@@ -129,8 +127,14 @@ export default function ReviewDetailPage({ params }: ReviewDetailPageProps) {
     }
   };
 
+  const links = [
+    { url: submission.demoUrl, label: "Live Demo", icon: ExternalLink },
+    { url: submission.repoUrl, label: "Repository", icon: Github },
+    { url: submission.videoUrl, label: "Demo Video", icon: Play },
+  ].filter((l) => l.url);
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Breadcrumb */}
       <Breadcrumb
         items={[
@@ -141,100 +145,97 @@ export default function ReviewDetailPage({ params }: ReviewDetailPageProps) {
       />
 
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold">Review: {submission.title}</h1>
-        <p className="text-muted-foreground">
-          {submission.team?.name || "Solo"} • {submission.cohort?.name}
-        </p>
+      <div className="flex items-center gap-3">
+        <Link
+          href={backHref}
+          className="text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Link>
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">{submission.title}</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {submission.team?.name || "Solo"} &middot; {submission.cohort?.name}
+          </p>
+        </div>
       </div>
 
       <div className="grid gap-8 lg:grid-cols-2">
-        {/* Submission Details */}
+        {/* Left — Project Details */}
         <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Project Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <h3 className="font-semibold">{submission.title}</h3>
-                {submission.tagline && (
-                  <p className="text-sm text-muted-foreground">{submission.tagline}</p>
-                )}
-              </div>
+          <section>
+            <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
+              Project Details
+            </h2>
+            <div className="rounded-xl border p-5 space-y-4">
+              {submission.tagline && (
+                <p className="text-sm text-muted-foreground">{submission.tagline}</p>
+              )}
 
-              <p className="text-sm">{submission.description}</p>
+              {submission.description && (
+                <p className="text-sm">{submission.description}</p>
+              )}
 
-              <div className="flex flex-wrap gap-2">
-                {submission.techStack.map((tech) => (
-                  <Badge key={tech} variant="secondary">
-                    {tech}
-                  </Badge>
-                ))}
-              </div>
+              {submission.techStack.length > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {submission.techStack.join(", ")}
+                </p>
+              )}
 
               {submission.builtWithStory && (
-                <Badge className="bg-purple-100 text-purple-800">
-                  Built with Story Protocol
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-violet-500" />
+                  <span className="text-xs text-violet-600">Built with Story Protocol</span>
+                </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </section>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Links</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {submission.demoUrl && (
-                <Button variant="outline" className="w-full justify-start" asChild>
-                  <a href={submission.demoUrl} target="_blank" rel="noopener noreferrer">
-                    <ExternalLink className="mr-2 h-4 w-4" />
-                    Live Demo
-                  </a>
-                </Button>
-              )}
-              {submission.repoUrl && (
-                <Button variant="outline" className="w-full justify-start" asChild>
-                  <a href={submission.repoUrl} target="_blank" rel="noopener noreferrer">
-                    <Github className="mr-2 h-4 w-4" />
-                    Repository
-                  </a>
-                </Button>
-              )}
-              {submission.videoUrl && (
-                <Button variant="outline" className="w-full justify-start" asChild>
-                  <a href={submission.videoUrl} target="_blank" rel="noopener noreferrer">
-                    <Play className="mr-2 h-4 w-4" />
-                    Demo Video
-                  </a>
-                </Button>
-              )}
-            </CardContent>
-          </Card>
+          {links.length > 0 && (
+            <section>
+              <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
+                Links
+              </h2>
+              <div className="space-y-2">
+                {links.map((link) => {
+                  const Icon = link.icon;
+                  return (
+                    <a
+                      key={link.label}
+                      href={link.url!}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 rounded-xl border py-3 px-4 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                    >
+                      <Icon className="h-4 w-4 shrink-0" />
+                      {link.label}
+                    </a>
+                  );
+                })}
+              </div>
+            </section>
+          )}
         </div>
 
-        {/* Review Form */}
+        {/* Right — Review Form */}
         <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Your Review</CardTitle>
-              <CardDescription>
-                Rate each category from 1-10
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
+          {/* Scoring */}
+          <section>
+            <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
+              Scoring
+            </h2>
+            <div className="rounded-xl border p-5 space-y-5">
               {scoreCategories.map((category) => (
                 <div key={category.key} className="space-y-2">
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label>{category.label}</Label>
+                      <p className="text-sm font-medium">{category.label}</p>
                       <p className="text-xs text-muted-foreground">
                         {category.description}
                       </p>
                     </div>
-                    <span className="text-lg font-semibold">
-                      {scores[category.key as keyof typeof scores]}
+                    <span className="font-mono text-sm tabular-nums font-semibold">
+                      {scores[category.key as keyof typeof scores] || "—"}
                     </span>
                   </div>
                   <div className="flex gap-1">
@@ -244,9 +245,9 @@ export default function ReviewDetailPage({ params }: ReviewDetailPageProps) {
                         type="button"
                         onClick={() => handleScoreChange(category.key, value)}
                         disabled={isCompleted}
-                        className={`flex h-8 w-8 items-center justify-center rounded text-sm font-medium transition-colors ${
+                        className={`flex h-7 w-7 items-center justify-center rounded text-xs font-medium transition-colors ${
                           scores[category.key as keyof typeof scores] >= value
-                            ? "bg-primary text-primary-foreground"
+                            ? "bg-foreground text-background"
                             : "bg-muted hover:bg-muted/80"
                         } ${isCompleted ? "cursor-not-allowed opacity-50" : ""}`}
                       >
@@ -257,29 +258,30 @@ export default function ReviewDetailPage({ params }: ReviewDetailPageProps) {
                 </div>
               ))}
 
-              <Separator />
-
-              <div className="flex items-center justify-between">
-                <span className="font-semibold">Overall Score</span>
-                <div className="flex items-center gap-2">
-                  <Star className="h-5 w-5 text-yellow-500" />
-                  <span className="text-2xl font-bold">{averageScore.toFixed(1)}</span>
-                  <span className="text-muted-foreground">/ 10</span>
+              {/* Overall */}
+              <div className="flex items-center justify-between pt-4 border-t">
+                <span className="text-sm font-medium">Overall</span>
+                <div className="flex items-center gap-1.5">
+                  <Star className="h-4 w-4 text-amber-500" />
+                  <span className="font-mono text-2xl font-semibold tabular-nums">
+                    {averageScore.toFixed(1)}
+                  </span>
+                  <span className="text-xs text-muted-foreground">/ 10</span>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </section>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Feedback</CardTitle>
-              <CardDescription>
-                Share constructive feedback with the team
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="feedback">Public Feedback</Label>
+          {/* Feedback */}
+          <section>
+            <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
+              Feedback
+            </h2>
+            <div className="rounded-xl border p-5 space-y-5">
+              <div className="space-y-1.5">
+                <Label htmlFor="feedback" className="text-xs text-muted-foreground">
+                  Public Feedback
+                </Label>
                 <Textarea
                   id="feedback"
                   placeholder="What did you like? What could be improved?"
@@ -288,13 +290,15 @@ export default function ReviewDetailPage({ params }: ReviewDetailPageProps) {
                   onChange={(e) => setFeedback(e.target.value)}
                   disabled={isCompleted}
                 />
-                <p className="text-xs text-muted-foreground">
-                  This will be shared with the team
+                <p className="text-[11px] text-muted-foreground">
+                  Shared with the team
                 </p>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="notes">Internal Notes</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="notes" className="text-xs text-muted-foreground">
+                  Internal Notes
+                </Label>
                 <Textarea
                   id="notes"
                   placeholder="Notes for other judges (not shared with team)"
@@ -303,18 +307,19 @@ export default function ReviewDetailPage({ params }: ReviewDetailPageProps) {
                   onChange={(e) => setInternalNotes(e.target.value)}
                   disabled={isCompleted}
                 />
-                <p className="text-xs text-muted-foreground">
-                  Only visible to other judges and admins
+                <p className="text-[11px] text-muted-foreground">
+                  Only visible to judges and admins
                 </p>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </section>
 
+          {/* Submit */}
           {!isCompleted && (
             <Button
               onClick={handleSubmit}
               disabled={isSubmitting || Object.values(scores).some((s) => s === 0)}
-              className="w-full"
+              className="w-full bg-foreground text-background hover:bg-foreground/90"
             >
               {isSubmitting ? (
                 <>
