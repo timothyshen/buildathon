@@ -212,11 +212,11 @@ async function create(data: CreateTeamData): Promise<ServiceResponse<Team>> {
     .maybeSingle();
 
   if (teamError) {
-    return error(teamError.message, null as unknown as Team);
+    return error(teamError.message);
   }
 
   if (!teamData) {
-    return error("Failed to retrieve created team", null as unknown as Team);
+    return error("Failed to retrieve created team");
   }
 
   // Add lead member
@@ -231,7 +231,7 @@ async function create(data: CreateTeamData): Promise<ServiceResponse<Team>> {
   if (memberError) {
     // Rollback team creation
     await supabase.from("teams").delete().eq("id", teamData.id);
-    return error(memberError.message, null as unknown as Team);
+    return error(memberError.message);
   }
 
   const team = await fetchTeamWithMembers(supabase, teamData.id);
@@ -258,7 +258,7 @@ async function update(
     .eq("id", id);
 
   if (dbError) {
-    return error(dbError.message, null as unknown as Team);
+    return error(dbError.message);
   }
 
   const team = await fetchTeamWithMembers(supabase, id);
@@ -289,6 +289,21 @@ async function addMember(
 ): Promise<ServiceResponse<Team>> {
   const supabase = createClient();
 
+  // Enforce team size limit
+  const { count } = await supabase
+    .from("team_members")
+    .select("*", { count: "exact", head: true })
+    .eq("team_id", teamId);
+  const { data: teamRow } = await supabase.from("teams").select("cohort_id").eq("id", teamId).single();
+  let maxSize = 5;
+  if (teamRow?.cohort_id) {
+    const { data: cohort } = await supabase.from("cohorts").select("max_team_size").eq("id", teamRow.cohort_id).single();
+    if (cohort?.max_team_size) maxSize = cohort.max_team_size;
+  }
+  if (count !== null && count >= maxSize) {
+    return error("Team has reached maximum size");
+  }
+
   const { error: dbError } = await supabase
     .from("team_members")
     .insert({
@@ -299,9 +314,9 @@ async function addMember(
 
   if (dbError) {
     if (dbError.code === "23505") {
-      return error("User is already a member", null as unknown as Team);
+      return error("User is already a member");
     }
-    return error(dbError.message, null as unknown as Team);
+    return error(dbError.message);
   }
 
   const team = await fetchTeamWithMembers(supabase, teamId);
@@ -318,7 +333,7 @@ async function removeMember(teamId: string, userId: string): Promise<ServiceResp
     .eq("user_id", userId);
 
   if (dbError) {
-    return error(dbError.message, null as unknown as Team);
+    return error(dbError.message);
   }
 
   const team = await fetchTeamWithMembers(supabase, teamId);
@@ -343,7 +358,7 @@ async function transferLead(teamId: string, newLeadUserId: string): Promise<Serv
     .eq("user_id", newLeadUserId);
 
   if (dbError) {
-    return error(dbError.message, null as unknown as Team);
+    return error(dbError.message);
   }
 
   const team = await fetchTeamWithMembers(supabase, teamId);
@@ -433,7 +448,7 @@ async function createInvite(data: CreateInviteData): Promise<ServiceResponse<Tea
     .single();
 
   if (existing) {
-    return error("User already has a pending invite", null as unknown as TeamInvite);
+    return error("User already has a pending invite");
   }
 
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
@@ -453,7 +468,7 @@ async function createInvite(data: CreateInviteData): Promise<ServiceResponse<Tea
     .single();
 
   if (dbError) {
-    return error(dbError.message, null as unknown as TeamInvite);
+    return error(dbError.message);
   }
 
   const team = await fetchTeamWithMembers(supabase, data.teamId);
@@ -473,11 +488,26 @@ async function acceptInvite(inviteId: string, userId: string): Promise<ServiceRe
     .single();
 
   if (inviteError || !invite) {
-    return error("Invite not found", null as unknown as Team);
+    return error("Invite not found");
   }
 
   if (invite.status !== "pending") {
-    return error("Invite is no longer pending", null as unknown as Team);
+    return error("Invite is no longer pending");
+  }
+
+  // Enforce team size limit
+  const { count } = await supabase
+    .from("team_members")
+    .select("*", { count: "exact", head: true })
+    .eq("team_id", invite.team_id);
+  const { data: teamRow } = await supabase.from("teams").select("cohort_id").eq("id", invite.team_id).single();
+  let maxSize = 5;
+  if (teamRow?.cohort_id) {
+    const { data: cohort } = await supabase.from("cohorts").select("max_team_size").eq("id", teamRow.cohort_id).single();
+    if (cohort?.max_team_size) maxSize = cohort.max_team_size;
+  }
+  if (count !== null && count >= maxSize) {
+    return error("Team has reached maximum size");
   }
 
   // Update invite status
@@ -496,7 +526,7 @@ async function acceptInvite(inviteId: string, userId: string): Promise<ServiceRe
     });
 
   if (memberError) {
-    return error(memberError.message, null as unknown as Team);
+    return error(memberError.message);
   }
 
   const team = await fetchTeamWithMembers(supabase, invite.team_id);

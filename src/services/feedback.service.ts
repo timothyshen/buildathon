@@ -124,7 +124,10 @@ class FeedbackServiceImpl implements FeedbackService {
         query = query.eq("category", category);
       }
       if (search) {
-        query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`);
+        const sanitized = search.replace(/[%,().*\\]/g, '');
+        if (sanitized.length > 0) {
+          query = query.or(`title.ilike.%${sanitized}%,description.ilike.%${sanitized}%`);
+        }
       }
 
       // For "top" and "new", we can sort in the database
@@ -146,7 +149,7 @@ class FeedbackServiceImpl implements FeedbackService {
         return { ...error(queryError.message, []), total: 0, page, pageSize, hasMore: false };
       }
 
-      let posts = (data || []).map((row) => toFeedbackPost(row as Record<string, unknown>));
+      const posts = (data || []).map((row) => toFeedbackPost(row as Record<string, unknown>));
 
       // Trending sort: score = vote_count + (1 / (days_old + 2))
       if (sort === "trending") {
@@ -213,12 +216,12 @@ class FeedbackServiceImpl implements FeedbackService {
         .single();
 
       if (insertError) {
-        return error(insertError.message, {} as FeedbackPost);
+        return error(insertError.message);
       }
 
       return success(toFeedbackPost(created as Record<string, unknown>));
     } catch (err) {
-      return error(err instanceof Error ? err.message : "Unknown error", {} as FeedbackPost);
+      return error(err instanceof Error ? err.message : "Unknown error");
     }
   }
 
@@ -237,12 +240,12 @@ class FeedbackServiceImpl implements FeedbackService {
         .single();
 
       if (updateError) {
-        return error(updateError.message, {} as FeedbackPost);
+        return error(updateError.message);
       }
 
       return success(toFeedbackPost(updated as Record<string, unknown>));
     } catch (err) {
-      return error(err instanceof Error ? err.message : "Unknown error", {} as FeedbackPost);
+      return error(err instanceof Error ? err.message : "Unknown error");
     }
   }
 
@@ -260,12 +263,12 @@ class FeedbackServiceImpl implements FeedbackService {
         .single();
 
       if (updateError) {
-        return error(updateError.message, {} as FeedbackPost);
+        return error(updateError.message);
       }
 
       return success(toFeedbackPost(updated as Record<string, unknown>));
     } catch (err) {
-      return error(err instanceof Error ? err.message : "Unknown error", {} as FeedbackPost);
+      return error(err instanceof Error ? err.message : "Unknown error");
     }
   }
 
@@ -277,12 +280,12 @@ class FeedbackServiceImpl implements FeedbackService {
         .eq("id", id);
 
       if (deleteError) {
-        return error(deleteError.message, undefined as unknown as void);
+        return error(deleteError.message);
       }
 
-      return success(undefined as unknown as void);
+      return success(undefined);
     } catch (err) {
-      return error(err instanceof Error ? err.message : "Unknown error", undefined as unknown as void);
+      return error(err instanceof Error ? err.message : "Unknown error");
     }
   }
 
@@ -293,12 +296,12 @@ class FeedbackServiceImpl implements FeedbackService {
         .insert({ post_id: postId, user_id: userId });
 
       if (insertError) {
-        return error(insertError.message, undefined as unknown as void);
+        return error(insertError.message);
       }
 
-      return success(undefined as unknown as void);
+      return success(undefined);
     } catch (err) {
-      return error(err instanceof Error ? err.message : "Unknown error", undefined as unknown as void);
+      return error(err instanceof Error ? err.message : "Unknown error");
     }
   }
 
@@ -311,12 +314,12 @@ class FeedbackServiceImpl implements FeedbackService {
         .eq("user_id", userId);
 
       if (deleteError) {
-        return error(deleteError.message, undefined as unknown as void);
+        return error(deleteError.message);
       }
 
-      return success(undefined as unknown as void);
+      return success(undefined);
     } catch (err) {
-      return error(err instanceof Error ? err.message : "Unknown error", undefined as unknown as void);
+      return error(err instanceof Error ? err.message : "Unknown error");
     }
   }
 
@@ -373,12 +376,12 @@ class FeedbackServiceImpl implements FeedbackService {
         .single();
 
       if (insertError) {
-        return error(insertError.message, {} as FeedbackComment);
+        return error(insertError.message);
       }
 
       return success(toFeedbackComment(created as Record<string, unknown>));
     } catch (err) {
-      return error(err instanceof Error ? err.message : "Unknown error", {} as FeedbackComment);
+      return error(err instanceof Error ? err.message : "Unknown error");
     }
   }
 
@@ -392,12 +395,12 @@ class FeedbackServiceImpl implements FeedbackService {
         .single();
 
       if (updateError) {
-        return error(updateError.message, {} as FeedbackComment);
+        return error(updateError.message);
       }
 
       return success(toFeedbackComment(updated as Record<string, unknown>));
     } catch (err) {
-      return error(err instanceof Error ? err.message : "Unknown error", {} as FeedbackComment);
+      return error(err instanceof Error ? err.message : "Unknown error");
     }
   }
 
@@ -409,12 +412,12 @@ class FeedbackServiceImpl implements FeedbackService {
         .eq("id", id);
 
       if (deleteError) {
-        return error(deleteError.message, undefined as unknown as void);
+        return error(deleteError.message);
       }
 
-      return success(undefined as unknown as void);
+      return success(undefined);
     } catch (err) {
-      return error(err instanceof Error ? err.message : "Unknown error", undefined as unknown as void);
+      return error(err instanceof Error ? err.message : "Unknown error");
     }
   }
 }

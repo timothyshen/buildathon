@@ -178,7 +178,7 @@ async function create(data: { submissionId: string; judgeId: string }): Promise<
     .single();
 
   if (dbError) {
-    return error(dbError.message, null as unknown as Review);
+    return error(dbError.message);
   }
 
   const judge = created.users ? toUser(created.users as Record<string, unknown>) : undefined;
@@ -211,7 +211,7 @@ async function update(id: string, data: Partial<Review>): Promise<ServiceRespons
     .single();
 
   if (dbError) {
-    return error(dbError.message, null as unknown as Review);
+    return error(dbError.message);
   }
 
   const judge = updated.users ? toUser(updated.users as Record<string, unknown>) : undefined;
@@ -354,6 +354,48 @@ async function list(
 async function submitReview(id: string, data: SubmitReviewData): Promise<ServiceResponse<Review>> {
   const supabase = createClient();
 
+  // Validate all scores are finite numbers between 1 and 10
+  const scores = [data.innovationScore, data.executionScore, data.designScore, data.impactScore, data.presentationScore];
+  if (scores.some((s) => typeof s !== "number" || !Number.isFinite(s) || s < 1 || s > 10)) {
+    return error("All scores must be between 1 and 10");
+  }
+
+  // Fetch the review to get submissionId and judgeId
+  const { data: reviewRow, error: reviewError } = await supabase
+    .from("reviews")
+    .select("submission_id, judge_id")
+    .eq("id", id)
+    .single();
+
+  if (reviewError || !reviewRow) {
+    return error("Review not found");
+  }
+
+  // Prevent judges from reviewing their own submissions
+  const { data: submission } = await supabase
+    .from("submissions")
+    .select("team_id, created_by")
+    .eq("id", reviewRow.submission_id)
+    .single();
+
+  if (submission) {
+    const judgeId = reviewRow.judge_id;
+    if (submission.created_by === judgeId) {
+      return error("Cannot review your own submission");
+    }
+    if (submission.team_id) {
+      const { data: membership } = await supabase
+        .from("team_members")
+        .select("id")
+        .eq("team_id", submission.team_id)
+        .eq("user_id", judgeId)
+        .maybeSingle();
+      if (membership) {
+        return error("Cannot review your own team's submission");
+      }
+    }
+  }
+
   // Calculate overall score (the database trigger should also do this)
   const overallScore =
     (data.innovationScore +
@@ -385,7 +427,7 @@ async function submitReview(id: string, data: SubmitReviewData): Promise<Service
     .single();
 
   if (dbError) {
-    return error(dbError.message, null as unknown as Review);
+    return error(dbError.message);
   }
 
   const judge = updated.users ? toUser(updated.users as Record<string, unknown>) : undefined;

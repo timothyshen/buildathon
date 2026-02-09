@@ -153,6 +153,18 @@ async function getBySponsor(sponsorOrgId: string): Promise<ServiceResponse<Track
 async function create(data: Omit<Track, "id">): Promise<ServiceResponse<Track>> {
   const supabase = createClient();
 
+  // Verify sponsor ownership
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return error("Unauthorized");
+
+  const { data: userData } = await supabase.from("users").select("sponsor_org_id, role").eq("id", user.id).single();
+  if (userData?.role !== "admin") {
+    if (!userData?.sponsor_org_id) return error("Not a sponsor");
+    if (data.sponsorOrgId && data.sponsorOrgId !== userData.sponsor_org_id) {
+      return error("Cannot create tracks for another sponsor organization");
+    }
+  }
+
   const dbData = toDbTrack(data) as TablesInsert<"tracks">;
 
   const { data: created, error: dbError } = await supabase
@@ -162,11 +174,11 @@ async function create(data: Omit<Track, "id">): Promise<ServiceResponse<Track>> 
     .maybeSingle();
 
   if (dbError) {
-    return error(dbError.message, null as unknown as Track);
+    return error(dbError.message);
   }
 
   if (!created) {
-    return error("Failed to retrieve created track", null as unknown as Track);
+    return error("Failed to retrieve created track");
   }
 
   // Fetch sponsor data separately (join after insert can fail with PostgREST)
@@ -186,6 +198,19 @@ async function create(data: Omit<Track, "id">): Promise<ServiceResponse<Track>> 
 async function update(id: string, data: Partial<Track>): Promise<ServiceResponse<Track>> {
   const supabase = createClient();
 
+  // Verify sponsor ownership
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return error("Unauthorized");
+
+  const { data: userData } = await supabase.from("users").select("sponsor_org_id, role").eq("id", user.id).single();
+  if (userData?.role !== "admin") {
+    if (!userData?.sponsor_org_id) return error("Not a sponsor");
+    const { data: existingTrack } = await supabase.from("tracks").select("sponsor_org_id").eq("id", id).single();
+    if (existingTrack?.sponsor_org_id !== userData.sponsor_org_id) {
+      return error("Cannot update tracks for another sponsor organization");
+    }
+  }
+
   const dbData = toDbTrack(data) as TablesUpdate<"tracks">;
 
   const { error: updateError } = await supabase
@@ -194,7 +219,7 @@ async function update(id: string, data: Partial<Track>): Promise<ServiceResponse
     .eq("id", id);
 
   if (updateError) {
-    return error(updateError.message, null as unknown as Track);
+    return error(updateError.message);
   }
 
   // Re-fetch with sponsor data
@@ -205,7 +230,7 @@ async function update(id: string, data: Partial<Track>): Promise<ServiceResponse
     .single();
 
   if (fetchError) {
-    return error(fetchError.message, null as unknown as Track);
+    return error(fetchError.message);
   }
 
   let sponsorData: { name: string; logo: string } | null = null;
@@ -223,6 +248,19 @@ async function update(id: string, data: Partial<Track>): Promise<ServiceResponse
 
 async function deleteTrack(id: string): Promise<ServiceResponse<void>> {
   const supabase = createClient();
+
+  // Verify sponsor ownership
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return error("Unauthorized");
+
+  const { data: userData } = await supabase.from("users").select("sponsor_org_id, role").eq("id", user.id).single();
+  if (userData?.role !== "admin") {
+    if (!userData?.sponsor_org_id) return error("Not a sponsor");
+    const { data: existingTrack } = await supabase.from("tracks").select("sponsor_org_id").eq("id", id).single();
+    if (existingTrack?.sponsor_org_id !== userData.sponsor_org_id) {
+      return error("Cannot delete tracks for another sponsor organization");
+    }
+  }
 
   const { error: dbError } = await supabase
     .from("tracks")

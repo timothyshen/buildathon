@@ -42,8 +42,8 @@ export function success<T>(data: T): ServiceResponse<T> {
 /**
  * Helper to create an error response
  */
-export function error<T>(message: string, data: T): ServiceResponse<T> {
-  return { data, success: false, error: message };
+export function error<T>(message: string, data?: T | null): ServiceResponse<T> {
+  return { data: data as T, success: false, error: message };
 }
 
 /**

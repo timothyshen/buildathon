@@ -123,6 +123,18 @@ async function create(
 ): Promise<ServiceResponse<Workshop>> {
   const supabase = createClient();
 
+  // Verify authorization
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return error("Unauthorized");
+
+  const { data: userData } = await supabase.from("users").select("sponsor_org_id, role").eq("id", user.id).single();
+  if (userData?.role !== "admin") {
+    if (!userData?.sponsor_org_id) return error("Not a sponsor");
+    if (data.sponsorOrgId && data.sponsorOrgId !== userData.sponsor_org_id) {
+      return error("Cannot create workshops for another sponsor organization");
+    }
+  }
+
   const dbData = {
     title: data.title,
     description: data.description,
@@ -154,11 +166,11 @@ async function create(
     .maybeSingle();
 
   if (dbError) {
-    return error(dbError.message, null as unknown as Workshop);
+    return error(dbError.message);
   }
 
   if (!created) {
-    return error("Failed to retrieve created workshop", null as unknown as Workshop);
+    return error("Failed to retrieve created workshop");
   }
 
   // Add cohort associations
@@ -176,6 +188,19 @@ async function create(
 
 async function update(id: string, data: Partial<Workshop>): Promise<ServiceResponse<Workshop>> {
   const supabase = createClient();
+
+  // Verify authorization
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return error("Unauthorized");
+
+  const { data: userData } = await supabase.from("users").select("sponsor_org_id, role").eq("id", user.id).single();
+  if (userData?.role !== "admin") {
+    if (!userData?.sponsor_org_id) return error("Not a sponsor");
+    const { data: existingWorkshop } = await supabase.from("workshops").select("sponsor_org_id").eq("id", id).single();
+    if (existingWorkshop?.sponsor_org_id !== userData.sponsor_org_id) {
+      return error("Cannot update workshops for another sponsor organization");
+    }
+  }
 
   const dbData: Record<string, unknown> = {};
   if (data.title !== undefined) dbData.title = data.title;
@@ -206,7 +231,7 @@ async function update(id: string, data: Partial<Workshop>): Promise<ServiceRespo
     .eq("id", id);
 
   if (dbError) {
-    return error(dbError.message, null as unknown as Workshop);
+    return error(dbError.message);
   }
 
   // Update cohort associations if provided
@@ -230,6 +255,19 @@ async function update(id: string, data: Partial<Workshop>): Promise<ServiceRespo
 
 async function deleteWorkshop(id: string): Promise<ServiceResponse<void>> {
   const supabase = createClient();
+
+  // Verify authorization
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return error("Unauthorized");
+
+  const { data: userData } = await supabase.from("users").select("sponsor_org_id, role").eq("id", user.id).single();
+  if (userData?.role !== "admin") {
+    if (!userData?.sponsor_org_id) return error("Not a sponsor");
+    const { data: existingWorkshop } = await supabase.from("workshops").select("sponsor_org_id").eq("id", id).single();
+    if (existingWorkshop?.sponsor_org_id !== userData.sponsor_org_id) {
+      return error("Cannot delete workshops for another sponsor organization");
+    }
+  }
 
   const { error: dbError } = await supabase
     .from("workshops")
@@ -454,7 +492,7 @@ async function createRSVP(workshopId: string, userId: string): Promise<ServiceRe
     .single();
 
   if (dbError) {
-    return error(dbError.message, null as unknown as WorkshopRSVP);
+    return error(dbError.message);
   }
 
   const user = created.users ? toUser(created.users as Record<string, unknown>) : undefined;

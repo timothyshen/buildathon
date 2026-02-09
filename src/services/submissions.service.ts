@@ -9,6 +9,7 @@ import type { ServiceResponse, QueryOptions, PaginatedResponse } from "./types";
 import { success, error, paginated } from "./types";
 
 const DRAFT_STORAGE_KEY = "swa-submission-draft";
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export interface SubmissionsService {
   // CRUD
@@ -224,11 +225,11 @@ async function create(
       .single();
 
     if (teamError || !teamRow) {
-      return error("Team not found", null as unknown as Submission);
+      return error("Team not found");
     }
 
     if (teamRow.cohort_id !== data.cohortId) {
-      return error("Team does not belong to the selected cohort", null as unknown as Submission);
+      return error("Team does not belong to the selected cohort");
     }
   }
 
@@ -243,7 +244,7 @@ async function create(
       (t) => t.cohort_id !== data.cohortId
     );
     if (invalidTracks.length > 0) {
-      return error("Selected tracks do not belong to the submission's cohort", null as unknown as Submission);
+      return error("Selected tracks do not belong to the submission's cohort");
     }
   }
 
@@ -275,11 +276,11 @@ async function create(
     .maybeSingle();
 
   if (dbError) {
-    return error(dbError.message, null as unknown as Submission);
+    return error(dbError.message);
   }
 
   if (!created) {
-    return error("Failed to retrieve created submission", null as unknown as Submission);
+    return error("Failed to retrieve created submission");
   }
 
   // Add track associations
@@ -290,13 +291,13 @@ async function create(
     }));
     const { error: trackError } = await supabase.from("submission_tracks").insert(trackInserts);
     if (trackError) {
-      return error("Submission created but failed to add tracks: " + trackError.message, null as unknown as Submission);
+      return error("Submission created but failed to add tracks: " + trackError.message);
     }
   }
 
   const submission = await fetchSubmissionWithRelations(supabase, created.id);
   if (!submission) {
-    return error("Failed to fetch created submission", null as unknown as Submission);
+    return error("Failed to fetch created submission");
   }
   return success(submission);
 }
@@ -323,7 +324,7 @@ async function update(id: string, data: Partial<Submission>): Promise<ServiceRes
         (t) => t.cohort_id !== cohortId
       );
       if (invalidTracks.length > 0) {
-        return error("Selected tracks do not belong to the submission's cohort", null as unknown as Submission);
+        return error("Selected tracks do not belong to the submission's cohort");
       }
     }
   }
@@ -358,11 +359,11 @@ async function update(id: string, data: Partial<Submission>): Promise<ServiceRes
     .select("id");
 
   if (dbError) {
-    return error(dbError.message, null as unknown as Submission);
+    return error(dbError.message);
   }
 
   if (!updatedRows || updatedRows.length === 0) {
-    return error("Submission not found or you don't have permission to update it", null as unknown as Submission);
+    return error("Submission not found or you don't have permission to update it");
   }
 
   // Update track associations if provided
@@ -370,7 +371,7 @@ async function update(id: string, data: Partial<Submission>): Promise<ServiceRes
     // Remove existing
     const { error: deleteError } = await supabase.from("submission_tracks").delete().eq("submission_id", id);
     if (deleteError) {
-      return error("Failed to update tracks: " + deleteError.message, null as unknown as Submission);
+      return error("Failed to update tracks: " + deleteError.message);
     }
 
     // Add new
@@ -381,7 +382,7 @@ async function update(id: string, data: Partial<Submission>): Promise<ServiceRes
       }));
       const { error: insertError } = await supabase.from("submission_tracks").insert(trackInserts);
       if (insertError) {
-        return error("Failed to add tracks: " + insertError.message, null as unknown as Submission);
+        return error("Failed to add tracks: " + insertError.message);
       }
     }
   }
@@ -460,6 +461,14 @@ async function getByUser(userId: string): Promise<ServiceResponse<Submission[]>>
     .eq("user_id", userId);
 
   const teamIds = (memberData || []).map((m) => m.team_id);
+
+  // Validate userId and teamIds before using in string interpolation
+  if (!UUID_REGEX.test(userId)) {
+    return error("Invalid user ID", []);
+  }
+  if (teamIds.some((id) => !UUID_REGEX.test(id))) {
+    return error("Invalid team ID", []);
+  }
 
   // Query submissions: team-based OR solo (created_by with null team_id)
   let query = supabase
@@ -594,7 +603,7 @@ async function submit(id: string): Promise<ServiceResponse<Submission>> {
     .eq("id", id);
 
   if (dbError) {
-    return error(dbError.message, null as unknown as Submission);
+    return error(dbError.message);
   }
 
   const submission = await fetchSubmissionWithRelations(supabase, id);
