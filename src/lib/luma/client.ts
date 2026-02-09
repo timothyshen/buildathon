@@ -20,7 +20,8 @@ export async function lumaFetch<T>(
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`Luma API error ${res.status}: ${text}`);
+    console.error(`[Luma API] Error ${res.status}:`, text);
+    throw new Error(`Luma API request failed (status ${res.status})`);
   }
 
   return res.json();

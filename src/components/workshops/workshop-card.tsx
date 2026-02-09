@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { CalendarEvent } from "@/types";
 import {
   Card,
@@ -88,9 +89,12 @@ export function WorkshopCard({
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
             {event.hostAvatar ? (
-              <img
+              <Image
                 src={event.hostAvatar}
                 alt={event.hostName || "Host"}
+                width={48}
+                height={48}
+                unoptimized
                 className="h-12 w-12 rounded-xl object-cover bg-muted"
               />
             ) : (
@@ -162,11 +166,13 @@ export function WorkshopCard({
           >
             {isRsvped ? "RSVP'd" : "RSVP"}
           </Button>
-          <Button variant="ghost" size="sm" className="ml-auto" asChild>
-            <a href={event.eventUrl} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="h-4 w-4" />
-            </a>
-          </Button>
+          {event.eventUrl && /^https?:\/\//i.test(event.eventUrl) && (
+            <Button variant="ghost" size="sm" className="ml-auto" asChild>
+              <a href={event.eventUrl} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="h-4 w-4" />
+              </a>
+            </Button>
+          )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm">

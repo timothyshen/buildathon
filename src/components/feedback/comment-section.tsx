@@ -100,6 +100,7 @@ function CommentItem({ comment, postId, isReply = false, onCommentAdded }: Comme
                 onChange={(e) => setEditText(e.target.value)}
                 rows={2}
                 className="text-sm"
+                maxLength={2000}
               />
               <div className="flex gap-2">
                 <Button size="sm" onClick={handleEdit} disabled={isSubmitting}>
@@ -157,6 +158,7 @@ function CommentItem({ comment, postId, isReply = false, onCommentAdded }: Comme
                 placeholder="Write a reply..."
                 rows={2}
                 className="text-sm"
+                maxLength={2000}
               />
               <div className="flex gap-2">
                 <Button size="sm" onClick={handleReply} disabled={isSubmitting || !replyText.trim()}>
@@ -232,6 +234,7 @@ export function CommentSection({ postId, comments, onRefresh }: CommentSectionPr
               placeholder="Leave a comment..."
               rows={3}
               className="text-sm"
+              maxLength={2000}
             />
             <div className="flex justify-end">
               <Button size="sm" onClick={handleSubmit} disabled={isSubmitting || !newComment.trim()}>

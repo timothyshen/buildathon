@@ -243,7 +243,7 @@ export function RichTextDisplay({ content, className }: RichTextDisplayProps) {
         ALLOWED_TAGS: ["p", "br", "strong", "em", "ul", "ol", "li", "h1", "h2", "h3", "h4", "a", "blockquote", "code", "pre"],
         ALLOWED_ATTR: ["href", "target", "rel"],
       })
-    : content; // SSR fallback - will be sanitized on client hydration
+    : content.replace(/<[^>]*>/g, ''); // SSR: strip HTML for safety, client will hydrate with sanitized version
 
   return (
     <div

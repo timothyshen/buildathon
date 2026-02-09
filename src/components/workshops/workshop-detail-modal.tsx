@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { CalendarEvent } from "@/types";
 import {
   Dialog,
@@ -98,11 +99,13 @@ export function WorkshopDetailModal({
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         {/* Cover Image */}
         {event.coverUrl && (
-          <div className="-mx-6 -mt-6 mb-4">
-            <img
+          <div className="-mx-6 -mt-6 mb-4 relative h-48">
+            <Image
               src={event.coverUrl}
               alt={event.title}
-              className="w-full h-48 object-cover rounded-t-lg"
+              fill
+              unoptimized
+              className="object-cover rounded-t-lg"
             />
           </div>
         )}
@@ -111,9 +114,12 @@ export function WorkshopDetailModal({
           {/* Host and Title */}
           <div className="flex items-start gap-4">
             {event.hostAvatar ? (
-              <img
+              <Image
                 src={event.hostAvatar}
                 alt={event.hostName || "Host"}
+                width={56}
+                height={56}
+                unoptimized
                 className="h-14 w-14 rounded-xl object-cover flex-shrink-0 bg-muted"
               />
             ) : (
@@ -172,19 +178,21 @@ export function WorkshopDetailModal({
         </div>
 
         {/* View on Luma */}
-        <Button variant="outline" className="w-full" asChild>
-          <a
-            href={event.eventUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <ExternalLink className="h-4 w-4 mr-2" />
-            View on Luma
-          </a>
-        </Button>
+        {event.eventUrl && /^https?:\/\//i.test(event.eventUrl) && (
+          <Button variant="outline" className="w-full" asChild>
+            <a
+              href={event.eventUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              View on Luma
+            </a>
+          </Button>
+        )}
 
         {/* Meeting Link (only if RSVP'd) */}
-        {isRsvped && event.meetingUrl && (
+        {isRsvped && event.meetingUrl && /^https?:\/\//i.test(event.meetingUrl) && (
           <Button variant="secondary" className="w-full" asChild>
             <a
               href={event.meetingUrl}

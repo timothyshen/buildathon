@@ -1,5 +1,4 @@
 "use client";
-"use no memo";
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -343,7 +342,7 @@ export function MilestonesList({
                           year: "numeric",
                         })}
                       </span>
-                      {milestone.proofUrl && (
+                      {milestone.proofUrl && /^https?:\/\//i.test(milestone.proofUrl) && (
                         <a
                           href={milestone.proofUrl}
                           target="_blank"

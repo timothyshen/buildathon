@@ -106,7 +106,7 @@ export function downloadICSFile(event: CalendarEvent): void {
   const sanitizedTitle = event.title
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
+    .replace(/^-|-$/g, "") || "event";
 
   const filename = `${sanitizedTitle}.ics`;
 

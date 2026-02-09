@@ -68,7 +68,8 @@ async function executeQuery(
 
   if (!response.ok) {
     const error = await response.text();
-    throw new Error(`Dune execute failed: ${error}`);
+    console.error("[Dune API] Execute failed:", error);
+    throw new Error("Dune API execute request failed");
   }
 
   const data: DuneExecutionResponse = await response.json();
@@ -91,7 +92,8 @@ async function getExecutionResult(executionId: string): Promise<DuneResultRespon
 
   if (!response.ok) {
     const error = await response.text();
-    throw new Error(`Dune results failed: ${error}`);
+    console.error("[Dune API] Results fetch failed:", error);
+    throw new Error("Dune API results request failed");
   }
 
   return response.json();
@@ -115,7 +117,8 @@ async function waitForCompletion(
     }
 
     if (result.state === "QUERY_STATE_FAILED") {
-      throw new Error(`Dune query failed: ${result.error || "Unknown error"}`);
+      console.error("[Dune API] Query failed:", result.error);
+      throw new Error("Dune API query execution failed");
     }
 
     // Wait before polling again
@@ -158,7 +161,8 @@ export async function getLatestResults(queryId: number): Promise<Record<string, 
 
   if (!response.ok) {
     const error = await response.text();
-    throw new Error(`Dune latest results failed: ${error}`);
+    console.error("[Dune API] Latest results fetch failed:", error);
+    throw new Error("Dune API latest results request failed");
   }
 
   const data: DuneResultResponse = await response.json();
