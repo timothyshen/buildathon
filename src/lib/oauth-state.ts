@@ -6,7 +6,13 @@
 
 import { createHmac, randomBytes } from "crypto";
 
-const STATE_SECRET = process.env.OAUTH_STATE_SECRET || process.env.NEXTAUTH_SECRET || "fallback-secret-change-me";
+function getStateSecret(): string {
+  const secret = process.env.OAUTH_STATE_SECRET || process.env.NEXTAUTH_SECRET;
+  if (!secret) {
+    throw new Error("OAUTH_STATE_SECRET or NEXTAUTH_SECRET environment variable must be set");
+  }
+  return secret;
+}
 const STATE_EXPIRY_MS = 10 * 60 * 1000; // 10 minutes
 
 interface StatePayload {
@@ -30,7 +36,7 @@ export function createSignedState(submissionId: string, userId: string): string 
   const payloadStr = JSON.stringify(payload);
   const payloadB64 = Buffer.from(payloadStr).toString("base64url");
 
-  const signature = createHmac("sha256", STATE_SECRET)
+  const signature = createHmac("sha256", getStateSecret())
     .update(payloadB64)
     .digest("base64url");
 
@@ -51,7 +57,7 @@ export function verifySignedState(state: string): { submissionId: string; userId
     const [payloadB64, signature] = parts;
 
     // Verify signature
-    const expectedSignature = createHmac("sha256", STATE_SECRET)
+    const expectedSignature = createHmac("sha256", getStateSecret())
       .update(payloadB64)
       .digest("base64url");
 

@@ -68,14 +68,23 @@ function RegisterForm() {
       return;
     }
 
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters");
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters");
+      return;
+    }
+    if (!/[A-Z]/.test(password)) {
+      setError("Password must contain at least one uppercase letter");
+      return;
+    }
+    if (!/[0-9]/.test(password)) {
+      setError("Password must contain at least one number");
       return;
     }
 
     setIsLoading(true);
 
-    const result = await register({ email, password, name });
+    const normalizedEmail = email.toLowerCase().trim();
+    const result = await register({ email: normalizedEmail, password, name });
 
     if (result.success) {
       // If this is an invite registration, consume the invite token
@@ -204,12 +213,12 @@ function RegisterForm() {
               <Input
                 id="password"
                 type="password"
-                placeholder="At least 6 characters"
+                placeholder="At least 8 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={isLoading}
-                minLength={6}
+                minLength={8}
               />
             </div>
 

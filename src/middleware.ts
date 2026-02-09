@@ -54,7 +54,10 @@ export async function middleware(request: NextRequest) {
   // Redirect to login if accessing protected route without auth
   if (isProtectedPath && !user) {
     const redirectUrl = new URL("/login", request.url);
-    redirectUrl.searchParams.set("redirect", request.nextUrl.pathname);
+    const redirectPath = request.nextUrl.pathname;
+    if (redirectPath.startsWith('/') && !redirectPath.startsWith('//')) {
+      redirectUrl.searchParams.set("redirect", redirectPath);
+    }
     return NextResponse.redirect(redirectUrl);
   }
 
@@ -68,7 +71,7 @@ export async function middleware(request: NextRequest) {
     // Fetch user profile to get role
     const { data: profile } = await supabase
       .from("users")
-      .select("role")
+      .select("role, has_completed_onboarding")
       .eq("id", user.id)
       .maybeSingle();
 
@@ -88,6 +91,11 @@ export async function middleware(request: NextRequest) {
         redirectUrl.searchParams.set("error", "account_deleted");
         return NextResponse.redirect(redirectUrl);
       }
+    }
+
+    // If user hasn't completed onboarding and isn't already on the onboarding page, redirect them
+    if (profile && !profile.has_completed_onboarding && !request.nextUrl.pathname.startsWith('/onboarding')) {
+      return NextResponse.redirect(new URL("/onboarding", request.url));
     }
 
     const role = profile?.role;

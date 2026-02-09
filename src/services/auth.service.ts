@@ -114,35 +114,28 @@ async function register(data: RegisterData): Promise<ServiceResponse<User>> {
 
   // Check if email confirmation is required
   if (signUpData.user.identities?.length === 0) {
-    return error("An account with this email already exists", null as unknown as User);
+    return error("Registration could not be completed. Please try again or use a different email.", null as unknown as User);
   }
 
-  // Wait a moment for trigger to create user profile
-  await new Promise((resolve) => setTimeout(resolve, 500));
-
-  // Fetch the user profile (created by trigger)
-  const { data: userData, error: userError } = await supabase
-    .from("users")
-    .select("*")
-    .eq("id", signUpData.user.id)
-    .maybeSingle();
-
-  if (userError) {
-    return error(userError.message, null as unknown as User);
+  // Poll for profile creation with retries
+  let profile = null;
+  for (let i = 0; i < 5; i++) {
+    const { data: userData } = await supabase
+      .from("users")
+      .select("*")
+      .eq("id", signUpData.user.id)
+      .maybeSingle();
+    if (userData) {
+      profile = userData;
+      break;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 300 * (i + 1)));
   }
 
-  if (!userData) {
-    // Profile not created yet - create minimal user object from auth data
-    return success({
-      id: signUpData.user.id,
-      email: signUpData.user.email || data.email,
-      name: data.name,
-      role: "participant",
-      createdAt: new Date(),
-    });
+  if (!profile) {
+    return error("Profile creation timed out. Please try logging in.", null as unknown as User);
   }
-
-  return success(toUser(userData));
+  return success(toUser(profile));
 }
 
 async function logout(): Promise<ServiceResponse<void>> {

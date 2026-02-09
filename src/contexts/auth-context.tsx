@@ -22,8 +22,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const isMountedRef = useRef(true);
   const initRef = useRef(false);
-  // Track when we've just completed login/register to skip redundant SIGNED_IN handler
-  const justAuthenticatedRef = useRef(false);
+  // Track when we've just completed login/register to skip redundant SIGNED_IN handler.
+  // Uses a counter instead of a boolean so concurrent login attempts don't interfere.
+  const authRequestIdRef = useRef<number>(0);
 
   // Helper to create user from session data (fallback when profile fetch fails)
   // For existing users (created > 5 min ago), default hasCompletedOnboarding to true
@@ -157,10 +158,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         try {
           if (event === "SIGNED_IN" && session?.user) {
-            // Skip if we just completed login/register - user is already set correctly
-            // This prevents race conditions where timeout fallback overwrites correct role
-            if (justAuthenticatedRef.current) {
-              console.log("Skipping SIGNED_IN handler - just authenticated");
+            // Skip if we just completed login/register - user is already set correctly.
+            // This prevents race conditions where timeout fallback overwrites correct role.
+            if (authRequestIdRef.current > 0) {
+              authRequestIdRef.current = 0;
               return;
             }
 
@@ -215,10 +216,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (success && data) {
       // Mark that we just authenticated to prevent SIGNED_IN handler from overwriting
-      justAuthenticatedRef.current = true;
+      authRequestIdRef.current++;
       setUser(data);
-      // Reset the flag after a short delay to allow normal behavior for subsequent events
-      setTimeout(() => { justAuthenticatedRef.current = false; }, 2000);
+      // Reset the counter after a delay to allow normal behavior for subsequent events
+      const currentId = authRequestIdRef.current;
+      setTimeout(() => {
+        if (authRequestIdRef.current === currentId) {
+          authRequestIdRef.current = 0;
+        }
+      }, 5000);
       return { success: true };
     }
 
@@ -230,10 +236,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (success && userData) {
       // Mark that we just authenticated to prevent SIGNED_IN handler from overwriting
-      justAuthenticatedRef.current = true;
+      authRequestIdRef.current++;
       setUser(userData);
-      // Reset the flag after a short delay to allow normal behavior for subsequent events
-      setTimeout(() => { justAuthenticatedRef.current = false; }, 2000);
+      // Reset the counter after a delay to allow normal behavior for subsequent events
+      const currentId = authRequestIdRef.current;
+      setTimeout(() => {
+        if (authRequestIdRef.current === currentId) {
+          authRequestIdRef.current = 0;
+        }
+      }, 5000);
       return { success: true };
     }
 

@@ -36,7 +36,8 @@ function LoginForm() {
     setIsLoading(true);
     setError("");
 
-    const result = await login(email, password);
+    const normalizedEmail = email.toLowerCase().trim();
+    const result = await login(normalizedEmail, password);
 
     if (result.success) {
       router.push("/dashboard");
