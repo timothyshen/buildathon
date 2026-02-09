@@ -106,6 +106,7 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
       title: "Builder",
       roles: ["participant"],
       items: [
+        { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
         {
           href: "/submissions",
           label: "My Submissions",

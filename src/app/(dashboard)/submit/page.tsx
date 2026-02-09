@@ -378,8 +378,8 @@ export default function SubmitPage() {
     <div className="mx-auto max-w-3xl space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold">Submit Project</h1>
-        <p className="mt-2 text-muted-foreground">
+        <h1 className="text-2xl font-semibold tracking-tight">Submit Project</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           Share your buildathon project with the community
         </p>
       </div>

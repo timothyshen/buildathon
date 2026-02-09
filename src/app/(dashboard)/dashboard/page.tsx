@@ -4,9 +4,10 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { Loading } from "@/components/ui/loading";
+import { ParticipantDashboard } from "@/components/dashboard/participant-dashboard";
 import type { User } from "@/types";
 
-function getRoleHome(role: User["role"]): string {
+function getRoleHome(role: User["role"]): string | null {
   switch (role) {
     case "admin":
       return "/admin/cohorts";
@@ -16,7 +17,7 @@ function getRoleHome(role: User["role"]): string {
       return "/sponsor/tracks";
     case "participant":
     default:
-      return "/submissions";
+      return null;
   }
 }
 
@@ -24,11 +25,17 @@ export default function DashboardPage() {
   const router = useRouter();
   const { user } = useAuth();
 
-  useEffect(() => {
-    if (user) {
-      router.replace(getRoleHome(user.role));
-    }
-  }, [user, router]);
+  const redirectTo = user ? getRoleHome(user.role) : null;
 
-  return <Loading fullScreen label="Loading..." />;
+  useEffect(() => {
+    if (redirectTo) {
+      router.replace(redirectTo);
+    }
+  }, [redirectTo, router]);
+
+  if (!user || redirectTo) {
+    return <Loading fullScreen label="Loading..." />;
+  }
+
+  return <ParticipantDashboard />;
 }
