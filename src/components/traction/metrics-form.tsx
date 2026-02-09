@@ -10,8 +10,7 @@ import type { TractionSnapshot } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Users, Globe, BarChart3 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 const metricsSchema = z.object({
   reportedDau: z.string().optional(),
@@ -89,117 +88,116 @@ export function MetricsForm({
   });
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Report Metrics</CardTitle>
-        <CardDescription>
-          Submit your current metrics for {today}. This creates a snapshot for historical tracking.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* Usage Metrics */}
-          <div className="space-y-4">
-            <Label className="flex items-center gap-2 text-base font-medium">
-              <Users className="h-4 w-4" />
-              Usage Metrics
-            </Label>
+    <section className="rounded-xl border p-5 space-y-6">
+      <div>
+        <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">
+          Report Metrics
+        </h2>
+        <p className="text-xs text-muted-foreground mt-1">
+          Snapshot for {today}
+        </p>
+      </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="reportedDau" className="text-sm text-muted-foreground">
-                  Daily Active Users (DAU)
-                </Label>
-                <Input
-                  id="reportedDau"
-                  type="number"
-                  min="0"
-                  {...register("reportedDau")}
-                  placeholder="0"
-                />
-                {errors.reportedDau && (
-                  <p className="text-sm text-red-500">{errors.reportedDau.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="reportedMau" className="text-sm text-muted-foreground">
-                  Monthly Active Users (MAU)
-                </Label>
-                <Input
-                  id="reportedMau"
-                  type="number"
-                  min="0"
-                  {...register("reportedMau")}
-                  placeholder="0"
-                />
-                {errors.reportedMau && (
-                  <p className="text-sm text-red-500">{errors.reportedMau.message}</p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Website Traffic */}
-          <div className="space-y-4">
-            <Label className="flex items-center gap-2 text-base font-medium">
-              <Globe className="h-4 w-4" />
-              Website Traffic
-            </Label>
-
-            <div className="space-y-2">
-              <Label htmlFor="reportedMonthlyVisits" className="text-sm text-muted-foreground">
-                Monthly Visits
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        {/* Usage Metrics */}
+        <div className="space-y-3">
+          <p className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">
+            Usage
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="reportedDau" className="text-xs text-muted-foreground">
+                Daily Active Users (DAU)
               </Label>
               <Input
-                id="reportedMonthlyVisits"
+                id="reportedDau"
                 type="number"
                 min="0"
-                {...register("reportedMonthlyVisits")}
+                {...register("reportedDau")}
                 placeholder="0"
               />
-              {errors.reportedMonthlyVisits && (
-                <p className="text-sm text-red-500">{errors.reportedMonthlyVisits.message}</p>
+              {errors.reportedDau && (
+                <p className="text-xs text-destructive">{errors.reportedDau.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="reportedMau" className="text-xs text-muted-foreground">
+                Monthly Active Users (MAU)
+              </Label>
+              <Input
+                id="reportedMau"
+                type="number"
+                min="0"
+                {...register("reportedMau")}
+                placeholder="0"
+              />
+              {errors.reportedMau && (
+                <p className="text-xs text-destructive">{errors.reportedMau.message}</p>
               )}
             </div>
           </div>
+        </div>
 
-          {/* Social Metrics */}
-          <div className="space-y-4">
-            <Label className="flex items-center gap-2 text-base font-medium">
-              <BarChart3 className="h-4 w-4" />
-              Social Metrics
+        {/* Website Traffic */}
+        <div className="space-y-3">
+          <p className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">
+            Website Traffic
+          </p>
+          <div className="space-y-1.5">
+            <Label htmlFor="reportedMonthlyVisits" className="text-xs text-muted-foreground">
+              Monthly Visits
             </Label>
-
-            <div className="space-y-2">
-              <Label htmlFor="twitterFollowers" className="text-sm text-muted-foreground">
-                Twitter Followers
-              </Label>
-              <Input
-                id="twitterFollowers"
-                type="number"
-                min="0"
-                {...register("twitterFollowers")}
-                placeholder="0"
-              />
-              {errors.twitterFollowers && (
-                <p className="text-sm text-red-500">{errors.twitterFollowers.message}</p>
-              )}
-            </div>
-          </div>
-
-          <Button type="submit" disabled={isSaving}>
-            {isSaving ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              "Save Snapshot"
+            <Input
+              id="reportedMonthlyVisits"
+              type="number"
+              min="0"
+              {...register("reportedMonthlyVisits")}
+              placeholder="0"
+            />
+            {errors.reportedMonthlyVisits && (
+              <p className="text-xs text-destructive">{errors.reportedMonthlyVisits.message}</p>
             )}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+          </div>
+        </div>
+
+        {/* Social Metrics */}
+        <div className="space-y-3">
+          <p className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">
+            Social
+          </p>
+          <div className="space-y-1.5">
+            <Label htmlFor="twitterFollowers" className="text-xs text-muted-foreground">
+              Twitter Followers
+            </Label>
+            <Input
+              id="twitterFollowers"
+              type="number"
+              min="0"
+              {...register("twitterFollowers")}
+              placeholder="0"
+            />
+            {errors.twitterFollowers && (
+              <p className="text-xs text-destructive">{errors.twitterFollowers.message}</p>
+            )}
+          </div>
+        </div>
+
+        <Button
+          type="submit"
+          disabled={isSaving}
+          className="bg-foreground text-background hover:bg-foreground/90"
+        >
+          {isSaving ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            "Save Snapshot"
+          )}
+        </Button>
+      </form>
+    </section>
   );
 }

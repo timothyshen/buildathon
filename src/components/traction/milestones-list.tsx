@@ -18,8 +18,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -40,7 +38,6 @@ import {
   Award,
   MoreHorizontal,
   ExternalLink,
-  CheckCircle2,
   Trash2,
 } from "lucide-react";
 
@@ -172,26 +169,20 @@ export function MilestonesList({
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Trophy className="h-5 w-5" />
-              Milestones
-            </CardTitle>
-            <CardDescription>
-              Track key achievements and progress
-            </CardDescription>
-          </div>
-          {!isAdmin && (
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Milestone
-                </Button>
-              </DialogTrigger>
+    <section>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">
+          Milestones
+        </h2>
+        {!isAdmin && (
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                <Plus className="h-3.5 w-3.5 mr-1" />
+                Add
+              </Button>
+            </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Add Milestone</DialogTitle>
@@ -200,8 +191,8 @@ export function MilestonesList({
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Type</Label>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Type</Label>
                   <Select
                     value={selectedType}
                     onValueChange={(value) =>
@@ -227,20 +218,22 @@ export function MilestonesList({
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="title">Title</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="title" className="text-xs text-muted-foreground">Title</Label>
                   <Input
                     id="title"
                     {...register("title")}
                     placeholder="e.g., Launched on Story Protocol Mainnet"
                   />
                   {errors.title && (
-                    <p className="text-sm text-red-500">{errors.title.message}</p>
+                    <p className="text-xs text-destructive">{errors.title.message}</p>
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description (optional)</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="description" className="text-xs text-muted-foreground">
+                    Description (optional)
+                  </Label>
                   <Textarea
                     id="description"
                     {...register("description")}
@@ -249,39 +242,45 @@ export function MilestonesList({
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="achievedAt">Date Achieved</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="achievedAt" className="text-xs text-muted-foreground">Date Achieved</Label>
                   <Input
                     id="achievedAt"
                     type="date"
                     {...register("achievedAt")}
                   />
                   {errors.achievedAt && (
-                    <p className="text-sm text-red-500">{errors.achievedAt.message}</p>
+                    <p className="text-xs text-destructive">{errors.achievedAt.message}</p>
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="proofUrl">Proof URL (optional)</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="proofUrl" className="text-xs text-muted-foreground">
+                    Proof URL (optional)
+                  </Label>
                   <Input
                     id="proofUrl"
                     {...register("proofUrl")}
                     placeholder="https://twitter.com/yourproject/status/..."
                   />
                   {errors.proofUrl && (
-                    <p className="text-sm text-red-500">{errors.proofUrl.message}</p>
+                    <p className="text-xs text-destructive">{errors.proofUrl.message}</p>
                   )}
                 </div>
 
                 <div className="flex justify-end gap-3 pt-4">
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="ghost"
                     onClick={() => setIsDialogOpen(false)}
                   >
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={isSaving}>
+                  <Button
+                    type="submit"
+                    disabled={isSaving}
+                    className="bg-foreground text-background hover:bg-foreground/90"
+                  >
                     {isSaving ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -295,47 +294,43 @@ export function MilestonesList({
               </form>
             </DialogContent>
           </Dialog>
+        )}
+      </div>
+
+      {/* List */}
+      {milestones.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground">
+          <Trophy className="mx-auto h-8 w-8 mb-2 opacity-50" />
+          <p className="text-sm">No milestones yet</p>
+          {!isAdmin && (
+            <p className="text-xs mt-1">Add your first achievement to get started</p>
           )}
         </div>
-      </CardHeader>
-      <CardContent>
-        {milestones.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <Trophy className="mx-auto h-8 w-8 mb-2 opacity-50" />
-            <p>No milestones yet</p>
-            {!isAdmin && (
-              <p className="text-sm">Add your first achievement to get started</p>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {milestones.map((milestone) => {
-              const Icon = getMilestoneIcon(milestone.milestoneType);
-              return (
-                <div
-                  key={milestone.id}
-                  className="flex items-start gap-4 p-4 rounded-lg border bg-card"
-                >
-                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Icon className="h-5 w-5 text-primary" />
-                  </div>
+      ) : (
+        <div className="space-y-2">
+          {milestones.map((milestone) => {
+            const Icon = getMilestoneIcon(milestone.milestoneType);
+            return (
+              <div
+                key={milestone.id}
+                className="rounded-xl border py-3 px-4 hover:bg-muted/50 transition-colors group"
+              >
+                <div className="flex items-start gap-3">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h4 className="font-medium">{milestone.title}</h4>
+                    <div className="flex items-center gap-2">
+                      <Icon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      <span className="text-sm font-medium">{milestone.title}</span>
                       {milestone.verified && (
-                        <Badge variant="default" className="bg-green-600">
-                          <CheckCircle2 className="mr-1 h-3 w-3" />
-                          Verified
-                        </Badge>
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" />
                       )}
                     </div>
                     {milestone.description && (
-                      <p className="text-sm text-muted-foreground mt-1">
+                      <p className="text-xs text-muted-foreground mt-1 ml-5.5">
                         {milestone.description}
                       </p>
                     )}
-                    <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                      <span>
+                    <div className="flex items-center gap-3 mt-1.5 ml-5.5">
+                      <span className="text-[11px] text-muted-foreground">
                         {new Date(milestone.achievedAt).toLocaleDateString("en-US", {
                           month: "short",
                           day: "numeric",
@@ -347,7 +342,7 @@ export function MilestonesList({
                           href={milestone.proofUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-primary hover:underline"
+                          className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
                         >
                           <ExternalLink className="h-3 w-3" />
                           Proof
@@ -355,38 +350,37 @@ export function MilestonesList({
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 shrink-0">
                     {isAdmin && (
                       <Button
                         variant="ghost"
                         size="sm"
+                        className="text-xs h-7"
                         onClick={() => handleVerify(milestone.id, !milestone.verified)}
                       >
                         {milestone.verified ? "Unverify" : "Verify"}
                       </Button>
                     )}
                     {!isAdmin && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
+                      <button
                         onClick={() => handleDelete(milestone.id)}
                         disabled={deletingId === milestone.id}
-                        className="text-red-600 hover:text-red-700"
+                        className="p-1.5 rounded-md text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100"
                       >
                         {deletingId === milestone.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
                         ) : (
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-3.5 w-3.5" />
                         )}
-                      </Button>
+                      </button>
                     )}
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </section>
   );
 }
