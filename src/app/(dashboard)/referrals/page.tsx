@@ -95,7 +95,6 @@ export default function ReferralsPage() {
   if (cohorts.length === 0) {
     return (
       <div className="space-y-10">
-        <h1 className="text-2xl font-semibold tracking-tight">Referrals</h1>
         <div className="rounded-xl border p-12 text-center">
           <Share2 className="mx-auto h-10 w-10 text-muted-foreground/50" />
           <h3 className="mt-3 text-sm font-medium">No active cohorts</h3>
@@ -113,10 +112,9 @@ export default function ReferralsPage() {
 
   return (
     <div className="space-y-10">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Referrals</h1>
-        {cohorts.length > 1 && (
+      {/* Cohort selector */}
+      {cohorts.length > 1 && (
+        <div className="flex justify-end">
           <Select value={selectedCohortId} onValueChange={handleCohortChange}>
             <SelectTrigger className="w-[200px] h-8 text-xs">
               <SelectValue placeholder="Select cohort" />
@@ -129,8 +127,8 @@ export default function ReferralsPage() {
               ))}
             </SelectContent>
           </Select>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Stats bento */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">

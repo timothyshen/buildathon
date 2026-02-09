@@ -14,7 +14,6 @@ import {
   FolderKanban,
   GraduationCap,
   LogOut,
-  ChevronRight,
   Home,
   Compass,
   BookOpen,
@@ -24,10 +23,7 @@ import {
   Calendar,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getRoleBadgeColor } from "@/lib/utils/colors";
 import { useAuth } from "@/contexts/auth-context";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { submissionsService, reviewsService } from "@/services";
 
 interface NavItem {
@@ -54,20 +50,16 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
   const router = useRouter();
   const { user, logout } = useAuth();
 
-  // Badge count state
   const [draftCount, setDraftCount] = useState(0);
   const [pendingReviews, setPendingReviews] = useState(0);
   const [totalSubmissions, setTotalSubmissions] = useState(0);
 
-  // Load badge counts - using targeted queries for efficiency
   useEffect(() => {
     async function loadCounts() {
       if (!user) return;
 
-      // Only fetch what's needed based on user role
       const promises: Promise<unknown>[] = [];
 
-      // Participants need their own submissions for draft count
       if (user.role === "participant") {
         promises.push(
           submissionsService.getByUser(user.id).then((res) => {
@@ -77,7 +69,6 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
         );
       }
 
-      // Judges need their pending reviews
       if (user.role === "judge") {
         promises.push(
           reviewsService.getByJudge(user.id).then((res) => {
@@ -87,7 +78,6 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
         );
       }
 
-      // Admins need total submission count
       if (user.role === "admin") {
         promises.push(
           submissionsService.list({ pageSize: 1 }).then((res) => {
@@ -111,7 +101,7 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
           href: "/submissions",
           label: "My Submissions",
           icon: FileText,
-          badge: draftCount > 0 ? `${draftCount} draft` : undefined,
+          badge: draftCount > 0 ? `${draftCount}` : undefined,
         },
         { href: "/submit", label: "New Submission", icon: PlusCircle },
         { href: "/teams", label: "My Teams", icon: Users2 },
@@ -199,24 +189,28 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
 
   return (
     <div className="flex h-full flex-col bg-background">
-      {/* Logo Section */}
-      <div className="flex h-14 items-center gap-3 border-b px-6">
-        <Link href="/" className="text-lg font-bold tracking-tight text-foreground" onClick={handleNavClick}>
+      {/* Logo */}
+      <div className="flex h-14 items-center px-5">
+        <Link
+          href="/"
+          className="text-sm font-semibold tracking-tight text-foreground"
+          onClick={handleNavClick}
+        >
           SWA.XYZ
         </Link>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4">
+      <nav className="flex-1 overflow-y-auto px-3 py-2">
         <div className="space-y-6">
           {filteredSections.map((section, sectionIndex) => (
             <div key={sectionIndex}>
               {section.title && (
-                <h3 className="mb-2 px-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                <h3 className="mb-1.5 px-2 text-[11px] uppercase tracking-widest text-muted-foreground font-medium">
                   {section.title}
                 </h3>
               )}
-              <div className="space-y-0.5">
+              <div className="space-y-px">
                 {section.items.map((item) => {
                   const isActive =
                     pathname === item.href ||
@@ -227,41 +221,18 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
                       href={item.href}
                       onClick={handleNavClick}
                       className={cn(
-                        "group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                        "group flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-[13px] transition-colors",
                         isActive
-                          ? "bg-accent text-accent-foreground"
-                          : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+                          ? "text-foreground bg-muted/80 font-medium"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                       )}
                     >
-                      <item.icon
-                        className={cn(
-                          "h-4 w-4",
-                          isActive
-                            ? "text-foreground"
-                            : "text-muted-foreground group-hover:text-foreground"
-                        )}
-                      />
-                      <span className="flex-1">{item.label}</span>
-                      {item.badge && (
-                        <Badge
-                          variant="secondary"
-                          className={cn(
-                            "ml-auto h-5 min-w-[20px] justify-center rounded px-1.5 text-[10px] font-medium",
-                            isActive
-                              ? "bg-secondary text-secondary-foreground"
-                              : "bg-muted text-muted-foreground"
-                          )}
-                        >
+                      <item.icon className="h-4 w-4 shrink-0" />
+                      <span className="flex-1 truncate">{item.label}</span>
+                      {item.badge !== undefined && item.badge !== 0 && (
+                        <span className="font-mono text-[10px] tabular-nums text-muted-foreground">
                           {item.badge}
-                        </Badge>
-                      )}
-                      {!item.badge && (
-                        <ChevronRight
-                          className={cn(
-                            "h-4 w-4 opacity-0 transition-opacity group-hover:opacity-100",
-                            "text-muted-foreground"
-                          )}
-                        />
+                        </span>
                       )}
                     </Link>
                   );
@@ -272,12 +243,17 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
         </div>
       </nav>
 
-      {/* Quick Actions */}
-      <div className="border-t p-3">
+      {/* Bottom links */}
+      <div className="px-3 py-2 space-y-px">
         <Link
           href="/settings"
           onClick={handleNavClick}
-          className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          className={cn(
+            "flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-[13px] transition-colors",
+            pathname === "/settings"
+              ? "text-foreground bg-muted/80 font-medium"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+          )}
         >
           <Settings className="h-4 w-4" />
           <span>Settings</span>
@@ -285,50 +261,40 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
         <Link
           href="/"
           onClick={handleNavClick}
-          className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-[13px] text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
         >
           <Home className="h-4 w-4" />
           <span>Back to Home</span>
         </Link>
       </div>
 
-      {/* User Profile */}
+      {/* User profile */}
       {user && (
-        <div className="border-t p-3">
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <img
-                src={
-                  user.avatar ||
-                  `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`
-                }
-                alt={user.name}
-                className="h-9 w-9 rounded-md object-cover border"
-              />
-              <div className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-background bg-success-foreground" />
-            </div>
-            <div className="flex-1 overflow-hidden">
-              <p className="truncate text-sm font-medium text-foreground">
+        <div className="border-t px-3 py-3">
+          <div className="flex items-center gap-2.5">
+            <img
+              src={
+                user.avatar ||
+                `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`
+              }
+              alt={user.name}
+              className="h-7 w-7 rounded-md object-cover border shrink-0"
+            />
+            <div className="flex-1 min-w-0">
+              <p className="truncate text-[13px] font-medium text-foreground">
                 {user.name}
               </p>
-              <Badge
-                className={cn(
-                  "mt-0.5 h-5 rounded px-1.5 text-[10px] font-medium capitalize border-0",
-                  getRoleBadgeColor(user.role)
-                )}
-              >
+              <p className="text-[10px] text-muted-foreground capitalize">
                 {user.role}
-              </Badge>
+              </p>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
+            <button
               onClick={handleLogout}
               aria-label="Log out"
-              className="h-8 w-8 rounded-md text-muted-foreground hover:bg-accent hover:text-destructive"
+              className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-muted/50 transition-colors shrink-0"
             >
-              <LogOut className="h-4 w-4" />
-            </Button>
+              <LogOut className="h-3.5 w-3.5" />
+            </button>
           </div>
         </div>
       )}
@@ -338,7 +304,7 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
 
 export function Sidebar() {
   return (
-    <aside className="hidden md:flex h-full w-64 flex-col border-r">
+    <aside className="hidden md:flex h-full w-60 flex-col border-r">
       <SidebarContent />
     </aside>
   );
