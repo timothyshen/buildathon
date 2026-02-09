@@ -40,7 +40,7 @@ export async function POST() {
 
     if (updateError) {
       console.error("[Referrals] Credit error:", updateError);
-      return NextResponse.json({ credited: false, reason: updateError.message });
+      return NextResponse.json({ credited: false, reason: "internal_error" });
     }
 
     // Clear the ref_code cookie

@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 
 // For now, we'll store in memory. Replace with Supabase when configured.
 const waitlist: Array<{
@@ -20,13 +22,20 @@ export async function POST(request: Request) {
       );
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!emailRegex.test(email)) {
       return NextResponse.json(
         { error: "Invalid email format" },
         { status: 400 }
       );
     }
+
+    if (interests && !Array.isArray(interests)) {
+      return NextResponse.json({ error: "Interests must be an array" }, { status: 400 });
+    }
+    const validInterests = Array.isArray(interests)
+      ? interests.filter((i: unknown): i is string => typeof i === 'string' && i.length < 200).slice(0, 50)
+      : [];
 
     // Check if already on waitlist (in-memory check)
     const existing = waitlist.find((entry) => entry.email.toLowerCase() === email.toLowerCase());
@@ -40,7 +49,7 @@ export async function POST(request: Request) {
     // Add to waitlist
     waitlist.push({
       email: email.toLowerCase(),
-      interests: Array.isArray(interests) ? interests : [],
+      interests: validInterests,
       createdAt: new Date(),
     });
 
@@ -60,7 +69,26 @@ export async function POST(request: Request) {
 }
 
 export async function GET() {
-  // Simple endpoint to check waitlist count (for admin use)
+  // Only allow authenticated users to check waitlist count
+  const cookieStore = await cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll() {},
+      },
+    }
+  );
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   return NextResponse.json({
     count: waitlist.length,
   });

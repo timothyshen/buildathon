@@ -21,7 +21,12 @@ export async function POST(request: Request) {
     const authHeader = request.headers.get("authorization");
     const cronSecret = process.env.CRON_SECRET;
 
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    if (!cronSecret) {
+      console.error("[Cron] CRON_SECRET environment variable not set");
+      return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
+    }
+
+    if (authHeader !== `Bearer ${cronSecret}`) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

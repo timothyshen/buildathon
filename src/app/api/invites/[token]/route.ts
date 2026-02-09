@@ -11,6 +11,12 @@ interface RouteContext {
 export async function GET(_request: Request, context: RouteContext) {
   try {
     const { token } = await context.params;
+
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!UUID_REGEX.test(token)) {
+      return NextResponse.json({ error: "Invalid token format" }, { status: 400 });
+    }
+
     const adminClient = createAdminClient();
 
     const { data: invite } = await adminClient
@@ -57,6 +63,11 @@ export async function GET(_request: Request, context: RouteContext) {
 export async function POST(_request: Request, context: RouteContext) {
   try {
     const { token } = await context.params;
+
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!UUID_REGEX.test(token)) {
+      return NextResponse.json({ error: "Invalid token format" }, { status: 400 });
+    }
 
     const cookieStore = await cookies();
     const supabase = createServerClient(

@@ -65,7 +65,7 @@ export async function POST() {
 
     if (insertError) {
       console.error("[Referrals] Record error:", insertError);
-      return NextResponse.json({ recorded: false, reason: insertError.message });
+      return NextResponse.json({ recorded: false, reason: "internal_error" });
     }
 
     return NextResponse.json({ recorded: true });

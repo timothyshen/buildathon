@@ -37,10 +37,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Register guest on Luma
-    await addGuestToEvent(eventApiId, user.email, user.user_metadata?.name);
-
-    // Track RSVP locally for fast lookups
+    // 1. Track RSVP locally first
     const adminClient = createAdminClient();
     const { error: dbError } = await adminClient.from("event_rsvps").upsert(
       {
@@ -58,11 +55,18 @@ export async function POST(request: Request) {
       );
     }
 
+    // 2. Then register on Luma (non-critical — log but don't fail)
+    try {
+      await addGuestToEvent(eventApiId, user.email, user.user_metadata?.name);
+    } catch (lumaError) {
+      console.error("[RSVP] Luma registration failed (RSVP saved locally):", lumaError);
+    }
+
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("[RSVP] Error:", err);
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Failed to RSVP" },
+      { error: "Failed to RSVP" },
       { status: 500 }
     );
   }

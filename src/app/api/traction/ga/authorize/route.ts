@@ -13,8 +13,9 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const submissionId = searchParams.get("submissionId");
 
-    if (!submissionId) {
-      return NextResponse.json({ error: "submissionId is required" }, { status: 400 });
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!submissionId || !UUID_REGEX.test(submissionId)) {
+      return NextResponse.json({ error: "Valid submissionId is required" }, { status: 400 });
     }
 
     // Verify user is authenticated

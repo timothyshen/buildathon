@@ -66,7 +66,16 @@ export async function POST(request: Request) {
       );
     }
 
-    const ext = file.name.split(".").pop() || "jpg";
+    const mimeToExt: Record<string, string> = {
+      "image/jpeg": "jpg",
+      "image/png": "png",
+      "image/webp": "webp",
+      "image/gif": "gif",
+    };
+    const ext = mimeToExt[file.type];
+    if (!ext) {
+      return NextResponse.json({ error: "Unsupported file type" }, { status: 400 });
+    }
     const fileName = `${randomUUID()}.${ext}`;
 
     const supabase = createAdminClient();

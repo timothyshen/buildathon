@@ -14,8 +14,9 @@ export async function POST(request: Request) {
   try {
     const { cohortId } = await request.json();
 
-    if (!cohortId) {
-      return NextResponse.json({ error: "cohortId is required" }, { status: 400 });
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!cohortId || !UUID_REGEX.test(cohortId)) {
+      return NextResponse.json({ error: "Valid cohortId is required" }, { status: 400 });
     }
 
     const cookieStore = await cookies();
@@ -90,7 +91,8 @@ export async function POST(request: Request) {
         continue; // Code collision, retry
       }
 
-      return NextResponse.json({ error: insertError?.message || "Failed to create code" }, { status: 500 });
+      console.error("[Referrals] Failed to create code:", insertError);
+      return NextResponse.json({ error: "Failed to create referral code" }, { status: 500 });
     }
 
     return NextResponse.json({ error: "Failed to generate unique code" }, { status: 500 });
