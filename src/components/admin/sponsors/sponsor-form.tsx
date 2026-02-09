@@ -128,15 +128,15 @@ export function SponsorForm({
         <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="name">Organization Name *</Label>
+              <Label htmlFor="name" className="text-xs text-muted-foreground">Organization Name *</Label>
               <Input id="name" {...register("name")} placeholder="Acme Corp" />
               {errors.name && (
-                <p className="text-sm text-red-500">{errors.name.message}</p>
+                <p className="text-xs text-destructive">{errors.name.message}</p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="cohortId">Cohort *</Label>
+              <Label htmlFor="cohortId" className="text-xs text-muted-foreground">Cohort *</Label>
               <Select
                 value={watch("cohortId")}
                 onValueChange={(value) => setValue("cohortId", value)}
@@ -153,22 +153,22 @@ export function SponsorForm({
                 </SelectContent>
               </Select>
               {errors.cohortId && (
-                <p className="text-sm text-red-500">{errors.cohortId.message}</p>
+                <p className="text-xs text-destructive">{errors.cohortId.message}</p>
               )}
             </div>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="logo">Logo URL</Label>
+              <Label htmlFor="logo" className="text-xs text-muted-foreground">Logo URL</Label>
               <Input id="logo" {...register("logo")} type="url" placeholder="https://..." />
               {errors.logo && (
-                <p className="text-sm text-red-500">{errors.logo.message}</p>
+                <p className="text-xs text-destructive">{errors.logo.message}</p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="website">Website</Label>
+              <Label htmlFor="website" className="text-xs text-muted-foreground">Website</Label>
               <Input
                 id="website"
                 {...register("website")}
@@ -176,13 +176,13 @@ export function SponsorForm({
                 placeholder="https://..."
               />
               {errors.website && (
-                <p className="text-sm text-red-500">{errors.website.message}</p>
+                <p className="text-xs text-destructive">{errors.website.message}</p>
               )}
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description" className="text-xs text-muted-foreground">Description</Label>
             <Textarea
               id="description"
               {...register("description")}
@@ -193,7 +193,7 @@ export function SponsorForm({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="tier">Tier</Label>
+              <Label htmlFor="tier" className="text-xs text-muted-foreground">Tier</Label>
               <Select
                 value={watch("tier")}
                 onValueChange={(value) =>
@@ -214,7 +214,7 @@ export function SponsorForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="prizePoolContribution">Prize Pool Contribution ($)</Label>
+              <Label htmlFor="prizePoolContribution" className="text-xs text-muted-foreground">Prize Pool Contribution ($)</Label>
               <Input
                 id="prizePoolContribution"
                 type="number"
@@ -222,7 +222,7 @@ export function SponsorForm({
                 {...register("prizePoolContribution", { valueAsNumber: true })}
               />
               {errors.prizePoolContribution && (
-                <p className="text-sm text-red-500">
+                <p className="text-xs text-destructive">
                   {errors.prizePoolContribution.message}
                 </p>
               )}
@@ -240,19 +240,19 @@ export function SponsorForm({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="contactName">Contact Name *</Label>
+              <Label htmlFor="contactName" className="text-xs text-muted-foreground">Contact Name *</Label>
               <Input
                 id="contactName"
                 {...register("contactName")}
                 placeholder="John Doe"
               />
               {errors.contactName && (
-                <p className="text-sm text-red-500">{errors.contactName.message}</p>
+                <p className="text-xs text-destructive">{errors.contactName.message}</p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="contactEmail">Contact Email *</Label>
+              <Label htmlFor="contactEmail" className="text-xs text-muted-foreground">Contact Email *</Label>
               <Input
                 id="contactEmail"
                 {...register("contactEmail")}
@@ -260,7 +260,7 @@ export function SponsorForm({
                 placeholder="john@example.com"
               />
               {errors.contactEmail && (
-                <p className="text-sm text-red-500">{errors.contactEmail.message}</p>
+                <p className="text-xs text-destructive">{errors.contactEmail.message}</p>
               )}
             </div>
           </div>
@@ -269,7 +269,7 @@ export function SponsorForm({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit">{sponsor ? "Save Changes" : "Add Sponsor"}</Button>
+            <Button type="submit" className="bg-foreground text-background hover:bg-foreground/90">{sponsor ? "Save Changes" : "Add Sponsor"}</Button>
           </div>
         </form>
       </DialogContent>

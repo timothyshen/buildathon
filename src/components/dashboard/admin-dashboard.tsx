@@ -3,20 +3,13 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { cohortsService, submissionsService, reviewsService, usersService } from "@/services";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
-  Trophy,
-  FileText,
-  Users,
-  Star,
   PlusCircle,
-  ArrowRight,
+  ChevronRight,
+  Loader2,
 } from "lucide-react";
-import { Loading } from "@/components/ui/loading";
 import type { Cohort, Submission, Review, User } from "@/types";
-import { getCohortStatusColor } from "@/lib/utils/status";
 
 export function AdminDashboard() {
   const [cohorts, setCohorts] = useState<Cohort[]>([]);
@@ -45,7 +38,11 @@ export function AdminDashboard() {
   }, []);
 
   if (isLoading) {
-    return <Loading />;
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
   }
 
   const activeCohorts = cohorts.filter((c) => c.status === "active");
@@ -53,18 +50,17 @@ export function AdminDashboard() {
   const pendingReviews = reviews.filter((r) => r.status === "pending").length;
   const totalJudges = judges.length;
 
-
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-          <p className="mt-2 text-muted-foreground">
+          <h1 className="text-2xl font-semibold tracking-tight">Admin Dashboard</h1>
+          <p className="text-sm text-muted-foreground mt-1">
             Manage buildathons, submissions, and judges.
           </p>
         </div>
-        <Button asChild>
+        <Button asChild className="bg-foreground text-background hover:bg-foreground/90">
           <Link href="/admin/cohorts/new">
             <PlusCircle className="mr-2 h-4 w-4" />
             New Cohort
@@ -72,146 +68,141 @@ export function AdminDashboard() {
         </Button>
       </div>
 
-      {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Active Cohorts</CardTitle>
-            <Trophy className="h-4 w-4 text-yellow-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{activeCohorts.length}</div>
-            <p className="text-xs text-muted-foreground">
-              {cohorts.length} total cohorts
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Submissions</CardTitle>
-            <FileText className="h-4 w-4 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalSubmissions}</div>
-            <p className="text-xs text-muted-foreground">
-              Across all cohorts
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Pending Reviews</CardTitle>
-            <Star className="h-4 w-4 text-purple-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{pendingReviews}</div>
-            <p className="text-xs text-muted-foreground">
-              Awaiting judge review
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Active Judges</CardTitle>
-            <Users className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalJudges}</div>
-            <p className="text-xs text-muted-foreground">
-              Reviewing submissions
-            </p>
-          </CardContent>
-        </Card>
+      {/* Stats strip */}
+      <div className="flex items-center divide-x">
+        <div className="pr-8">
+          <div className="text-3xl font-mono font-semibold tabular-nums text-emerald-600">
+            {activeCohorts.length}
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">Active Cohorts</div>
+        </div>
+        <div className="px-8">
+          <div className="text-3xl font-mono font-semibold tabular-nums">
+            {totalSubmissions}
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">Submissions</div>
+        </div>
+        <div className="px-8">
+          <div className="text-3xl font-mono font-semibold tabular-nums text-amber-600">
+            {pendingReviews}
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">Pending Reviews</div>
+        </div>
+        <div className="pl-8">
+          <div className="text-3xl font-mono font-semibold tabular-nums">
+            {totalJudges}
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">Judges</div>
+        </div>
       </div>
 
-      {/* Cohorts Overview */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>Cohorts</CardTitle>
-            <CardDescription>All buildathon cohorts</CardDescription>
-          </div>
-          <Button variant="outline" asChild>
-            <Link href="/admin/cohorts">
-              View All
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
-          </Button>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {cohorts.map((cohort) => {
+      {/* Cohorts */}
+      <section>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">
+            Cohorts
+          </h2>
+          <Link
+            href="/admin/cohorts"
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            View All
+          </Link>
+        </div>
+        <div className="rounded-xl border divide-y">
+          {cohorts.length === 0 ? (
+            <div className="py-12 text-center">
+              <p className="text-sm text-muted-foreground">No cohorts yet.</p>
+            </div>
+          ) : (
+            cohorts.map((cohort) => {
               const cohortSubmissions = submissions.filter(
                 (s) => s.cohortId === cohort.id
               );
               return (
-                <div
+                <Link
                   key={cohort.id}
-                  className="flex items-center justify-between rounded-lg border p-4"
+                  href={`/admin/cohorts/${cohort.id}`}
+                  className="flex items-center justify-between px-4 py-3 hover:bg-muted/50 transition-colors group"
                 >
-                  <div>
+                  <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <h3 className="font-semibold">{cohort.name}</h3>
-                      <Badge className={getCohortStatusColor(cohort.status)}>
-                        {cohort.status}
-                      </Badge>
+                      <p className="text-sm font-medium truncate">{cohort.name}</p>
+                      <div className="flex items-center gap-1.5">
+                        <span className={`h-1.5 w-1.5 rounded-full ${
+                          cohort.status === "active" ? "bg-emerald-500"
+                            : cohort.status === "upcoming" ? "bg-blue-500"
+                            : cohort.status === "judging" ? "bg-violet-500"
+                            : cohort.status === "completed" ? "bg-amber-500"
+                            : "bg-muted-foreground"
+                        }`} />
+                        <span className="text-xs text-muted-foreground capitalize">{cohort.status}</span>
+                      </div>
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      {cohortSubmissions.length} submissions
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(cohort.startDate).toLocaleDateString()} -{" "}
-                      {new Date(cohort.endDate).toLocaleDateString()}
-                    </p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-[11px] text-muted-foreground">
+                        {cohortSubmissions.length} submissions
+                      </span>
+                      <span className="text-[11px] text-muted-foreground">
+                        {new Date(cohort.startDate).toLocaleDateString()} – {new Date(cohort.endDate).toLocaleDateString()}
+                      </span>
+                    </div>
                   </div>
-                  <Button variant="outline" asChild>
-                    <Link href={`/admin/cohorts/${cohort.id}`}>Manage</Link>
-                  </Button>
-                </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                </Link>
               );
-            })}
-          </div>
-        </CardContent>
-      </Card>
+            })
+          )}
+        </div>
+      </section>
 
       {/* Recent Submissions */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>Recent Submissions</CardTitle>
-            <CardDescription>Latest project submissions</CardDescription>
-          </div>
-          <Button variant="outline" asChild>
-            <Link href="/admin/submissions">
-              View All
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
-          </Button>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {submissions.slice(0, 5).map((submission) => (
-              <div
+      <section>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">
+            Recent Submissions
+          </h2>
+          <Link
+            href="/admin/submissions"
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            View All
+          </Link>
+        </div>
+        <div className="rounded-xl border divide-y">
+          {submissions.length === 0 ? (
+            <div className="py-12 text-center">
+              <p className="text-sm text-muted-foreground">No submissions yet.</p>
+            </div>
+          ) : (
+            submissions.slice(0, 5).map((submission) => (
+              <Link
                 key={submission.id}
-                className="flex items-center justify-between rounded-lg border p-4"
+                href={`/admin/submissions/${submission.id}`}
+                className="flex items-center justify-between px-4 py-3 hover:bg-muted/50 transition-colors group"
               >
-                <div>
+                <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-semibold">{submission.title}</h3>
-                    <Badge variant="outline">{submission.status}</Badge>
+                    <p className="text-sm font-medium truncate">{submission.title}</p>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`h-1.5 w-1.5 rounded-full ${
+                        submission.status === "submitted" ? "bg-emerald-500"
+                          : submission.status === "draft" ? "bg-amber-500"
+                          : "bg-muted-foreground"
+                      }`} />
+                      <span className="text-xs text-muted-foreground capitalize">{submission.status}</span>
+                    </div>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    by {submission.team?.name || "Solo"} • {submission.cohort?.name}
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    {submission.team?.name || "Solo"} · {submission.cohort?.name}
                   </p>
                 </div>
-                <Button variant="outline" size="sm" asChild>
-                  <Link href={`/admin/submissions/${submission.id}`}>View</Link>
-                </Button>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+                <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+              </Link>
+            ))
+          )}
+        </div>
+      </section>
     </div>
   );
 }

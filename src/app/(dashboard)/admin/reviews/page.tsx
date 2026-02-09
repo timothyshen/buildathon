@@ -6,9 +6,7 @@ import { reviewsService, cohortsService, usersService } from "@/services";
 import type { Review, Cohort, User } from "@/types";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -26,7 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, Eye, Star, CheckCircle, Clock, Loader2 } from "lucide-react";
+import { Search, Eye, Star, Loader2 } from "lucide-react";
 
 function getInitials(name: string): string {
   return name
@@ -35,18 +33,6 @@ function getInitials(name: string): string {
     .join("")
     .toUpperCase()
     .slice(0, 2);
-}
-
-function getReviewStatusColor(status: Review["status"]): string {
-  switch (status) {
-    case "completed":
-      return "bg-green-100 text-green-800";
-    case "in_progress":
-      return "bg-blue-100 text-blue-800";
-    case "pending":
-    default:
-      return "bg-slate-100 text-slate-800";
-  }
 }
 
 export default function AdminReviewsPage() {
@@ -107,7 +93,7 @@ export default function AdminReviewsPage() {
   const inProgressReviews = reviews.filter((r) => r.status === "in_progress").length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-10">
       <Breadcrumb
         items={[
           { label: "Admin", href: "/admin/cohorts" },
@@ -117,58 +103,30 @@ export default function AdminReviewsPage() {
       <AdminNav />
 
       <div>
-        <h1 className="text-3xl font-bold">Judge Reviews</h1>
-        <p className="mt-2 text-muted-foreground">
+        <h1 className="text-2xl font-semibold tracking-tight">Judge Reviews</h1>
+        <p className="text-sm text-muted-foreground mt-1">
           View and monitor all judge reviews across cohorts
         </p>
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Star className="h-4 w-4" />
-              Total Reviews
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{reviews.length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-500" />
-              Completed
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{completedReviews}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Clock className="h-4 w-4 text-blue-500" />
-              In Progress
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{inProgressReviews}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Clock className="h-4 w-4 text-slate-500" />
-              Pending
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-slate-600">{pendingReviews}</div>
-          </CardContent>
-        </Card>
+      <div className="rounded-xl border divide-x grid grid-cols-4">
+        <div className="px-6 py-4">
+          <p className="text-xs text-muted-foreground mb-1">Total Reviews</p>
+          <p className="text-3xl font-mono font-semibold tabular-nums">{reviews.length}</p>
+        </div>
+        <div className="px-6 py-4">
+          <p className="text-xs text-muted-foreground mb-1">Completed</p>
+          <p className="text-3xl font-mono font-semibold tabular-nums text-emerald-600">{completedReviews}</p>
+        </div>
+        <div className="px-6 py-4">
+          <p className="text-xs text-muted-foreground mb-1">In Progress</p>
+          <p className="text-3xl font-mono font-semibold tabular-nums text-blue-600">{inProgressReviews}</p>
+        </div>
+        <div className="px-6 py-4">
+          <p className="text-xs text-muted-foreground mb-1">Pending</p>
+          <p className="text-3xl font-mono font-semibold tabular-nums text-amber-600">{pendingReviews}</p>
+        </div>
       </div>
 
       {/* Filters */}
@@ -222,89 +180,98 @@ export default function AdminReviewsPage() {
       </div>
 
       {/* Reviews Table */}
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
+      <div className="rounded-xl border overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Judge</TableHead>
+              <TableHead>Submission</TableHead>
+              <TableHead className="hidden md:table-cell">Score</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="hidden md:table-cell">Date</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredReviews.length === 0 ? (
               <TableRow>
-                <TableHead>Judge</TableHead>
-                <TableHead>Submission</TableHead>
-                <TableHead className="hidden md:table-cell">Score</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="hidden md:table-cell">Date</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableCell colSpan={6} className="text-center py-8">
+                  <p className="text-muted-foreground">No reviews found</p>
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredReviews.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8">
-                    <p className="text-muted-foreground">No reviews found</p>
+            ) : (
+              filteredReviews.map((review) => (
+                <TableRow key={review.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={review.judge?.avatar} />
+                        <AvatarFallback>
+                          {review.judge?.name ? getInitials(review.judge.name) : "?"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium">{review.judge?.name || "Unknown"}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {review.judge?.email}
+                        </p>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div>
+                      <p className="font-medium">
+                        {review.submission?.title || "Unknown Submission"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {review.submission?.team?.name || "Solo"}
+                      </p>
+                    </div>
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    {review.overallScore ? (
+                      <div className="flex items-center gap-1">
+                        <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />
+                        <span className="font-mono text-xs tabular-nums">{review.overallScore.toFixed(1)}</span>
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`inline-block h-2 w-2 rounded-full ${
+                          review.status === "completed"
+                            ? "bg-emerald-500"
+                            : review.status === "in_progress"
+                              ? "bg-blue-500"
+                              : "bg-amber-500"
+                        }`}
+                      />
+                      <span className="text-xs capitalize">
+                        {review.status.replace("_", " ")}
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    {review.completedAt
+                      ? new Date(review.completedAt).toLocaleDateString()
+                      : new Date(review.createdAt).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
+                      <Link href={`/admin/reviews/${review.id}`}>
+                        <Eye className="h-4 w-4" />
+                      </Link>
+                    </Button>
                   </TableCell>
                 </TableRow>
-              ) : (
-                filteredReviews.map((review) => (
-                  <TableRow key={review.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={review.judge?.avatar} />
-                          <AvatarFallback>
-                            {review.judge?.name ? getInitials(review.judge.name) : "?"}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium">{review.judge?.name || "Unknown"}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {review.judge?.email}
-                          </p>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">
-                          {review.submission?.title || "Unknown Submission"}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {review.submission?.team?.name || "Solo"}
-                        </p>
-                      </div>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      {review.overallScore ? (
-                        <div className="flex items-center gap-1">
-                          <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                          <span className="font-medium">{review.overallScore.toFixed(1)}</span>
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={getReviewStatusColor(review.status)}>
-                        {review.status.replace("_", " ")}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      {review.completedAt
-                        ? new Date(review.completedAt).toLocaleDateString()
-                        : new Date(review.createdAt).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" asChild>
-                        <Link href={`/admin/reviews/${review.id}`}>
-                          <Eye className="h-4 w-4" />
-                        </Link>
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }

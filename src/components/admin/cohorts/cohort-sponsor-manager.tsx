@@ -22,8 +22,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { PlusCircle, X, Building2, Loader2 } from "lucide-react";
 import type { SponsorOrg, SponsorTier } from "@/types";
 
@@ -53,14 +51,6 @@ const tierOptions: { value: SponsorTier; label: string }[] = [
   { value: "bronze", label: "Bronze" },
   { value: "community", label: "Community" },
 ];
-
-const tierColors: Record<SponsorTier, string> = {
-  platinum: "bg-slate-200 text-slate-800",
-  gold: "bg-amber-100 text-amber-800",
-  silver: "bg-slate-100 text-slate-600",
-  bronze: "bg-orange-100 text-orange-800",
-  community: "bg-green-100 text-green-800",
-};
 
 export function CohortSponsorManager({
   sponsors,
@@ -158,39 +148,34 @@ export function CohortSponsorManager({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <Label className="text-base font-semibold">Sponsors</Label>
+        <span className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">Sponsors</span>
         {!isAdding && canAddSponsor && (
           <Button
             type="button"
-            variant="outline"
+            variant="ghost"
             size="sm"
             onClick={() => setIsAdding(true)}
             disabled={disabled}
           >
-            <PlusCircle className="mr-2 h-4 w-4" />
+            <PlusCircle className="mr-2 h-3.5 w-3.5" />
             Add Sponsor
           </Button>
         )}
       </div>
 
       {sponsors.length === 0 && !isAdding && (
-        <Card>
-          <CardContent className="py-8">
-            <div className="text-center">
-              <Building2 className="mx-auto h-10 w-10 text-muted-foreground" />
-              <p className="mt-2 text-sm text-muted-foreground">
-                No sponsors added yet. Add sponsors to support this cohort.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="rounded-xl border py-12 text-center">
+          <Building2 className="mx-auto h-8 w-8 text-muted-foreground opacity-50" />
+          <p className="mt-2 text-sm text-muted-foreground">
+            No sponsors added yet. Add sponsors to support this cohort.
+          </p>
+        </div>
       )}
 
       {/* Existing Sponsors */}
       <div className="space-y-3">
         {sponsors.map((sponsor) => (
-          <Card key={sponsor.sponsorOrgId}>
-            <CardContent className="p-4">
+          <div key={sponsor.sponsorOrgId} className="rounded-xl border py-3 px-4">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-3">
                   {sponsor.sponsorOrg.logo ? (
@@ -205,7 +190,7 @@ export function CohortSponsorManager({
                     </div>
                   )}
                   <div>
-                    <p className="font-medium">{sponsor.sponsorOrg.name}</p>
+                    <p className="text-sm font-medium">{sponsor.sponsorOrg.name}</p>
                     <p className="text-xs text-muted-foreground">
                       {sponsor.sponsorOrg.contactEmail}
                     </p>
@@ -228,9 +213,7 @@ export function CohortSponsorManager({
                     <SelectContent>
                       {tierOptions.map((opt) => (
                         <SelectItem key={opt.value} value={opt.value}>
-                          <Badge className={tierColors[opt.value]}>
-                            {opt.label}
-                          </Badge>
+                          {opt.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -238,14 +221,14 @@ export function CohortSponsorManager({
 
                   {/* Show bounty info as read-only - sponsor sets this */}
                   {sponsor.prizePoolContribution > 0 && (
-                    <Badge variant="outline" className="text-sm">
-                      ${sponsor.prizePoolContribution.toLocaleString()} bounty
-                    </Badge>
+                    <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                      ${sponsor.prizePoolContribution.toLocaleString()}
+                    </span>
                   )}
                   {sponsor.hasDedicatedTrack && (
-                    <Badge variant="secondary" className="text-sm">
+                    <span className="text-xs text-muted-foreground">
                       Has Track
-                    </Badge>
+                    </span>
                   )}
 
                   <Button
@@ -254,25 +237,23 @@ export function CohortSponsorManager({
                     size="icon"
                     onClick={() => handleRemoveSponsor(sponsor.sponsorOrgId)}
                     disabled={disabled}
-                    className="text-destructive hover:text-destructive"
+                    className="text-muted-foreground hover:text-destructive"
                   >
-                    <X className="h-4 w-4" />
+                    <X className="h-3.5 w-3.5" />
                   </Button>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+          </div>
         ))}
       </div>
 
       {/* Add New Sponsor Form */}
       {isAdding && (
-        <Card className="border-dashed">
-          <CardContent className="p-4">
+        <div className="rounded-xl border border-dashed p-4">
             <div className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label>Select Organization</Label>
+                  <Label className="text-xs text-muted-foreground">Select Organization</Label>
                   <div className="flex gap-2">
                     <Select
                       value={newSponsor.sponsorOrgId}
@@ -310,14 +291,14 @@ export function CohortSponsorManager({
                         onClick={() => setIsCreateOrgOpen(true)}
                         title="Create new organization"
                       >
-                        <PlusCircle className="h-4 w-4" />
+                        <PlusCircle className="h-3.5 w-3.5" />
                       </Button>
                     )}
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Tier</Label>
+                  <Label className="text-xs text-muted-foreground">Tier</Label>
                   <Select
                     value={newSponsor.tier}
                     onValueChange={(value) =>
@@ -364,25 +345,25 @@ export function CohortSponsorManager({
                   size="sm"
                   onClick={handleAddSponsor}
                   disabled={!newSponsor.sponsorOrgId}
+                  className="bg-foreground text-background hover:bg-foreground/90"
                 >
                   Add Sponsor
                 </Button>
               </div>
             </div>
-          </CardContent>
-        </Card>
+        </div>
       )}
 
       {/* Show add button at bottom if some sponsors exist */}
       {sponsors.length > 0 && !isAdding && canAddSponsor && (
         <Button
           type="button"
-          variant="outline"
+          variant="ghost"
           className="w-full"
           onClick={() => setIsAdding(true)}
           disabled={disabled}
         >
-          <PlusCircle className="mr-2 h-4 w-4" />
+          <PlusCircle className="mr-2 h-3.5 w-3.5" />
           Add Another Sponsor
         </Button>
       )}
@@ -407,32 +388,32 @@ export function CohortSponsorManager({
             <form onSubmit={handleSubmit(handleCreateOrg)} className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="org-name">Organization Name *</Label>
+                  <Label htmlFor="org-name" className="text-xs text-muted-foreground">Organization Name *</Label>
                   <Input id="org-name" {...register("name")} placeholder="Acme Corp" />
                   {errors.name && (
-                    <p className="text-sm text-red-500">{errors.name.message}</p>
+                    <p className="text-xs text-destructive">{errors.name.message}</p>
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="org-website">Website</Label>
+                  <Label htmlFor="org-website" className="text-xs text-muted-foreground">Website</Label>
                   <Input id="org-website" {...register("website")} type="url" placeholder="https://..." />
                   {errors.website && (
-                    <p className="text-sm text-red-500">{errors.website.message}</p>
+                    <p className="text-xs text-destructive">{errors.website.message}</p>
                   )}
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="org-logo">Logo URL</Label>
+                <Label htmlFor="org-logo" className="text-xs text-muted-foreground">Logo URL</Label>
                 <Input id="org-logo" {...register("logo")} type="url" placeholder="https://..." />
                 {errors.logo && (
-                  <p className="text-sm text-red-500">{errors.logo.message}</p>
+                  <p className="text-xs text-destructive">{errors.logo.message}</p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="org-description">Description</Label>
+                <Label htmlFor="org-description" className="text-xs text-muted-foreground">Description</Label>
                 <Textarea
                   id="org-description"
                   {...register("description")}
@@ -443,18 +424,18 @@ export function CohortSponsorManager({
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="org-contactName">Contact Name *</Label>
+                  <Label htmlFor="org-contactName" className="text-xs text-muted-foreground">Contact Name *</Label>
                   <Input id="org-contactName" {...register("contactName")} placeholder="John Doe" />
                   {errors.contactName && (
-                    <p className="text-sm text-red-500">{errors.contactName.message}</p>
+                    <p className="text-xs text-destructive">{errors.contactName.message}</p>
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="org-contactEmail">Contact Email *</Label>
+                  <Label htmlFor="org-contactEmail" className="text-xs text-muted-foreground">Contact Email *</Label>
                   <Input id="org-contactEmail" {...register("contactEmail")} type="email" placeholder="john@example.com" />
                   {errors.contactEmail && (
-                    <p className="text-sm text-red-500">{errors.contactEmail.message}</p>
+                    <p className="text-xs text-destructive">{errors.contactEmail.message}</p>
                   )}
                 </div>
               </div>
@@ -463,7 +444,7 @@ export function CohortSponsorManager({
                 <Button type="button" variant="outline" onClick={() => setIsCreateOrgOpen(false)} disabled={isCreatingOrg}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={isCreatingOrg}>
+                <Button type="submit" disabled={isCreatingOrg} className="bg-foreground text-background hover:bg-foreground/90">
                   {isCreatingOrg && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Create Organization
                 </Button>

@@ -61,7 +61,7 @@ export function AdminNav({ className }: AdminNavProps) {
   const pathname = usePathname();
 
   return (
-    <nav className={cn("mb-6", className)}>
+    <nav className={cn("mb-8", className)}>
       <div className="border-b">
         <div className="flex gap-1 -mb-px overflow-x-auto">
           {adminNavItems.map((item) => {
@@ -75,11 +75,11 @@ export function AdminNav({ className }: AdminNavProps) {
                 className={cn(
                   "flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap",
                   isActive
-                    ? "border-primary text-primary"
+                    ? "border-foreground text-foreground"
                     : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30"
                 )}
               >
-                <Icon className="h-4 w-4" />
+                <Icon className="h-3.5 w-3.5" />
                 {item.label}
               </Link>
             );

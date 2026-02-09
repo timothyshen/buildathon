@@ -168,29 +168,29 @@ export default function EditCohortPage({ params }: EditCohortPageProps) {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild>
-          <Link href={`/admin/cohorts/${id}`}>
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        </Button>
-        <Breadcrumb
-          items={[
-            { label: "Admin", href: "/admin/cohorts" },
-            { label: "Cohorts", href: "/admin/cohorts" },
-            { label: cohort.name, href: `/admin/cohorts/${id}` },
-            { label: "Edit" },
-          ]}
-        />
-      </div>
+    <div className="space-y-10">
+      <Breadcrumb
+        items={[
+          { label: "Admin", href: "/admin/cohorts" },
+          { label: "Cohorts", href: "/admin/cohorts" },
+          { label: cohort.name, href: `/admin/cohorts/${id}` },
+          { label: "Edit" },
+        ]}
+      />
       <AdminNav />
 
-      <div>
-        <h1 className="text-3xl font-bold">Edit Cohort</h1>
-        <p className="mt-2 text-muted-foreground">
-          Update {cohort.name} settings, timeline, and sponsors
-        </p>
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground" asChild>
+          <Link href={`/admin/cohorts/${id}`}>
+            <ArrowLeft className="h-3.5 w-3.5" />
+          </Link>
+        </Button>
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Edit Cohort</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Update {cohort.name} settings, timeline, and sponsors
+          </p>
+        </div>
       </div>
 
       <CohortPageForm

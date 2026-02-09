@@ -9,11 +9,8 @@ import type { Review } from "@/types";
 import { toast } from "sonner";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
 import {
   ArrowLeft,
   ExternalLink,
@@ -35,18 +32,6 @@ function getInitials(name: string): string {
     .slice(0, 2);
 }
 
-function getReviewStatusColor(status: Review["status"]): string {
-  switch (status) {
-    case "completed":
-      return "bg-green-100 text-green-800";
-    case "in_progress":
-      return "bg-blue-100 text-blue-800";
-    case "pending":
-    default:
-      return "bg-slate-100 text-slate-800";
-  }
-}
-
 const scoreCategories = [
   { key: "innovationScore", label: "Innovation", description: "How novel and creative is the idea?" },
   { key: "executionScore", label: "Execution", description: "How well is the project implemented?" },
@@ -54,6 +39,18 @@ const scoreCategories = [
   { key: "impactScore", label: "Impact", description: "What's the potential impact?" },
   { key: "presentationScore", label: "Presentation", description: "How well is it presented?" },
 ];
+
+function getStatusDotColor(status: Review["status"]): string {
+  switch (status) {
+    case "completed":
+      return "bg-emerald-500";
+    case "in_progress":
+      return "bg-blue-500";
+    case "pending":
+    default:
+      return "bg-amber-500";
+  }
+}
 
 interface AdminReviewDetailPageProps {
   params: Promise<{ id: string }>;
@@ -147,7 +144,7 @@ export default function AdminReviewDetailPage({ params }: AdminReviewDetailPageP
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-10">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" asChild>
           <Link href="/admin/reviews">
@@ -167,16 +164,17 @@ export default function AdminReviewDetailPage({ params }: AdminReviewDetailPageP
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Review Details</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Review Details</h1>
           <p className="mt-2 text-muted-foreground">
             {submission?.title || "Unknown Submission"}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <Button
             onClick={handleJudgeSubmission}
             disabled={isCreatingReview}
             size="sm"
+            className="bg-foreground text-background hover:bg-foreground/90"
           >
             {isCreatingReview ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -185,22 +183,23 @@ export default function AdminReviewDetailPage({ params }: AdminReviewDetailPageP
             )}
             {adminReviewId ? "Review this Submission" : "Judge this Submission"}
           </Button>
-          <Badge className={getReviewStatusColor(review.status)}>
-            {review.status.replace("_", " ")}
-          </Badge>
+          <div className="flex items-center gap-1.5">
+            <span className={`h-2 w-2 rounded-full ${getStatusDotColor(review.status)}`} />
+            <span className="text-xs capitalize">{review.status.replace("_", " ")}</span>
+          </div>
         </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Judge Info */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-4 w-4" />
+        <div>
+          <h3 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
+            <span className="inline-flex items-center gap-1.5">
+              <User className="h-3.5 w-3.5" />
               Judge
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+            </span>
+          </h3>
+          <div className="rounded-xl border p-5">
             <div className="flex items-center gap-4">
               <Avatar className="h-12 w-12">
                 <AvatarImage src={judge?.avatar} />
@@ -213,15 +212,15 @@ export default function AdminReviewDetailPage({ params }: AdminReviewDetailPageP
                 <p className="text-sm text-muted-foreground">{judge?.email}</p>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Submission Info */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Submission</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
+        <div>
+          <h3 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
+            Submission
+          </h3>
+          <div className="rounded-xl border p-5 space-y-2">
             <p className="font-semibold">{submission?.title || "Unknown"}</p>
             {submission?.tagline && (
               <p className="text-sm text-muted-foreground">{submission.tagline}</p>
@@ -234,18 +233,18 @@ export default function AdminReviewDetailPage({ params }: AdminReviewDetailPageP
                 View Submission
               </Link>
             </Button>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Timeline */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
+        <div>
+          <h3 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
+            <span className="inline-flex items-center gap-1.5">
+              <Calendar className="h-3.5 w-3.5" />
               Timeline
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
+            </span>
+          </h3>
+          <div className="rounded-xl border p-5 space-y-3">
             <div>
               <p className="text-xs text-muted-foreground">Assigned</p>
               <p className="font-medium">
@@ -260,29 +259,26 @@ export default function AdminReviewDetailPage({ params }: AdminReviewDetailPageP
                 </p>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
 
       {/* Scores */}
       {review.status === "completed" && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Star className="h-5 w-5 text-yellow-500" />
+        <div>
+          <h3 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
+            <span className="inline-flex items-center gap-1.5">
+              <Star className="h-3.5 w-3.5 text-yellow-500" />
               Scores
-            </CardTitle>
-            <CardDescription>
-              Individual category scores and overall rating
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+            </span>
+          </h3>
+          <div className="rounded-xl border p-5">
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-5">
               {scoreCategories.map((category) => {
                 const score = review[category.key as keyof Review] as number | undefined;
                 return (
                   <div key={category.key} className="text-center">
-                    <div className="text-3xl font-bold">
+                    <div className="font-mono text-3xl tabular-nums">
                       {score?.toFixed(1) || "-"}
                     </div>
                     <p className="text-sm font-medium">{category.label}</p>
@@ -294,65 +290,59 @@ export default function AdminReviewDetailPage({ params }: AdminReviewDetailPageP
               })}
             </div>
 
-            <Separator className="my-6" />
+            <div className="border-t my-6 pt-6" />
 
             <div className="flex items-center justify-center gap-4">
               <Star className="h-8 w-8 text-yellow-500 fill-yellow-500" />
               <div className="text-center">
-                <div className="text-4xl font-bold">
+                <div className="font-mono text-4xl font-semibold tabular-nums">
                   {review.overallScore?.toFixed(1) || "-"}
                 </div>
                 <p className="text-muted-foreground">Overall Score</p>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {/* Feedback */}
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Public Feedback</CardTitle>
-            <CardDescription>
-              Feedback shared with the team
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+        <div>
+          <h3 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
+            Public Feedback
+          </h3>
+          <div className="rounded-xl border p-5">
             {review.feedback ? (
               <p className="whitespace-pre-wrap">{review.feedback}</p>
             ) : (
               <p className="text-muted-foreground italic">No feedback provided</p>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Internal Notes</CardTitle>
-            <CardDescription>
-              Notes visible only to judges and admins
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+        <div>
+          <h3 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
+            Internal Notes
+          </h3>
+          <div className="rounded-xl border p-5">
             {review.internalNotes ? (
               <p className="whitespace-pre-wrap">{review.internalNotes}</p>
             ) : (
               <p className="text-muted-foreground italic">No internal notes</p>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
 
       {/* Submission Links */}
       {submission && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Project Links</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-wrap gap-2">
+        <div>
+          <h3 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
+            Project Links
+          </h3>
+          <div className="rounded-xl border p-5 flex flex-wrap gap-2">
             {submission.demoUrl && (
-              <Button variant="outline" asChild>
+              <Button variant="ghost" asChild>
                 <a href={submission.demoUrl} target="_blank" rel="noopener noreferrer">
                   <ExternalLink className="mr-2 h-4 w-4" />
                   Live Demo
@@ -360,7 +350,7 @@ export default function AdminReviewDetailPage({ params }: AdminReviewDetailPageP
               </Button>
             )}
             {submission.repoUrl && (
-              <Button variant="outline" asChild>
+              <Button variant="ghost" asChild>
                 <a href={submission.repoUrl} target="_blank" rel="noopener noreferrer">
                   <Github className="mr-2 h-4 w-4" />
                   Repository
@@ -368,15 +358,15 @@ export default function AdminReviewDetailPage({ params }: AdminReviewDetailPageP
               </Button>
             )}
             {submission.videoUrl && (
-              <Button variant="outline" asChild>
+              <Button variant="ghost" asChild>
                 <a href={submission.videoUrl} target="_blank" rel="noopener noreferrer">
                   <Play className="mr-2 h-4 w-4" />
                   Demo Video
                 </a>
               </Button>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
     </div>
   );

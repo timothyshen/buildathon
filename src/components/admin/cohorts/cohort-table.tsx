@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -19,14 +18,6 @@ import { sponsorsService } from "@/services";
 interface CohortTableProps {
   cohorts: Cohort[];
 }
-
-const statusColors: Record<Cohort["status"], string> = {
-  draft: "bg-slate-100 text-slate-700",
-  upcoming: "bg-blue-100 text-blue-700",
-  active: "bg-green-100 text-green-700",
-  judging: "bg-purple-100 text-purple-700",
-  completed: "bg-amber-100 text-amber-700",
-};
 
 export function CohortTable({ cohorts }: CohortTableProps) {
   const [cohortSponsors, setCohortSponsors] = useState<CohortSponsor[]>([]);
@@ -60,44 +51,49 @@ export function CohortTable({ cohorts }: CohortTableProps) {
           <TableRow key={cohort.id}>
             <TableCell>
               <div>
-                <p className="font-medium">{cohort.name}</p>
+                <p className="text-sm font-medium">{cohort.name}</p>
                 <p className="text-xs text-muted-foreground">{cohort.slug}</p>
               </div>
             </TableCell>
             <TableCell>
-              <Badge className={statusColors[cohort.status]}>
-                {cohort.status}
-              </Badge>
+              <div className="flex items-center gap-1.5">
+                <span className={`h-1.5 w-1.5 rounded-full ${
+                  cohort.status === "active" ? "bg-emerald-500"
+                    : cohort.status === "upcoming" ? "bg-blue-500"
+                    : cohort.status === "judging" ? "bg-violet-500"
+                    : cohort.status === "completed" ? "bg-amber-500"
+                    : "bg-muted-foreground"
+                }`} />
+                <span className="text-xs capitalize">{cohort.status}</span>
+              </div>
             </TableCell>
             <TableCell className="hidden md:table-cell">
-              <div className="text-sm">
+              <div className="text-xs text-muted-foreground">
                 <p>{new Date(cohort.startDate).toLocaleDateString()}</p>
-                <p className="text-muted-foreground">
-                  to {new Date(cohort.endDate).toLocaleDateString()}
-                </p>
+                <p>to {new Date(cohort.endDate).toLocaleDateString()}</p>
               </div>
             </TableCell>
             <TableCell className="hidden md:table-cell">
               <div className="flex items-center gap-1">
-                <Users className="h-4 w-4 text-muted-foreground" />
-                <span>{getSponsorCount(cohort.id)}</span>
+                <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-xs">{getSponsorCount(cohort.id)}</span>
               </div>
             </TableCell>
             <TableCell className="hidden md:table-cell">
-              <Badge variant={cohort.isPublic ? "default" : "outline"}>
+              <span className="text-xs text-muted-foreground">
                 {cohort.isPublic ? "Public" : "Private"}
-              </Badge>
+              </span>
             </TableCell>
             <TableCell className="text-right">
-              <div className="flex justify-end gap-2">
-                <Button variant="ghost" size="icon" asChild>
+              <div className="flex justify-end gap-1">
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground" asChild>
                   <Link href={`/admin/cohorts/${cohort.id}`}>
-                    <Eye className="h-4 w-4" />
+                    <Eye className="h-3.5 w-3.5" />
                   </Link>
                 </Button>
-                <Button variant="ghost" size="icon" asChild>
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground" asChild>
                   <Link href={`/admin/cohorts/${cohort.id}/edit`}>
-                    <Pencil className="h-4 w-4" />
+                    <Pencil className="h-3.5 w-3.5" />
                   </Link>
                 </Button>
               </div>

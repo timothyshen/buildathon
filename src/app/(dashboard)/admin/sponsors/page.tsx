@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import type { SponsorOrg, CohortSponsor, Cohort } from "@/types";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -323,7 +322,7 @@ export default function AdminSponsorsPage() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-10">
       <Breadcrumb
         items={[
           { label: "Admin", href: "/admin/cohorts" },
@@ -334,54 +333,38 @@ export default function AdminSponsorsPage() {
 
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Sponsors</h1>
-          <p className="mt-2 text-muted-foreground">
+          <h1 className="text-2xl font-semibold tracking-tight">Sponsors</h1>
+          <p className="text-sm text-muted-foreground mt-1">
             Manage sponsor organizations and invitations
           </p>
         </div>
-        <Button onClick={() => setIsFormOpen(true)}>
+        <Button onClick={() => setIsFormOpen(true)} className="bg-foreground text-background hover:bg-foreground/90">
           <PlusCircle className="mr-2 h-4 w-4" />
           Add Sponsor
         </Button>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Sponsors</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{sponsorOrgs.length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Contribution</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${totalContribution.toLocaleString()}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">With Tracks</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {sponsorsWithCohorts.filter((s) => s.hasDedicatedTrack).length}
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Platinum/Gold</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {sponsorsWithCohorts.filter((s) => s.highestTier && ["platinum", "gold"].includes(s.highestTier)).length}
-            </div>
-          </CardContent>
-        </Card>
+      <div className="rounded-xl border divide-x flex">
+        <div className="flex-1 px-6 py-4">
+          <p className="text-sm text-muted-foreground">Total Sponsors</p>
+          <p className="text-3xl font-mono font-semibold tabular-nums mt-1">{sponsorOrgs.length}</p>
+        </div>
+        <div className="flex-1 px-6 py-4">
+          <p className="text-sm text-muted-foreground">Total Contribution</p>
+          <p className="text-3xl font-mono font-semibold tabular-nums mt-1 text-emerald-600">${totalContribution.toLocaleString()}</p>
+        </div>
+        <div className="flex-1 px-6 py-4">
+          <p className="text-sm text-muted-foreground">With Tracks</p>
+          <p className="text-3xl font-mono font-semibold tabular-nums mt-1">
+            {sponsorsWithCohorts.filter((s) => s.hasDedicatedTrack).length}
+          </p>
+        </div>
+        <div className="flex-1 px-6 py-4">
+          <p className="text-sm text-muted-foreground">Platinum/Gold</p>
+          <p className="text-3xl font-mono font-semibold tabular-nums mt-1 text-violet-600">
+            {sponsorsWithCohorts.filter((s) => s.highestTier && ["platinum", "gold"].includes(s.highestTier)).length}
+          </p>
+        </div>
       </div>
 
       <div className="flex gap-4">
@@ -410,29 +393,23 @@ export default function AdminSponsorsPage() {
       </div>
 
       {filteredSponsors.length === 0 ? (
-        <Card>
-          <CardContent className="py-12">
-            <div className="text-center">
-              <Building2 className="mx-auto h-12 w-12 text-muted-foreground" />
-              <h3 className="mt-4 text-lg font-semibold">No Sponsors Yet</h3>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Add sponsors to support the buildathon.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="py-12 text-center">
+          <Building2 className="mx-auto h-8 w-8 opacity-50" />
+          <h3 className="mt-4 text-lg font-semibold">No Sponsors Yet</h3>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Add sponsors to support the buildathon.
+          </p>
+        </div>
       ) : (
-        <Card>
-          <CardContent className="p-0">
-            <SponsorTable
-              sponsors={filteredSponsors}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onInvite={handleInvite}
-              onGenerateInviteLink={handleGenerateInviteLink}
-            />
-          </CardContent>
-        </Card>
+        <div className="rounded-xl border overflow-hidden">
+          <SponsorTable
+            sponsors={filteredSponsors}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onInvite={handleInvite}
+            onGenerateInviteLink={handleGenerateInviteLink}
+          />
+        </div>
       )}
 
       <SponsorForm

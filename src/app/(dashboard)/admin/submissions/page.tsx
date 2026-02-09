@@ -5,9 +5,7 @@ import Link from "next/link";
 import { submissionsService, cohortsService } from "@/services";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -26,7 +24,6 @@ import {
 } from "@/components/ui/table";
 import { Search, ExternalLink, Eye, Loader2 } from "lucide-react";
 import type { Submission, Cohort } from "@/types";
-import { getSubmissionStatusColor } from "@/lib/utils/status";
 
 export default function AdminSubmissionsPage() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
@@ -74,9 +71,8 @@ export default function AdminSubmissionsPage() {
     return matchesSearch && matchesCohort && matchesStatus;
   });
 
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-10">
       <Breadcrumb
         items={[
           { label: "Admin", href: "/admin/cohorts" },
@@ -86,8 +82,8 @@ export default function AdminSubmissionsPage() {
       <AdminNav />
 
       <div>
-        <h1 className="text-3xl font-bold">All Submissions</h1>
-        <p className="mt-2 text-muted-foreground">
+        <h1 className="text-2xl font-semibold tracking-tight">All Submissions</h1>
+        <p className="text-sm text-muted-foreground mt-1">
           Manage all buildathon submissions across cohorts
         </p>
       </div>
@@ -132,75 +128,93 @@ export default function AdminSubmissionsPage() {
       </div>
 
       {/* Results */}
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
+      <div className="rounded-xl border overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Project</TableHead>
+              <TableHead className="hidden md:table-cell">Team</TableHead>
+              <TableHead className="hidden md:table-cell">Cohort</TableHead>
+              <TableHead className="hidden md:table-cell">Track</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="hidden md:table-cell">Submitted</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredSubmissions.length === 0 ? (
               <TableRow>
-                <TableHead>Project</TableHead>
-                <TableHead className="hidden md:table-cell">Team</TableHead>
-                <TableHead className="hidden md:table-cell">Cohort</TableHead>
-                <TableHead className="hidden md:table-cell">Track</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="hidden md:table-cell">Submitted</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableCell colSpan={7} className="text-center py-12">
+                  <p className="text-sm text-muted-foreground">No submissions found.</p>
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredSubmissions.map((submission) => (
+            ) : (
+              filteredSubmissions.map((submission) => (
                 <TableRow key={submission.id}>
                   <TableCell>
                     <div>
-                      <p className="font-medium">{submission.title}</p>
+                      <p className="text-sm font-medium">{submission.title}</p>
                       <p className="text-xs text-muted-foreground">
                         {submission.tagline?.slice(0, 40)}
                         {submission.tagline && submission.tagline.length > 40 ? "..." : ""}
                       </p>
                     </div>
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">{submission.team?.name || "Solo"}</TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    <Badge variant="outline">{submission.cohort?.name}</Badge>
+                  <TableCell className="hidden md:table-cell text-xs text-muted-foreground">
+                    {submission.team?.name || "Solo"}
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">{submission.track?.name || "Open"}</TableCell>
+                  <TableCell className="hidden md:table-cell text-xs text-muted-foreground">
+                    {submission.cohort?.name}
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell text-xs text-muted-foreground">
+                    {submission.track?.name || "Open"}
+                  </TableCell>
                   <TableCell>
-                    <Badge className={getSubmissionStatusColor(submission.status)}>
-                      {submission.status}
-                    </Badge>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`h-1.5 w-1.5 rounded-full ${
+                        submission.status === "submitted" ? "bg-emerald-500"
+                          : submission.status === "accepted" ? "bg-blue-500"
+                          : submission.status === "winner" ? "bg-violet-500"
+                          : submission.status === "under_review" ? "bg-blue-500"
+                          : submission.status === "draft" ? "bg-amber-500"
+                          : "bg-muted-foreground"
+                      }`} />
+                      <span className="text-xs capitalize">{submission.status.replace("_", " ")}</span>
+                    </div>
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">
+                  <TableCell className="hidden md:table-cell text-xs text-muted-foreground">
                     {submission.submittedAt
                       ? new Date(submission.submittedAt).toLocaleDateString()
-                      : "-"}
+                      : "—"}
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
+                    <div className="flex justify-end gap-1">
                       {submission.demoUrl && (
-                        <Button variant="ghost" size="icon" asChild>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
                           <a
                             href={submission.demoUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                           >
-                            <ExternalLink className="h-4 w-4" />
+                            <ExternalLink className="h-3.5 w-3.5" />
                           </a>
                         </Button>
                       )}
-                      <Button variant="ghost" size="icon" asChild>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
                         <Link href={`/admin/submissions/${submission.id}`}>
-                          <Eye className="h-4 w-4" />
+                          <Eye className="h-3.5 w-3.5" />
                         </Link>
                       </Button>
                     </div>
                   </TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
 
-      <p className="text-sm text-muted-foreground">
+      <p className="text-xs text-muted-foreground">
         Showing {filteredSubmissions.length} of {submissions.length} submissions
       </p>
     </div>

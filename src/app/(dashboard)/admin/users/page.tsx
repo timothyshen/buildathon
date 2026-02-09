@@ -5,9 +5,7 @@ import { usersService, sponsorsService } from "@/services";
 import type { User, SponsorOrg, UserRole } from "@/types";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
-import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -35,14 +33,10 @@ import {
 import {
   Search,
   Users,
-  Shield,
-  Building2,
-  Gavel,
   UserCircle,
   Loader2,
   Pencil,
 } from "lucide-react";
-import { getRoleBadgeColor } from "@/lib/utils/colors";
 import { toast } from "sonner";
 
 export default function AdminUsersPage() {
@@ -93,7 +87,7 @@ export default function AdminUsersPage() {
 
   if (loadError) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-10">
         <Breadcrumb
           items={[
             { label: "Admin", href: "/admin/cohorts" },
@@ -101,22 +95,18 @@ export default function AdminUsersPage() {
           ]}
         />
         <AdminNav />
-        <Card>
-          <CardContent className="py-12">
-            <div className="text-center">
-              <Users className="mx-auto h-12 w-12 text-destructive" />
-              <h3 className="mt-4 text-lg font-semibold">Failed to Load Users</h3>
-              <p className="mt-2 text-sm text-muted-foreground">{loadError}</p>
-              <Button
-                variant="outline"
-                className="mt-4"
-                onClick={() => window.location.reload()}
-              >
-                Try Again
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="py-12 text-center">
+          <Users className="mx-auto h-12 w-12 text-destructive" />
+          <h3 className="mt-4 text-lg font-semibold">Failed to Load Users</h3>
+          <p className="mt-2 text-sm text-muted-foreground">{loadError}</p>
+          <Button
+            variant="outline"
+            className="mt-4"
+            onClick={() => window.location.reload()}
+          >
+            Try Again
+          </Button>
+        </div>
       </div>
     );
   }
@@ -188,8 +178,22 @@ export default function AdminUsersPage() {
     setIsSaving(false);
   };
 
+  // Role dot color helper
+  const getRoleDotColor = (role: string) => {
+    switch (role) {
+      case "admin":
+        return "bg-violet-500";
+      case "sponsor":
+        return "bg-blue-500";
+      case "judge":
+        return "bg-emerald-500";
+      default:
+        return "bg-muted-foreground";
+    }
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-10">
       <Breadcrumb
         items={[
           { label: "Admin", href: "/admin/cohorts" },
@@ -199,42 +203,31 @@ export default function AdminUsersPage() {
       <AdminNav />
 
       <div>
-        <h1 className="text-3xl font-bold">User Management</h1>
-        <p className="mt-2 text-muted-foreground">
+        <h1 className="text-2xl font-semibold tracking-tight">User Management</h1>
+        <p className="text-sm text-muted-foreground mt-1">
           Manage user roles and permissions
         </p>
       </div>
 
-      {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </div>
-          <div className="mt-2 text-2xl font-bold">{users.length}</div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-medium">Admins</CardTitle>
-            <Shield className="h-4 w-4 text-primary" />
-          </div>
-          <div className="mt-2 text-2xl font-bold">{adminCount}</div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-medium">Sponsors</CardTitle>
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-          </div>
-          <div className="mt-2 text-2xl font-bold">{sponsorCount}</div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-medium">Judges</CardTitle>
-            <Gavel className="h-4 w-4 text-muted-foreground" />
-          </div>
-          <div className="mt-2 text-2xl font-bold">{judgeCount}</div>
-        </Card>
+      {/* Stats Strip */}
+      <div className="rounded-xl border bg-card divide-x flex">
+        <div className="flex-1 px-6 py-4">
+          <p className="text-sm text-muted-foreground">Total</p>
+          <p className="text-3xl font-mono font-semibold tabular-nums mt-1">{users.length}</p>
+          <p className="text-[11px] text-muted-foreground mt-0.5">{participantCount} participants</p>
+        </div>
+        <div className="flex-1 px-6 py-4">
+          <p className="text-sm text-violet-600">Admins</p>
+          <p className="text-3xl font-mono font-semibold tabular-nums mt-1">{adminCount}</p>
+        </div>
+        <div className="flex-1 px-6 py-4">
+          <p className="text-sm text-muted-foreground">Sponsors</p>
+          <p className="text-3xl font-mono font-semibold tabular-nums mt-1">{sponsorCount}</p>
+        </div>
+        <div className="flex-1 px-6 py-4">
+          <p className="text-sm text-muted-foreground">Judges</p>
+          <p className="text-3xl font-mono font-semibold tabular-nums mt-1">{judgeCount}</p>
+        </div>
       </div>
 
       {/* Search and Filter */}
@@ -264,87 +257,82 @@ export default function AdminUsersPage() {
 
       {/* Users Table */}
       {filteredUsers.length === 0 ? (
-        <Card>
-          <CardContent className="py-12">
-            <div className="text-center">
-              <Users className="mx-auto h-12 w-12 text-muted-foreground" />
-              <h3 className="mt-4 text-lg font-semibold">No Users Found</h3>
-              <p className="mt-2 text-sm text-muted-foreground">
-                {search || roleFilter !== "all"
-                  ? "Try adjusting your search or filter."
-                  : "No users have registered yet."}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="py-12 text-center">
+          <Users className="mx-auto h-8 w-8 opacity-50" />
+          <h3 className="mt-4 text-lg font-semibold">No Users Found</h3>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {search || roleFilter !== "all"
+              ? "Try adjusting your search or filter."
+              : "No users have registered yet."}
+          </p>
+        </div>
       ) : (
-        <Card>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>User</TableHead>
-                  <TableHead className="hidden md:table-cell">Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead className="hidden md:table-cell">Sponsor Org</TableHead>
-                  <TableHead className="hidden md:table-cell">Joined</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredUsers.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        {user.avatar ? (
-                          <img
-                            src={user.avatar}
-                            alt={user.name}
-                            className="h-8 w-8 rounded-full"
-                          />
-                        ) : (
-                          <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-                            <UserCircle className="h-5 w-5 text-muted-foreground" />
-                          </div>
-                        )}
-                        <div>
-                          <p className="font-medium">{user.name || "Unknown"}</p>
-                          <p className="text-xs text-muted-foreground md:hidden">
-                            {user.email || "-"}
-                          </p>
+        <div className="rounded-xl border overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>User</TableHead>
+                <TableHead className="hidden md:table-cell">Email</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead className="hidden md:table-cell">Sponsor Org</TableHead>
+                <TableHead className="hidden md:table-cell">Joined</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredUsers.map((user) => (
+                <TableRow key={user.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      {user.avatar ? (
+                        <img
+                          src={user.avatar}
+                          alt={user.name}
+                          className="h-8 w-8 rounded-full"
+                        />
+                      ) : (
+                        <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+                          <UserCircle className="h-5 w-5 text-muted-foreground" />
                         </div>
+                      )}
+                      <div>
+                        <p className="font-medium">{user.name || "Unknown"}</p>
+                        <p className="text-xs text-muted-foreground md:hidden">
+                          {user.email || "-"}
+                        </p>
                       </div>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      {user.email || "-"}
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={getRoleBadgeColor(user.role)}>
-                        {user.role}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      {getSponsorOrgName(user.sponsorOrgId)}
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      {formatDate(user.createdAt)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEditClick(user)}
-                      >
-                        <Pencil className="h-4 w-4 mr-1" />
-                        Edit
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                    </div>
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    {user.email || "-"}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <span className={`h-2 w-2 rounded-full ${getRoleDotColor(user.role)}`} />
+                      <span className="text-xs capitalize">{user.role}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    {getSponsorOrgName(user.sponsorOrgId)}
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    {formatDate(user.createdAt)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={() => handleEditClick(user)}
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       )}
 
       {/* Edit Role Dialog */}

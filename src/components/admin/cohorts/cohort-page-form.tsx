@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -235,13 +234,15 @@ export function CohortPageForm({
                 disabled={isDisabled}
                 className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
                   i === step
-                    ? "bg-primary text-primary-foreground"
+                    ? "bg-foreground text-background"
                     : isClickable
-                    ? "bg-primary/20 text-primary hover:bg-primary/30 cursor-pointer"
+                    ? "bg-muted text-foreground hover:bg-muted/80 cursor-pointer"
                     : "bg-muted text-muted-foreground cursor-not-allowed"
                 }`}
               >
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-background/20 text-xs">
+                <span className={`flex h-5 w-5 items-center justify-center rounded-full text-xs ${
+                  i === step ? "bg-background/20" : ""
+                }`}>
                   {i + 1}
                 </span>
                 <span className="hidden sm:inline">{s}</span>
@@ -257,14 +258,12 @@ export function CohortPageForm({
       <form onSubmit={handleSubmit(onFormSubmit, onValidationError)} className="space-y-6">
         {/* Step 1: Basic Info */}
         {step === 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Basic Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <div>
+            <h3 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-4">Basic Information</h3>
+            <div className="rounded-xl border p-5 space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Name *</Label>
+                  <Label htmlFor="name" className="text-xs text-muted-foreground">Name *</Label>
                   <Input
                     id="name"
                     {...register("name", {
@@ -273,25 +272,25 @@ export function CohortPageForm({
                     placeholder="SWA Summer 2024"
                   />
                   {errors.name && (
-                    <p className="text-sm text-destructive">{errors.name.message}</p>
+                    <p className="text-xs text-destructive">{errors.name.message}</p>
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="slug">Slug *</Label>
+                  <Label htmlFor="slug" className="text-xs text-muted-foreground">Slug *</Label>
                   <Input
                     id="slug"
                     {...register("slug")}
                     placeholder="swa-summer-2024"
                   />
                   {errors.slug && (
-                    <p className="text-sm text-destructive">{errors.slug.message}</p>
+                    <p className="text-xs text-destructive">{errors.slug.message}</p>
                   )}
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="tagline">Tagline</Label>
+                <Label htmlFor="tagline" className="text-xs text-muted-foreground">Tagline</Label>
                 <Input
                   id="tagline"
                   {...register("tagline")}
@@ -300,14 +299,14 @@ export function CohortPageForm({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Description *</Label>
+                <Label htmlFor="description" className="text-xs text-muted-foreground">Description *</Label>
                 <RichTextEditor
                   value={description}
                   onChange={handleDescriptionChange}
                   placeholder="Describe this buildathon..."
                 />
                 {errors.description && (
-                  <p className="text-sm text-destructive">{errors.description.message}</p>
+                  <p className="text-xs text-destructive">{errors.description.message}</p>
                 )}
               </div>
 
@@ -321,37 +320,35 @@ export function CohortPageForm({
                   aspectRatio="16/9"
                 />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         )}
 
         {/* Step 2: Dates */}
         {step === 1 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Timeline</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <div>
+            <h3 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-4">Timeline</h3>
+            <div className="rounded-xl border p-5 space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="startDate">Start Date *</Label>
+                  <Label htmlFor="startDate" className="text-xs text-muted-foreground">Start Date *</Label>
                   <Input id="startDate" type="date" lang="en" {...register("startDate")} />
                   {errors.startDate && (
-                    <p className="text-sm text-destructive">{errors.startDate.message}</p>
+                    <p className="text-xs text-destructive">{errors.startDate.message}</p>
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="endDate">End Date *</Label>
+                  <Label htmlFor="endDate" className="text-xs text-muted-foreground">End Date *</Label>
                   <Input id="endDate" type="date" lang="en" {...register("endDate")} />
                   {errors.endDate && (
-                    <p className="text-sm text-destructive">{errors.endDate.message}</p>
+                    <p className="text-xs text-destructive">{errors.endDate.message}</p>
                   )}
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="submissionDeadline">Submission Deadline *</Label>
+                <Label htmlFor="submissionDeadline" className="text-xs text-muted-foreground">Submission Deadline *</Label>
                 <Input
                   id="submissionDeadline"
                   type="datetime-local"
@@ -359,13 +356,13 @@ export function CohortPageForm({
                   {...register("submissionDeadline")}
                 />
                 {errors.submissionDeadline && (
-                  <p className="text-sm text-destructive">{errors.submissionDeadline.message}</p>
+                  <p className="text-xs text-destructive">{errors.submissionDeadline.message}</p>
                 )}
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="judgingStart">Judging Start *</Label>
+                  <Label htmlFor="judgingStart" className="text-xs text-muted-foreground">Judging Start *</Label>
                   <Input
                     id="judgingStart"
                     type="datetime-local"
@@ -373,12 +370,12 @@ export function CohortPageForm({
                     {...register("judgingStart")}
                   />
                   {errors.judgingStart && (
-                    <p className="text-sm text-destructive">{errors.judgingStart.message}</p>
+                    <p className="text-xs text-destructive">{errors.judgingStart.message}</p>
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="judgingEnd">Judging End *</Label>
+                  <Label htmlFor="judgingEnd" className="text-xs text-muted-foreground">Judging End *</Label>
                   <Input
                     id="judgingEnd"
                     type="datetime-local"
@@ -386,23 +383,21 @@ export function CohortPageForm({
                     {...register("judgingEnd")}
                   />
                   {errors.judgingEnd && (
-                    <p className="text-sm text-destructive">{errors.judgingEnd.message}</p>
+                    <p className="text-xs text-destructive">{errors.judgingEnd.message}</p>
                   )}
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         )}
 
         {/* Step 3: Settings */}
         {step === 2 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Settings</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <div>
+            <h3 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-4">Settings</h3>
+            <div className="rounded-xl border p-5 space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
+                <Label htmlFor="status" className="text-xs text-muted-foreground">Status</Label>
                 <Select
                   value={watch("status")}
                   onValueChange={(value) => setValue("status", value as CohortFormData["status"])}
@@ -421,7 +416,7 @@ export function CohortPageForm({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="maxTeamSize">Max Team Size</Label>
+                <Label htmlFor="maxTeamSize" className="text-xs text-muted-foreground">Max Team Size</Label>
                 <Input
                   id="maxTeamSize"
                   type="number"
@@ -430,7 +425,7 @@ export function CohortPageForm({
                   {...register("maxTeamSize", { valueAsNumber: true })}
                 />
                 {errors.maxTeamSize && (
-                  <p className="text-sm text-destructive">{errors.maxTeamSize.message}</p>
+                  <p className="text-xs text-destructive">{errors.maxTeamSize.message}</p>
                 )}
               </div>
 
@@ -440,25 +435,23 @@ export function CohortPageForm({
                   checked={watch("isPublic")}
                   onCheckedChange={(checked) => setValue("isPublic", !!checked)}
                 />
-                <Label htmlFor="isPublic">Make this cohort public</Label>
+                <Label htmlFor="isPublic" className="text-xs text-muted-foreground">Make this cohort public</Label>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         )}
 
         {/* Step 4: Prizes */}
         {step === 3 && (
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Prizes</CardTitle>
-                <Button type="button" variant="outline" size="sm" onClick={addPrize}>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Add Prize
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">Prizes</h3>
+              <Button type="button" variant="ghost" size="sm" onClick={addPrize}>
+                <PlusCircle className="mr-2 h-3.5 w-3.5" />
+                Add Prize
+              </Button>
+            </div>
+            <div className="rounded-xl border p-5 space-y-3">
               {prizes.map((prize, index) => (
                 <div key={index} className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center">
                   <div className="w-24">
@@ -491,32 +484,28 @@ export function CohortPageForm({
                     size="icon"
                     onClick={() => removePrize(index)}
                     disabled={prizes.length === 1}
-                    className="text-destructive hover:text-destructive"
+                    className="text-muted-foreground hover:text-destructive"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 </div>
               ))}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         )}
 
         {/* Step 5: Sponsors */}
         {step === 4 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Sponsors</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CohortSponsorManager
-                sponsors={sponsors}
-                onChange={handleSponsorsChange}
-                availableOrgs={sponsorOrgs}
-                disabled={isLoading}
-                onCreateOrg={onCreateOrg}
-              />
-            </CardContent>
-          </Card>
+          <div>
+            <h3 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-4">Sponsors</h3>
+            <CohortSponsorManager
+              sponsors={sponsors}
+              onChange={handleSponsorsChange}
+              availableOrgs={sponsorOrgs}
+              disabled={isLoading}
+              onCreateOrg={onCreateOrg}
+            />
+          </div>
         )}
 
         {/* Navigation */}
@@ -542,18 +531,18 @@ export function CohortPageForm({
 
             {step > 0 && (
               <Button type="button" variant="outline" onClick={prevStep} disabled={isLoading}>
-                <ChevronLeft className="mr-1 h-4 w-4" />
+                <ChevronLeft className="mr-1 h-3.5 w-3.5" />
                 Previous
               </Button>
             )}
 
             {step < steps.length - 1 ? (
-              <Button type="button" onClick={nextStep} disabled={isLoading || saveStatus === "saving"}>
+              <Button type="button" onClick={nextStep} disabled={isLoading || saveStatus === "saving"} className="bg-foreground text-background hover:bg-foreground/90">
                 Next
-                <ChevronRight className="ml-1 h-4 w-4" />
+                <ChevronRight className="ml-1 h-3.5 w-3.5" />
               </Button>
             ) : (
-              <Button type="button" onClick={onDone} disabled={isLoading || saveStatus === "saving"}>
+              <Button type="button" onClick={onDone} disabled={isLoading || saveStatus === "saving"} className="bg-foreground text-background hover:bg-foreground/90">
                 Done
               </Button>
             )}

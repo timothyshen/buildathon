@@ -161,28 +161,28 @@ export default function NewCohortPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild>
-          <Link href="/admin/cohorts">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        </Button>
-        <Breadcrumb
-          items={[
-            { label: "Admin", href: "/admin/cohorts" },
-            { label: "Cohorts", href: "/admin/cohorts" },
-            { label: "New Cohort" },
-          ]}
-        />
-      </div>
+    <div className="space-y-10">
+      <Breadcrumb
+        items={[
+          { label: "Admin", href: "/admin/cohorts" },
+          { label: "Cohorts", href: "/admin/cohorts" },
+          { label: "New Cohort" },
+        ]}
+      />
       <AdminNav />
 
-      <div>
-        <h1 className="text-3xl font-bold">Create Cohort</h1>
-        <p className="mt-2 text-muted-foreground">
-          Set up a new buildathon cohort with sponsors and prizes
-        </p>
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground" asChild>
+          <Link href="/admin/cohorts">
+            <ArrowLeft className="h-3.5 w-3.5" />
+          </Link>
+        </Button>
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Create Cohort</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Set up a new buildathon cohort with sponsors and prizes
+          </p>
+        </div>
       </div>
 
       <CohortPageForm

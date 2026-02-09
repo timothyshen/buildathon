@@ -1,6 +1,5 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -28,14 +27,6 @@ interface SponsorTableProps {
   onInvite: (sponsor: SponsorOrg) => void;
   onGenerateInviteLink: (sponsor: SponsorOrg) => void;
 }
-
-const tierColors: Record<SponsorTier, string> = {
-  platinum: "bg-slate-200 text-slate-800",
-  gold: "bg-amber-100 text-amber-800",
-  silver: "bg-slate-100 text-slate-600",
-  bronze: "bg-orange-100 text-orange-800",
-  community: "bg-green-100 text-green-800",
-};
 
 export function SponsorTable({ sponsors, onEdit, onDelete, onInvite, onGenerateInviteLink }: SponsorTableProps) {
   const sortedSponsors = [...sponsors].sort((a, b) => {
@@ -69,10 +60,10 @@ export function SponsorTable({ sponsors, onEdit, onDelete, onInvite, onGenerateI
                     className="h-8 w-8 rounded object-contain"
                   />
                 ) : (
-                  <div className="h-8 w-8 rounded bg-slate-200" />
+                  <div className="h-8 w-8 rounded bg-muted" />
                 )}
                 <div>
-                  <p className="font-medium">{sponsor.name}</p>
+                  <p className="text-sm font-medium">{sponsor.name}</p>
                   {sponsor.website && (
                     <a
                       href={sponsor.website}
@@ -88,55 +79,64 @@ export function SponsorTable({ sponsors, onEdit, onDelete, onInvite, onGenerateI
             </TableCell>
             <TableCell>
               {sponsor.highestTier ? (
-                <Badge className={tierColors[sponsor.highestTier]}>{sponsor.highestTier}</Badge>
+                <span className="text-xs capitalize text-muted-foreground">{sponsor.highestTier}</span>
               ) : (
-                <span className="text-muted-foreground text-sm">—</span>
+                <span className="text-xs text-muted-foreground">—</span>
               )}
             </TableCell>
             <TableCell className="hidden md:table-cell">
-              {sponsor.totalContribution > 0
-                ? `$${sponsor.totalContribution.toLocaleString()}`
-                : "—"}
+              <span className="font-mono text-xs tabular-nums">
+                {sponsor.totalContribution > 0
+                  ? `$${sponsor.totalContribution.toLocaleString()}`
+                  : "—"}
+              </span>
             </TableCell>
             <TableCell className="hidden md:table-cell">
-              <Badge variant={sponsor.hasDedicatedTrack ? "default" : "outline"}>
+              <span className="text-xs text-muted-foreground">
                 {sponsor.hasDedicatedTrack ? "Yes" : "No"}
-              </Badge>
+              </span>
             </TableCell>
             <TableCell className="hidden md:table-cell">
-              <div className="text-sm">
-                <p>{sponsor.contactName}</p>
-                <p className="text-muted-foreground">{sponsor.contactEmail}</p>
+              <div>
+                <p className="text-xs">{sponsor.contactName}</p>
+                <p className="text-xs text-muted-foreground">{sponsor.contactEmail}</p>
               </div>
             </TableCell>
             <TableCell className="text-right">
-              <div className="flex justify-end gap-2">
+              <div className="flex justify-end gap-1">
                 <Button
                   variant="ghost"
                   size="icon"
+                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
                   onClick={() => onGenerateInviteLink(sponsor)}
                   title="Generate invite link"
                 >
-                  <Link2 className="h-4 w-4" />
+                  <Link2 className="h-3.5 w-3.5" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="icon"
+                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
                   onClick={() => onInvite(sponsor)}
                   title="Invite existing user"
                 >
-                  <Mail className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="icon" onClick={() => onEdit(sponsor)}>
-                  <Pencil className="h-4 w-4" />
+                  <Mail className="h-3.5 w-3.5" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => onDelete(sponsor)}
-                  className="text-red-600"
+                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                  onClick={() => onEdit(sponsor)}
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Pencil className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                  onClick={() => onDelete(sponsor)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
                 </Button>
               </div>
             </TableCell>
@@ -144,7 +144,7 @@ export function SponsorTable({ sponsors, onEdit, onDelete, onInvite, onGenerateI
         ))}
         {sortedSponsors.length === 0 && (
           <TableRow>
-            <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+            <TableCell colSpan={6} className="text-center text-muted-foreground py-12">
               No sponsors yet. Add a sponsor to get started.
             </TableCell>
           </TableRow>

@@ -13,8 +13,6 @@ import {
 } from "@/services";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -33,10 +31,6 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
-  Calendar,
-  Users,
-  FileText,
-  Trophy,
   ExternalLink,
   Eye,
   Pencil,
@@ -46,7 +40,38 @@ import { RichTextDisplay } from "@/components/ui/rich-text-editor";
 import { toast } from "sonner";
 import type { Cohort, Track, Submission } from "@/types";
 import type { CohortSponsorWithOrg } from "@/services/sponsors.service";
-import { getCohortStatusColor, getSubmissionStatusColor } from "@/lib/utils/colors";
+
+function getStatusDotColor(status: string) {
+  switch (status) {
+    case "active":
+      return "bg-emerald-500";
+    case "upcoming":
+      return "bg-blue-500";
+    case "judging":
+      return "bg-violet-500";
+    case "completed":
+      return "bg-amber-500";
+    case "draft":
+    default:
+      return "bg-muted-foreground";
+  }
+}
+
+function getSubmissionDotColor(status: string) {
+  switch (status) {
+    case "submitted":
+      return "bg-emerald-500";
+    case "draft":
+      return "bg-amber-500";
+    case "under_review":
+    case "accepted":
+      return "bg-blue-500";
+    case "winner":
+      return "bg-violet-500";
+    default:
+      return "bg-muted-foreground";
+  }
+}
 
 interface AdminCohortDetailPageProps {
   params: Promise<{ id: string }>;
@@ -137,7 +162,7 @@ export default function AdminCohortDetailPage({ params }: AdminCohortDetailPageP
   }, 0) || 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-10">
       <Breadcrumb
         items={[
           { label: "Admin", href: "/admin/cohorts" },
@@ -150,11 +175,14 @@ export default function AdminCohortDetailPage({ params }: AdminCohortDetailPageP
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">{cohort.name}</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{cohort.name}</h1>
           <p className="mt-1 text-sm text-muted-foreground">/{cohort.slug}</p>
         </div>
         <div className="flex items-center gap-3">
-          <Badge className={getCohortStatusColor(currentStatus)}>{currentStatus}</Badge>
+          <span className="flex items-center gap-1.5">
+            <span className={`h-1.5 w-1.5 rounded-full ${getStatusDotColor(currentStatus)}`} />
+            <span className="text-xs capitalize">{currentStatus}</span>
+          </span>
           <Select
             value={currentStatus}
             onValueChange={(value) => handleStatusChange(value as Cohort["status"])}
@@ -178,54 +206,26 @@ export default function AdminCohortDetailPage({ params }: AdminCohortDetailPageP
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              Submissions
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{submissions.length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Sponsors
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{sponsors.length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Trophy className="h-4 w-4" />
-              Tracks
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{tracks.length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              Prize Pool
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {totalPrizePool > 0 ? `$${totalPrizePool.toLocaleString()}` : "-"}
-            </div>
-          </CardContent>
-        </Card>
+      {/* Stats Strip */}
+      <div className="rounded-xl border divide-x flex">
+        <div className="flex-1 px-5 py-4">
+          <p className="text-xs text-muted-foreground mb-1">Submissions</p>
+          <p className="text-3xl font-mono font-semibold tabular-nums">{submissions.length}</p>
+        </div>
+        <div className="flex-1 px-5 py-4">
+          <p className="text-xs text-muted-foreground mb-1">Sponsors</p>
+          <p className="text-3xl font-mono font-semibold tabular-nums">{sponsors.length}</p>
+        </div>
+        <div className="flex-1 px-5 py-4">
+          <p className="text-xs text-muted-foreground mb-1">Tracks</p>
+          <p className="text-3xl font-mono font-semibold tabular-nums">{tracks.length}</p>
+        </div>
+        <div className="flex-1 px-5 py-4">
+          <p className="text-xs text-muted-foreground mb-1">Prize Pool</p>
+          <p className="text-3xl font-mono font-semibold tabular-nums text-emerald-600">
+            {totalPrizePool > 0 ? `$${totalPrizePool.toLocaleString()}` : "-"}
+          </p>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -238,73 +238,72 @@ export default function AdminCohortDetailPage({ params }: AdminCohortDetailPageP
         </TabsList>
 
         {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-6">
+        <TabsContent value="overview" className="space-y-10">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Main Info */}
-            <div className="lg:col-span-2 space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>About</CardTitle>
-                </CardHeader>
-                <CardContent>
+            <div className="lg:col-span-2 space-y-10">
+              {/* About */}
+              <div>
+                <p className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
+                  About
+                </p>
+                <div className="rounded-xl border p-5">
                   <RichTextDisplay content={cohort.description} />
-                </CardContent>
-              </Card>
+                </div>
+              </div>
 
               {/* Prizes */}
               {cohort.prizes && cohort.prizes.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Trophy className="h-5 w-5 text-prize-grand" />
-                      Prizes
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
+                <div>
+                  <p className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
+                    Prizes
+                  </p>
+                  <div className="rounded-xl border p-5">
+                    <div className="divide-y">
                       {cohort.prizes.map((prize, index) => (
                         <div
                           key={index}
-                          className="flex items-center justify-between border-b last:border-0 pb-3 last:pb-0"
+                          className="flex items-center justify-between py-3 first:pt-0 last:pb-0"
                         >
                           <div className="flex items-center gap-3">
-                            <Badge variant="secondary">{prize.place}</Badge>
+                            <span className="text-sm font-medium">{prize.place}</span>
                             {prize.description && (
                               <span className="text-sm text-muted-foreground">
                                 {prize.description}
                               </span>
                             )}
                           </div>
-                          <span className="font-bold">{prize.amount}</span>
+                          <span className="font-mono font-semibold">{prize.amount}</span>
                         </div>
                       ))}
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               )}
             </div>
 
             {/* Sidebar */}
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Timeline</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
+            <div className="space-y-10">
+              {/* Timeline */}
+              <div>
+                <p className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
+                  Timeline
+                </p>
+                <div className="rounded-xl border p-5 divide-y">
+                  <div className="pb-3">
                     <p className="text-xs text-muted-foreground">Start Date</p>
                     <p className="font-medium">
                       {cohort.startDate.toLocaleDateString()}
                     </p>
                   </div>
-                  <div>
+                  <div className="py-3">
                     <p className="text-xs text-muted-foreground">End Date</p>
                     <p className="font-medium">
                       {cohort.endDate.toLocaleDateString()}
                     </p>
                   </div>
                   {cohort.submissionDeadline && (
-                    <div>
+                    <div className="py-3">
                       <p className="text-xs text-muted-foreground">
                         Submission Deadline
                       </p>
@@ -313,7 +312,7 @@ export default function AdminCohortDetailPage({ params }: AdminCohortDetailPageP
                       </p>
                     </div>
                   )}
-                  <div>
+                  <div className="pt-3">
                     <p className="text-xs text-muted-foreground">
                       Judging Period
                     </p>
@@ -321,31 +320,32 @@ export default function AdminCohortDetailPage({ params }: AdminCohortDetailPageP
                       {cohort.judgingStart.toLocaleDateString()} - {cohort.judgingEnd.toLocaleDateString()}
                     </p>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Settings</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
+              {/* Settings */}
+              <div>
+                <p className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
+                  Settings
+                </p>
+                <div className="rounded-xl border p-5 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm">Visibility</span>
-                    <Badge variant={cohort.isPublic ? "default" : "outline"}>
+                    <span className="text-sm text-muted-foreground">
                       {cohort.isPublic ? "Public" : "Private"}
-                    </Badge>
+                    </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm">Max Team Size</span>
-                    <Badge variant="outline">
+                    <span className="text-sm text-muted-foreground">
                       {cohort.maxTeamSize} members
-                    </Badge>
+                    </span>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
 
               <div className="space-y-2">
-                <Button className="w-full" asChild>
+                <Button className="bg-foreground text-background hover:bg-foreground/90 w-full" asChild>
                   <Link href={`/admin/cohorts/${cohort.id}/edit`}>
                     <Pencil className="mr-2 h-4 w-4" />
                     Edit Cohort
@@ -364,93 +364,86 @@ export default function AdminCohortDetailPage({ params }: AdminCohortDetailPageP
 
         {/* Submissions Tab */}
         <TabsContent value="submissions">
-          <Card>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
+          <div className="rounded-xl border overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Project</TableHead>
+                  <TableHead className="hidden md:table-cell">Team</TableHead>
+                  <TableHead className="hidden md:table-cell">Track</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {submissions.length === 0 ? (
                   <TableRow>
-                    <TableHead>Project</TableHead>
-                    <TableHead className="hidden md:table-cell">Team</TableHead>
-                    <TableHead className="hidden md:table-cell">Track</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableCell colSpan={5} className="text-center py-8">
+                      <p className="text-muted-foreground">No submissions yet</p>
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {submissions.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8">
-                        <p className="text-muted-foreground">No submissions yet</p>
+                ) : (
+                  submissions.map((submission) => (
+                    <TableRow key={submission.id}>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{submission.title}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {submission.tagline?.slice(0, 40)}
+                            {submission.tagline && submission.tagline.length > 40
+                              ? "..."
+                              : ""}
+                          </p>
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {submission.team?.name || "Solo"}
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {submission.track?.name || "Open"}
+                      </TableCell>
+                      <TableCell>
+                        <span className="flex items-center gap-1.5">
+                          <span className={`h-1.5 w-1.5 rounded-full ${getSubmissionDotColor(submission.status)}`} />
+                          <span className="text-xs capitalize">{submission.status.replace("_", " ")}</span>
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
+                          <Link href={`/admin/submissions/${submission.id}`}>
+                            <Eye className="h-4 w-4" />
+                          </Link>
+                        </Button>
                       </TableCell>
                     </TableRow>
-                  ) : (
-                    submissions.map((submission) => (
-                      <TableRow key={submission.id}>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium">{submission.title}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {submission.tagline?.slice(0, 40)}
-                              {submission.tagline && submission.tagline.length > 40
-                                ? "..."
-                                : ""}
-                            </p>
-                          </div>
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          {submission.team?.name || "Solo"}
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          {submission.track?.name || "Open"}
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={getSubmissionStatusColor(submission.status)}>
-                            {submission.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="ghost" size="icon" asChild>
-                            <Link href={`/admin/submissions/${submission.id}`}>
-                              <Eye className="h-4 w-4" />
-                            </Link>
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </TabsContent>
 
         {/* Sponsors Tab */}
         <TabsContent value="sponsors">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="space-y-3">
             {sponsors.length === 0 ? (
-              <div className="col-span-full text-center py-12">
+              <div className="text-center py-12">
                 <p className="text-muted-foreground">No sponsors yet</p>
               </div>
             ) : (
               sponsors.map((sponsor) => (
-                <Card key={sponsor.id}>
-                  <CardContent className="p-6 flex items-center gap-4">
-                    <div className="w-16 h-16 relative flex-shrink-0">
-                      <Image
-                        src={sponsor.logo}
-                        alt={sponsor.name}
-                        fill
-                        className="object-contain"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{sponsor.name}</p>
-                      <Badge variant="outline" className="mt-1">
-                        {sponsor.tier}
-                      </Badge>
-                    </div>
-                  </CardContent>
-                </Card>
+                <div key={sponsor.id} className="rounded-xl border py-3 px-4 flex items-center gap-4">
+                  <div className="w-10 h-10 relative flex-shrink-0">
+                    <Image
+                      src={sponsor.logo}
+                      alt={sponsor.name}
+                      fill
+                      className="object-contain"
+                    />
+                  </div>
+                  <span className="font-medium">{sponsor.name}</span>
+                  <span className="text-sm text-muted-foreground capitalize">{sponsor.tier}</span>
+                </div>
               ))
             )}
           </div>
@@ -458,43 +451,39 @@ export default function AdminCohortDetailPage({ params }: AdminCohortDetailPageP
 
         {/* Tracks Tab */}
         <TabsContent value="tracks">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-3">
             {tracks.length === 0 ? (
-              <div className="col-span-full text-center py-12">
+              <div className="text-center py-12">
                 <p className="text-muted-foreground">No tracks yet</p>
               </div>
             ) : (
               tracks.map((track) => (
-                <Card key={track.id}>
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      <span>{track.name}</span>
-                      {track.prizePool && (
-                        <Badge variant="secondary">{track.prizePool}</Badge>
-                      )}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">
-                      {track.description}
-                    </p>
-                    {track.sponsorName && (
-                      <div className="flex items-center gap-2 mt-4 pt-4 border-t">
-                        {track.sponsorLogo && (
-                          <div className="w-8 h-8 relative">
-                            <Image
-                              src={track.sponsorLogo}
-                              alt={track.sponsorName}
-                              fill
-                              className="object-contain"
-                            />
-                          </div>
-                        )}
-                        <span className="text-sm">{track.sponsorName}</span>
-                      </div>
+                <div key={track.id} className="rounded-xl border p-4">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-medium">{track.name}</span>
+                    {track.prizePool && (
+                      <span className="font-mono font-semibold text-sm">{track.prizePool}</span>
                     )}
-                  </CardContent>
-                </Card>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {track.description}
+                  </p>
+                  {track.sponsorName && (
+                    <div className="flex items-center gap-2 mt-4 pt-4 border-t">
+                      {track.sponsorLogo && (
+                        <div className="w-8 h-8 relative">
+                          <Image
+                            src={track.sponsorLogo}
+                            alt={track.sponsorName}
+                            fill
+                            className="object-contain"
+                          />
+                        </div>
+                      )}
+                      <span className="text-sm">{track.sponsorName}</span>
+                    </div>
+                  )}
+                </div>
               ))
             )}
           </div>

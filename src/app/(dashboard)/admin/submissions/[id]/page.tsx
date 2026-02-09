@@ -6,13 +6,10 @@ import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
 import { submissionsService, reviewsService, tracksService } from "@/services";
 import type { Submission, Review, Track } from "@/types";
-import { getSubmissionStatusColor } from "@/lib/utils/status";
 import { ProjectGallery } from "@/components/projects/project-gallery";
 import { ProjectTeam } from "@/components/projects/project-team";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -56,6 +53,23 @@ const scoreCategories = [
   { key: "impactScore", label: "Impact" },
   { key: "presentationScore", label: "Presentation" },
 ] as const;
+
+function getStatusDotColor(status: string): string {
+  switch (status) {
+    case "submitted":
+      return "bg-emerald-500";
+    case "draft":
+      return "bg-amber-500";
+    case "under_review":
+      return "bg-blue-500";
+    case "accepted":
+      return "bg-blue-500";
+    case "winner":
+      return "bg-violet-500";
+    default:
+      return "bg-muted-foreground";
+  }
+}
 
 export default function AdminSubmissionDetailPage({ params }: AdminSubmissionDetailPageProps) {
   const { id } = use(params);
@@ -150,7 +164,7 @@ export default function AdminSubmissionDetailPage({ params }: AdminSubmissionDet
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-10">
       <Breadcrumb
         items={[
           { label: "Admin", href: "/admin/cohorts" },
@@ -163,15 +177,18 @@ export default function AdminSubmissionDetailPage({ params }: AdminSubmissionDet
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">{submission.title}</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{submission.title}</h1>
           {submission.tagline && (
-            <p className="mt-2 text-lg text-muted-foreground">
+            <p className="text-sm text-muted-foreground mt-1">
               {submission.tagline}
             </p>
           )}
         </div>
         <div className="flex items-center gap-3">
-          <Badge className={getSubmissionStatusColor(currentStatus as Submission["status"])}>{currentStatus}</Badge>
+          <span className="flex items-center gap-1.5">
+            <span className={`inline-block h-2 w-2 rounded-full ${getStatusDotColor(currentStatus)}`} />
+            <span className="text-xs capitalize">{currentStatus.replace("_", " ")}</span>
+          </span>
           <Select
             value={currentStatus}
             onValueChange={handleStatusChange}
@@ -198,57 +215,58 @@ export default function AdminSubmissionDetailPage({ params }: AdminSubmissionDet
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Content (2 columns) */}
-        <div className="lg:col-span-2 space-y-8">
+        <div className="lg:col-span-2 space-y-10">
           {/* Project Gallery */}
           <ProjectGallery
             screenshots={submission.screenshots}
             videoUrl={submission.videoUrl}
           />
 
-          {/* About Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle>About</CardTitle>
-            </CardHeader>
-            <CardContent>
+          {/* About Section */}
+          <div>
+            <h3 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
+              About
+            </h3>
+            <div className="rounded-xl border p-5">
               <p className="text-muted-foreground whitespace-pre-wrap">
                 {submission.description}
               </p>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Tech Stack */}
           {submission.techStack.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Tech Stack</CardTitle>
-              </CardHeader>
-              <CardContent>
+            <div>
+              <h3 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
+                Tech Stack
+              </h3>
+              <div className="rounded-xl border p-5">
                 <div className="flex flex-wrap gap-2">
                   {submission.techStack.map((tech) => (
-                    <Badge key={tech} variant="secondary">
+                    <span
+                      key={tech}
+                      className="rounded-md bg-muted px-2 py-1 text-xs"
+                    >
                       {tech}
-                    </Badge>
+                    </span>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           )}
 
           {/* Reviews Section */}
           {completedReviews.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Star className="h-5 w-5" />
-                  Reviews ({completedReviews.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
+            <div>
+              <h3 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3 flex items-center gap-2">
+                <Star className="h-4 w-4" />
+                Reviews ({completedReviews.length})
+              </h3>
+              <div className="space-y-4">
                 {completedReviews.map((review) => (
                   <div
                     key={review.id}
-                    className="border rounded-lg p-4 space-y-4"
+                    className="rounded-xl border p-4 space-y-4"
                   >
                     {/* Judge Info */}
                     <div className="flex items-center gap-3">
@@ -271,7 +289,7 @@ export default function AdminSubmissionDetailPage({ params }: AdminSubmissionDet
                       </div>
                       {review.overallScore && (
                         <div className="ml-auto text-right">
-                          <p className="text-2xl font-bold">
+                          <p className="font-mono text-2xl font-semibold tabular-nums">
                             {review.overallScore.toFixed(1)}
                           </p>
                           <p className="text-sm text-muted-foreground">
@@ -287,7 +305,7 @@ export default function AdminSubmissionDetailPage({ params }: AdminSubmissionDet
                         const score = review[key];
                         return (
                           <div key={key} className="text-center">
-                            <p className="text-lg font-semibold">
+                            <p className="font-mono text-lg font-semibold tabular-nums">
                               {score ?? "-"}
                             </p>
                             <p className="text-xs text-muted-foreground">
@@ -309,60 +327,56 @@ export default function AdminSubmissionDetailPage({ params }: AdminSubmissionDet
                     )}
                   </div>
                 ))}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           )}
         </div>
 
         {/* Sidebar (1 column) */}
-        <div className="space-y-6">
-          {/* Team Card or Solo Badge */}
+        <div className="space-y-10">
+          {/* Team or Solo Badge */}
           {submission.team ? (
             <ProjectTeam team={submission.team} />
           ) : (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Submitted by</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Badge variant="secondary">Solo submission</Badge>
-              </CardContent>
-            </Card>
+            <div>
+              <h3 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
+                Submitted by
+              </h3>
+              <div className="rounded-xl border p-5">
+                <p className="text-sm">Solo submission</p>
+              </div>
+            </div>
           )}
 
-          {/* Track Card */}
+          {/* Track */}
           {submissionTrack && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Tag className="h-5 w-5" />
-                  Track
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
+            <div>
+              <h3 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3 flex items-center gap-2">
+                <Tag className="h-4 w-4" />
+                Track
+              </h3>
+              <div className="rounded-xl border p-5">
                 <p className="font-medium">{submissionTrack.name}</p>
                 <p className="text-sm text-muted-foreground mt-1">
                   {submissionTrack.description}
                 </p>
                 {submissionTrack.prizePool && (
-                  <p className="text-sm font-medium text-green-600 mt-2">
+                  <p className="font-mono text-sm tabular-nums text-emerald-600 mt-2">
                     Prize Pool: {submissionTrack.prizePool}
                   </p>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           )}
 
-          {/* IP Registration Card */}
+          {/* IP Registration */}
           {submission.ipAssetId && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5" />
-                  IP Registration
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
+            <div>
+              <h3 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3 flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                IP Registration
+              </h3>
+              <div className="rounded-xl border p-5 space-y-3">
                 <div className="rounded-lg bg-green-50 p-3">
                   <p className="text-sm font-medium text-green-800">
                     Registered on Story Protocol
@@ -387,25 +401,23 @@ export default function AdminSubmissionDetailPage({ params }: AdminSubmissionDet
                 {submission.ipLicenseType && (
                   <div>
                     <p className="text-xs text-muted-foreground">License</p>
-                    <Badge variant="outline" className="mt-1">
+                    <p className="text-xs mt-1">
                       {submission.ipLicenseType}
-                    </Badge>
+                    </p>
                   </div>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           )}
 
-          {/* Cohort Card */}
+          {/* Cohort */}
           {submission.cohort && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
-                  Cohort
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
+            <div>
+              <h3 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3 flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                Cohort
+              </h3>
+              <div className="rounded-xl border p-5">
                 <Link
                   href={`/cohorts/${submission.cohort.slug}`}
                   className="font-medium hover:underline"
@@ -416,81 +428,78 @@ export default function AdminSubmissionDetailPage({ params }: AdminSubmissionDet
                   {submission.cohort.startDate.toLocaleDateString()} -{" "}
                   {submission.cohort.endDate.toLocaleDateString()}
                 </p>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           )}
 
-          {/* Links Card */}
+          {/* Links */}
           {(submission.demoUrl ||
             submission.repoUrl ||
             submission.videoUrl ||
             submission.presentationUrl) && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Links</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
+            <div>
+              <h3 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
+                Links
+              </h3>
+              <div className="rounded-xl border p-5 space-y-1">
                 {submission.demoUrl && (
-                  <a
-                    href={submission.demoUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                    Live Demo
-                  </a>
+                  <Button variant="ghost" className="w-full justify-start gap-2" asChild>
+                    <a
+                      href={submission.demoUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                      Live Demo
+                    </a>
+                  </Button>
                 )}
                 {submission.repoUrl && (
-                  <a
-                    href={submission.repoUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <Github className="h-4 w-4" />
-                    Repository
-                  </a>
+                  <Button variant="ghost" className="w-full justify-start gap-2" asChild>
+                    <a
+                      href={submission.repoUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Github className="h-4 w-4" />
+                      Repository
+                    </a>
+                  </Button>
                 )}
                 {submission.videoUrl && (
-                  <a
-                    href={submission.videoUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <Video className="h-4 w-4" />
-                    Video
-                  </a>
+                  <Button variant="ghost" className="w-full justify-start gap-2" asChild>
+                    <a
+                      href={submission.videoUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Video className="h-4 w-4" />
+                      Video
+                    </a>
+                  </Button>
                 )}
                 {submission.presentationUrl && (
-                  <a
-                    href={submission.presentationUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <Presentation className="h-4 w-4" />
-                    Presentation
-                  </a>
+                  <Button variant="ghost" className="w-full justify-start gap-2" asChild>
+                    <a
+                      href={submission.presentationUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Presentation className="h-4 w-4" />
+                      Presentation
+                    </a>
+                  </Button>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           )}
 
           {/* Admin Actions */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Admin Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Button variant="outline" className="w-full" asChild>
-                <Link href={`/submissions/${submission.id}`}>
-                  View as Participant
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
+          <Button variant="outline" className="w-full" asChild>
+            <Link href={`/submissions/${submission.id}`}>
+              View as Participant
+            </Link>
+          </Button>
         </div>
       </div>
     </div>

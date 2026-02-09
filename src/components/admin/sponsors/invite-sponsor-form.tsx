@@ -83,7 +83,7 @@ export function InviteSponsorForm({
 
         <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="sponsorId">Sponsor Organization *</Label>
+            <Label htmlFor="sponsorId" className="text-xs text-muted-foreground">Sponsor Organization *</Label>
             {defaultSponsor ? (
               <p className="text-sm font-medium py-2">{defaultSponsor.name}</p>
             ) : (
@@ -104,20 +104,20 @@ export function InviteSponsorForm({
               </Select>
             )}
             {errors.sponsorId && (
-              <p className="text-sm text-red-500">{errors.sponsorId.message}</p>
+              <p className="text-xs text-destructive">{errors.sponsorId.message}</p>
             )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="name">Name *</Label>
+            <Label htmlFor="name" className="text-xs text-muted-foreground">Name *</Label>
             <Input id="name" {...register("name")} placeholder="John Doe" />
             {errors.name && (
-              <p className="text-sm text-red-500">{errors.name.message}</p>
+              <p className="text-xs text-destructive">{errors.name.message}</p>
             )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email *</Label>
+            <Label htmlFor="email" className="text-xs text-muted-foreground">Email *</Label>
             <Input
               id="email"
               {...register("email")}
@@ -125,7 +125,7 @@ export function InviteSponsorForm({
               placeholder="john@example.com"
             />
             {errors.email && (
-              <p className="text-sm text-red-500">{errors.email.message}</p>
+              <p className="text-xs text-destructive">{errors.email.message}</p>
             )}
           </div>
 
@@ -133,7 +133,7 @@ export function InviteSponsorForm({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit">Send Invitation</Button>
+            <Button type="submit" className="bg-foreground text-background hover:bg-foreground/90">Send Invitation</Button>
           </div>
         </form>
       </DialogContent>

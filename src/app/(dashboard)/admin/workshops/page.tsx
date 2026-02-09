@@ -6,9 +6,7 @@ import { workshopsService } from "@/services";
 import type { Workshop } from "@/types";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -46,7 +44,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PlusCircle, Pencil, Trash2, Play, FileText, GraduationCap, Search, X, Loader2 } from "lucide-react";
+import { PlusCircle, Pencil, Trash2, GraduationCap, Search, X, Loader2 } from "lucide-react";
 
 export default function AdminWorkshopPage() {
   const [workshops, setWorkshops] = useState<Workshop[]>([]);
@@ -133,7 +131,7 @@ export default function AdminWorkshopPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-10">
       <Breadcrumb
         items={[
           { label: "Admin", href: "/admin/cohorts" },
@@ -142,16 +140,17 @@ export default function AdminWorkshopPage() {
       />
       <AdminNav />
 
+      {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Resource Management</h1>
-          <p className="mt-2 text-muted-foreground">
+          <h1 className="text-2xl font-semibold tracking-tight">Resource Management</h1>
+          <p className="text-sm text-muted-foreground mt-1">
             Manage learning resources, tutorials, and guides
           </p>
         </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button className="bg-foreground text-background hover:bg-foreground/90">
               <PlusCircle className="mr-2 h-4 w-4" />
               Add Content
             </Button>
@@ -235,182 +234,157 @@ export default function AdminWorkshopPage() {
         </Dialog>
       </div>
 
-      {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Content</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{workshops.length}</div>
-          </CardContent>
-        </Card>
+      {/* Stats Strip */}
+      <div className="flex rounded-xl border divide-x">
+        <div className="flex-1 px-6 py-4">
+          <p className="text-sm text-muted-foreground">Total Content</p>
+          <p className="text-3xl font-mono font-semibold tabular-nums mt-1">{workshops.length}</p>
+        </div>
         {categories.slice(0, 3).map((category) => (
-          <Card key={category}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">{category}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {workshops.filter((w) => w.category === category).length}
-              </div>
-            </CardContent>
-          </Card>
+          <div key={category} className="flex-1 px-6 py-4">
+            <p className="text-sm text-muted-foreground">{category}</p>
+            <p className="text-3xl font-mono font-semibold tabular-nums mt-1">
+              {workshops.filter((w) => w.category === category).length}
+            </p>
+          </div>
         ))}
       </div>
 
       {/* Content Table */}
       {workshops.length === 0 ? (
-        <Card>
-          <CardContent className="py-12">
-            <div className="text-center">
-              <GraduationCap className="mx-auto h-12 w-12 text-muted-foreground" />
-              <h3 className="mt-4 text-lg font-semibold">No Workshops Yet</h3>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Create workshops to help participants learn.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="py-12 text-center">
+          <GraduationCap className="mx-auto h-8 w-8 opacity-50" />
+          <h3 className="mt-4 text-lg font-semibold">No Workshops Yet</h3>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Create workshops to help participants learn.
+          </p>
+        </div>
       ) : (
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <CardTitle>All Content</CardTitle>
-                <CardDescription>
-                  {filteredWorkshops.length} of {workshops.length} workshop{workshops.length !== 1 ? "s" : ""}
-                </CardDescription>
-              </div>
+        <>
+          {/* Search and Filter */}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search workshops..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
             </div>
-
-            {/* Search and Filter */}
-            <div className="flex flex-col gap-3 pt-4 sm:flex-row sm:items-center">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Search workshops..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="w-full sm:w-[180px]">
-                  <SelectValue placeholder="Category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {categories.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {(searchQuery || categoryFilter !== "all") && (
-                <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1">
-                  <X className="h-4 w-4" />
-                  Clear
-                </Button>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent>
-            {filteredWorkshops.length === 0 ? (
-              <div className="py-12 text-center">
-                <Search className="mx-auto h-12 w-12 text-muted-foreground" />
-                <h3 className="mt-4 text-lg font-semibold">No results found</h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Try adjusting your search or filter criteria
-                </p>
-                <Button variant="outline" size="sm" onClick={clearFilters} className="mt-4">
-                  Clear filters
-                </Button>
-              </div>
-            ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/50">
-                    <TableHead className="w-[300px]">Title</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead className="hidden md:table-cell">Partner</TableHead>
-                    <TableHead className="hidden md:table-cell">Duration</TableHead>
-                    <TableHead className="hidden md:table-cell">Content</TableHead>
-                    <TableHead className="hidden md:table-cell">Published</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredWorkshops.map((workshop) => (
-                    <TableRow key={workshop.id}>
-                      <TableCell>
-                        <div className="max-w-[280px]">
-                          <p className="font-medium truncate">{workshop.title}</p>
-                          <p className="text-xs text-muted-foreground line-clamp-1">
-                            {workshop.description}
-                          </p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{workshop.category}</Badge>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell text-muted-foreground">
-                        {workshop.partnerName}
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell text-muted-foreground">
-                        {workshop.duration || "-"}
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        <div className="flex gap-1">
-                          {workshop.videoUrl && (
-                            <Badge variant="secondary" className="gap-1">
-                              <Play className="h-3 w-3" />
-                              Video
-                            </Badge>
-                          )}
-                          {workshop.articleUrl && (
-                            <Badge variant="secondary" className="gap-1">
-                              <FileText className="h-3 w-3" />
-                              Article
-                            </Badge>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell text-muted-foreground">
-                        {workshop.publishedAt
-                          ? new Date(workshop.publishedAt).toLocaleDateString()
-                          : "-"}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => handleEdit(workshop)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-                            onClick={() => handleDelete(workshop)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {categories.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {category}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {(searchQuery || categoryFilter !== "all") && (
+              <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1">
+                <X className="h-4 w-4" />
+                Clear
+              </Button>
             )}
-          </CardContent>
-        </Card>
+          </div>
+
+          {filteredWorkshops.length === 0 ? (
+            <div className="py-12 text-center">
+              <Search className="mx-auto h-12 w-12 text-muted-foreground" />
+              <h3 className="mt-4 text-lg font-semibold">No results found</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Try adjusting your search or filter criteria
+              </p>
+              <Button variant="outline" size="sm" onClick={clearFilters} className="mt-4">
+                Clear filters
+              </Button>
+            </div>
+          ) : (
+            <>
+              <div className="rounded-xl border overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead className="w-[300px]">Title</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead className="hidden md:table-cell">Partner</TableHead>
+                      <TableHead className="hidden md:table-cell">Duration</TableHead>
+                      <TableHead className="hidden md:table-cell">Content</TableHead>
+                      <TableHead className="hidden md:table-cell">Published</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredWorkshops.map((workshop) => (
+                      <TableRow key={workshop.id}>
+                        <TableCell>
+                          <div className="max-w-[280px]">
+                            <p className="font-medium truncate">{workshop.title}</p>
+                            <p className="text-xs text-muted-foreground line-clamp-1">
+                              {workshop.description}
+                            </p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-xs text-muted-foreground">{workshop.category}</span>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell text-muted-foreground">
+                          {workshop.partnerName}
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell text-muted-foreground">
+                          {workshop.duration || "-"}
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          <span className="text-xs text-muted-foreground">
+                            {[
+                              workshop.videoUrl ? "Video" : null,
+                              workshop.articleUrl ? "Article" : null,
+                            ]
+                              .filter(Boolean)
+                              .join(", ") || "-"}
+                          </span>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell text-muted-foreground">
+                          {workshop.publishedAt
+                            ? new Date(workshop.publishedAt).toLocaleDateString()
+                            : "-"}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => handleEdit(workshop)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                              onClick={() => handleDelete(workshop)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {filteredWorkshops.length} of {workshops.length} workshop{workshops.length !== 1 ? "s" : ""}
+              </p>
+            </>
+          )}
+        </>
       )}
 
       {/* Edit Dialog */}

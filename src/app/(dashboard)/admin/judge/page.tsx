@@ -11,9 +11,7 @@ import {
 import type { Review, Submission, Cohort } from "@/types";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -33,10 +31,7 @@ import {
 import {
   Search,
   Star,
-  CheckCircle,
-  Clock,
   Loader2,
-  Scale,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -161,7 +156,7 @@ export default function AdminJudgePage() {
   const notStartedCount = items.filter((i) => !i.review).length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-10">
       <Breadcrumb
         items={[
           { label: "Admin", href: "/admin/cohorts" },
@@ -171,58 +166,30 @@ export default function AdminJudgePage() {
       <AdminNav />
 
       <div>
-        <h1 className="text-3xl font-bold">Judge Submissions</h1>
-        <p className="mt-2 text-muted-foreground">
+        <h1 className="text-2xl font-semibold tracking-tight">Judge Submissions</h1>
+        <p className="text-sm text-muted-foreground mt-1">
           Review and score any submitted project
         </p>
       </div>
 
-      {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Scale className="h-4 w-4" />
-              Total Submissions
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{items.length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-500" />
-              Reviewed
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{reviewedCount}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Clock className="h-4 w-4 text-blue-500" />
-              In Progress
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{inProgressCount}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Clock className="h-4 w-4 text-slate-500" />
-              Not Started
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-slate-600">{notStartedCount}</div>
-          </CardContent>
-        </Card>
+      {/* Stats strip */}
+      <div className="rounded-xl border divide-x flex">
+        <div className="flex-1 px-6 py-4">
+          <p className="text-xs text-muted-foreground mb-1">Total</p>
+          <p className="text-3xl font-mono font-semibold tabular-nums">{items.length}</p>
+        </div>
+        <div className="flex-1 px-6 py-4">
+          <p className="text-xs text-muted-foreground mb-1">Reviewed</p>
+          <p className="text-3xl font-mono font-semibold tabular-nums text-emerald-600">{reviewedCount}</p>
+        </div>
+        <div className="flex-1 px-6 py-4">
+          <p className="text-xs text-muted-foreground mb-1">In Progress</p>
+          <p className="text-3xl font-mono font-semibold tabular-nums text-blue-600">{inProgressCount}</p>
+        </div>
+        <div className="flex-1 px-6 py-4">
+          <p className="text-xs text-muted-foreground mb-1">Not Started</p>
+          <p className="text-3xl font-mono font-semibold tabular-nums text-amber-600">{notStartedCount}</p>
+        </div>
       </div>
 
       {/* Filters */}
@@ -252,105 +219,119 @@ export default function AdminJudgePage() {
       </div>
 
       {/* Submissions Table */}
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
+      <div className="rounded-xl border overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Project</TableHead>
+              <TableHead className="hidden md:table-cell">Team</TableHead>
+              <TableHead className="hidden md:table-cell">Tracks</TableHead>
+              <TableHead>Your Review</TableHead>
+              <TableHead className="hidden md:table-cell">Score</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredItems.length === 0 ? (
               <TableRow>
-                <TableHead>Project</TableHead>
-                <TableHead className="hidden md:table-cell">Team</TableHead>
-                <TableHead className="hidden md:table-cell">Tracks</TableHead>
-                <TableHead>Your Review</TableHead>
-                <TableHead className="hidden md:table-cell">Score</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableCell colSpan={6} className="text-center py-8">
+                  <p className="text-muted-foreground">No submissions found</p>
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredItems.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8">
-                    <p className="text-muted-foreground">No submissions found</p>
+            ) : (
+              filteredItems.map((item) => (
+                <TableRow key={item.submission.id}>
+                  <TableCell>
+                    <div>
+                      <p className="font-medium">{item.submission.title}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {item.submission.tagline}
+                      </p>
+                    </div>
                   </TableCell>
-                </TableRow>
-              ) : (
-                filteredItems.map((item) => (
-                  <TableRow key={item.submission.id}>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{item.submission.title}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {item.submission.tagline}
-                        </p>
-                      </div>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      {item.submission.team?.name || "Solo"}
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      <div className="flex flex-wrap gap-1">
-                        {item.submission.tracks?.map((track) => (
-                          <Badge key={track.id} variant="outline" className="text-xs">
-                            {track.name}
-                          </Badge>
-                        )) || (
-                          <span className="text-muted-foreground text-xs">None</span>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {item.review ? (
-                        <Badge
-                          className={
+                  <TableCell className="hidden md:table-cell">
+                    {item.submission.team?.name || "Solo"}
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    {item.submission.tracks && item.submission.tracks.length > 0 ? (
+                      <span className="text-[11px] text-muted-foreground">
+                        {item.submission.tracks.map((t) => t.name).join(", ")}
+                      </span>
+                    ) : (
+                      <span className="text-[11px] text-muted-foreground">None</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {item.review ? (
+                      <span className="inline-flex items-center gap-1.5 text-xs capitalize">
+                        <span
+                          className={`h-2 w-2 rounded-full ${
                             item.review.status === "completed"
-                              ? "bg-green-100 text-green-800"
+                              ? "bg-emerald-500"
                               : item.review.status === "in_progress"
-                              ? "bg-blue-100 text-blue-800"
-                              : "bg-slate-100 text-slate-800"
-                          }
-                        >
-                          {item.review.status.replace("_", " ")}
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline">Not started</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      {item.review?.overallScore ? (
-                        <div className="flex items-center gap-1">
-                          <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                          <span className="font-medium">
-                            {item.review.overallScore.toFixed(1)}
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
+                              ? "bg-blue-500"
+                              : "bg-amber-500"
+                          }`}
+                        />
+                        {item.review.status.replace("_", " ")}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 text-xs capitalize">
+                        <span className="h-2 w-2 rounded-full bg-muted-foreground" />
+                        Not started
+                      </span>
+                    )}
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    {item.review?.overallScore ? (
+                      <div className="flex items-center gap-1">
+                        <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />
+                        <span className="font-mono text-xs tabular-nums">
+                          {item.review.overallScore.toFixed(1)}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {item.review?.status === "completed" ? (
                       <Button
-                        variant={item.review?.status === "completed" ? "ghost" : "default"}
+                        variant="ghost"
                         size="sm"
+                        className="text-xs"
                         onClick={() => handleJudge(item)}
                         disabled={creatingReviewFor === item.submission.id}
                       >
                         {creatingReviewFor === item.submission.id ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : item.review?.status === "completed" ? (
+                        ) : (
                           "View"
+                        )}
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        className="bg-foreground text-background hover:bg-foreground/90 text-xs"
+                        onClick={() => handleJudge(item)}
+                        disabled={creatingReviewFor === item.submission.id}
+                      >
+                        {creatingReviewFor === item.submission.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
                         ) : item.review ? (
                           "Continue"
                         ) : (
                           "Judge"
                         )}
                       </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }
