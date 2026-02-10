@@ -116,11 +116,7 @@ export function AdminDashboard() {
               <p className="text-sm text-muted-foreground">No cohorts yet.</p>
             </div>
           ) : (
-            cohorts.map((cohort) => {
-              const cohortSubmissions = submissions.filter(
-                (s) => s.cohortId === cohort.id
-              );
-              return (
+            cohorts.map((cohort) => (
                 <Link
                   key={cohort.id}
                   href={`/admin/cohorts/${cohort.id}`}
@@ -140,19 +136,13 @@ export function AdminDashboard() {
                         <span className="text-xs text-muted-foreground capitalize">{cohort.status}</span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[11px] text-muted-foreground">
-                        {cohortSubmissions.length} submissions
-                      </span>
-                      <span className="text-[11px] text-muted-foreground">
-                        {new Date(cohort.startDate).toLocaleDateString()} – {new Date(cohort.endDate).toLocaleDateString()}
-                      </span>
-                    </div>
+                    <span className="text-[11px] text-muted-foreground mt-0.5">
+                      {new Date(cohort.startDate).toLocaleDateString()} – {new Date(cohort.endDate).toLocaleDateString()}
+                    </span>
                   </div>
                   <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                 </Link>
-              );
-            })
+              ))
           )}
         </div>
       </section>

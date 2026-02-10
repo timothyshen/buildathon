@@ -54,7 +54,7 @@ export function ParticipantDashboard() {
   }
 
   const activeCohorts = cohorts.filter((c) => c.status === "active");
-  const allCohorts = cohorts;
+  const publicCohorts = cohorts;
   const wins = submissions.filter((s) => s.status === "winner").length;
   const drafts = submissions.filter((s) => s.status === "draft").length;
 
@@ -199,13 +199,13 @@ export function ParticipantDashboard() {
       </div>
 
       {/* Cohorts */}
-      {allCohorts.length > 0 && (
+      {publicCohorts.length > 0 && (
         <div>
           <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-4">
             Buildathons
           </h2>
           <div className="divide-y">
-            {allCohorts.map((c) => {
+            {publicCohorts.map((c) => {
               const days = daysUntil(c.submissionDeadline);
               const isActive = c.status === "active";
               return (
