@@ -150,12 +150,33 @@ async function getByUser(userId: string): Promise<ServiceResponse<Team[]>> {
   }
 
   const teamIds = memberData.map((m) => m.team_id);
-  const teams: Team[] = [];
 
-  for (const teamId of teamIds) {
-    const team = await fetchTeamWithMembers(supabase, teamId);
-    if (team) teams.push(team);
+  // Fetch all teams with members in a single query
+  const { data: teamsData, error: teamsError } = await supabase
+    .from("teams")
+    .select(`
+      *,
+      team_members(
+        role,
+        joined_at,
+        users(*)
+      )
+    `)
+    .in("id", teamIds);
+
+  if (teamsError) {
+    return error(teamsError.message, []);
   }
+
+  const teams = (teamsData || []).map((teamRow) => {
+    const membersData = (teamRow.team_members as Array<Record<string, unknown>>) || [];
+    const members = membersData.map((m) => ({
+      user: m.users as Record<string, unknown>,
+      role: m.role as string,
+      joined_at: m.joined_at as string,
+    }));
+    return toTeam(teamRow as Record<string, unknown>, members);
+  });
 
   return success(teams);
 }

@@ -293,7 +293,7 @@ async function list(
 
   let query = supabase
     .from("workshops")
-    .select("*", { count: "exact" });
+    .select("*, workshop_cohorts(cohort_id)", { count: "exact" });
 
   if (options?.status) {
     query = query.eq("status", options.status);
@@ -327,17 +327,11 @@ async function list(
     return { data: [], success: false, error: dbError.message, total: 0, page, pageSize, hasMore: false };
   }
 
-  // Fetch cohort IDs for each workshop
-  const workshops: Workshop[] = [];
-  for (const row of data || []) {
-    const { data: cohortData } = await supabase
-      .from("workshop_cohorts")
-      .select("cohort_id")
-      .eq("workshop_id", row.id);
-
-    const cohortIds = (cohortData || []).map((c) => c.cohort_id);
-    workshops.push(toWorkshop(row, cohortIds));
-  }
+  const workshops = (data || []).map((row) => {
+    const cohortLinks = (row.workshop_cohorts as Array<{ cohort_id: string }>) || [];
+    const cohortIds = cohortLinks.map((c) => c.cohort_id);
+    return toWorkshop(row as Record<string, unknown>, cohortIds);
+  });
 
   return paginated(workshops, count || 0, page, pageSize);
 }
@@ -361,11 +355,21 @@ async function getByCohort(cohortId: string): Promise<ServiceResponse<Workshop[]
 
   const workshopIds = junctionData.map((j) => j.workshop_id);
 
-  const workshops: Workshop[] = [];
-  for (const workshopId of workshopIds) {
-    const workshop = await fetchWorkshopWithRelations(supabase, workshopId);
-    if (workshop) workshops.push(workshop);
+  const { data, error: dbError } = await supabase
+    .from("workshops")
+    .select("*, workshop_cohorts(cohort_id)")
+    .in("id", workshopIds)
+    .order("scheduled_at", { ascending: true });
+
+  if (dbError) {
+    return error(dbError.message, []);
   }
+
+  const workshops = (data || []).map((row) => {
+    const cohortLinks = (row.workshop_cohorts as Array<{ cohort_id: string }>) || [];
+    const cohortIds = cohortLinks.map((c) => c.cohort_id);
+    return toWorkshop(row as Record<string, unknown>, cohortIds);
+  });
 
   return success(workshops);
 }
@@ -375,7 +379,7 @@ async function getBySponsor(sponsorOrgId: string): Promise<ServiceResponse<Works
 
   const { data, error: dbError } = await supabase
     .from("workshops")
-    .select("id")
+    .select("*, workshop_cohorts(cohort_id)")
     .eq("sponsor_org_id", sponsorOrgId)
     .order("scheduled_at", { ascending: true });
 
@@ -383,11 +387,11 @@ async function getBySponsor(sponsorOrgId: string): Promise<ServiceResponse<Works
     return error(dbError.message, []);
   }
 
-  const workshops: Workshop[] = [];
-  for (const row of data || []) {
-    const workshop = await fetchWorkshopWithRelations(supabase, row.id);
-    if (workshop) workshops.push(workshop);
-  }
+  const workshops = (data || []).map((row) => {
+    const cohortLinks = (row.workshop_cohorts as Array<{ cohort_id: string }>) || [];
+    const cohortIds = cohortLinks.map((c) => c.cohort_id);
+    return toWorkshop(row as Record<string, unknown>, cohortIds);
+  });
 
   return success(workshops);
 }
@@ -397,7 +401,7 @@ async function getByDateRange(start: Date, end: Date): Promise<ServiceResponse<W
 
   const { data, error: dbError } = await supabase
     .from("workshops")
-    .select("id")
+    .select("*, workshop_cohorts(cohort_id)")
     .gte("scheduled_at", start.toISOString())
     .lte("scheduled_at", end.toISOString())
     .order("scheduled_at", { ascending: true });
@@ -406,11 +410,11 @@ async function getByDateRange(start: Date, end: Date): Promise<ServiceResponse<W
     return error(dbError.message, []);
   }
 
-  const workshops: Workshop[] = [];
-  for (const row of data || []) {
-    const workshop = await fetchWorkshopWithRelations(supabase, row.id);
-    if (workshop) workshops.push(workshop);
-  }
+  const workshops = (data || []).map((row) => {
+    const cohortLinks = (row.workshop_cohorts as Array<{ cohort_id: string }>) || [];
+    const cohortIds = cohortLinks.map((c) => c.cohort_id);
+    return toWorkshop(row as Record<string, unknown>, cohortIds);
+  });
 
   return success(workshops);
 }
