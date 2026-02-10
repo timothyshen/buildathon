@@ -4,12 +4,11 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { usersService } from "@/services";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
+import { WalletConnect } from "@/components/wallet/wallet-connect";
 import { Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
 
@@ -60,67 +59,66 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl space-y-8">
+    <div className="mx-auto max-w-2xl space-y-10">
       <div>
-        <h1 className="text-3xl font-bold">Settings</h1>
-        <p className="mt-2 text-muted-foreground">
+        <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           Manage your account settings and preferences
         </p>
       </div>
 
-      {/* Profile Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Profile</CardTitle>
-          <CardDescription>
+      {/* Profile */}
+      <section className="space-y-5 rounded-xl border p-5">
+        <div>
+          <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">
+            Profile
+          </h2>
+          <p className="mt-1 text-xs text-muted-foreground">
             Your public profile information
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center gap-4">
-            <img
-              src={user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`}
-              alt={user?.name}
-              className="h-20 w-20 rounded-full"
-            />
-            <Button variant="outline">Change Avatar</Button>
-          </div>
+          </p>
+        </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
-              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" defaultValue={user?.email} disabled />
-            </div>
-          </div>
+        <div className="flex items-center gap-4">
+          <img
+            src={user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`}
+            alt={user?.name}
+            className="h-20 w-20 rounded-full"
+          />
+          <Button variant="outline" size="sm">Change Avatar</Button>
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="bio">Bio</Label>
-            <Textarea
-              id="bio"
-              placeholder="Tell us about yourself..."
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
-              rows={3}
-            />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="name" className="text-xs text-muted-foreground">Name</Label>
+            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
           </div>
-        </CardContent>
-      </Card>
+          <div className="space-y-1.5">
+            <Label htmlFor="email" className="text-xs text-muted-foreground">Email</Label>
+            <Input id="email" type="email" defaultValue={user?.email} disabled />
+          </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="bio" className="text-xs text-muted-foreground">Bio</Label>
+          <Textarea
+            id="bio"
+            placeholder="Tell us about yourself..."
+            value={bio}
+            onChange={(e) => setBio(e.target.value)}
+            rows={3}
+          />
+        </div>
+      </section>
 
       {/* Social Links */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Social Links</CardTitle>
-          <CardDescription>
-            Connect your social profiles
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="twitter">Twitter</Label>
+      <section className="space-y-5 rounded-xl border p-5">
+        <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">
+          Social Links
+        </h2>
+
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="twitter" className="text-xs text-muted-foreground">Twitter</Label>
             <div className="flex">
               <span className="flex items-center rounded-l-md border border-r-0 bg-muted px-3 text-sm text-muted-foreground">
                 @
@@ -135,8 +133,8 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="github">GitHub</Label>
+          <div className="space-y-1.5">
+            <Label htmlFor="github" className="text-xs text-muted-foreground">GitHub</Label>
             <div className="flex">
               <span className="flex items-center rounded-l-md border border-r-0 bg-muted px-3 text-sm text-muted-foreground">
                 github.com/
@@ -150,33 +148,21 @@ export default function SettingsPage() {
               />
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
       {/* Wallet */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Wallet</CardTitle>
-          <CardDescription>
+      <section className="space-y-5 rounded-xl border p-5">
+        <div>
+          <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">
+            Wallet
+          </h2>
+          <p className="mt-1 text-xs text-muted-foreground">
             Connect your wallet for IP registration
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {user?.walletAddress ? (
-            <div className="flex items-center justify-between rounded-lg border p-4">
-              <div>
-                <p className="font-mono text-sm">{user.walletAddress}</p>
-                <p className="text-xs text-muted-foreground">Connected</p>
-              </div>
-              <Button variant="outline" size="sm">
-                Disconnect
-              </Button>
-            </div>
-          ) : (
-            <Button>Connect Wallet</Button>
-          )}
-        </CardContent>
-      </Card>
+          </p>
+        </div>
+        <WalletConnect />
+      </section>
 
       {/* Save Button */}
       <div className="flex justify-end">
@@ -195,40 +181,36 @@ export default function SettingsPage() {
         </Button>
       </div>
 
-      <Separator />
-
       {/* Danger Zone */}
-      <Card className="border-red-200">
-        <CardHeader>
-          <CardTitle className="text-red-600">Danger Zone</CardTitle>
-          <CardDescription>
-            Irreversible account actions
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <section className="space-y-5 rounded-xl border border-destructive/30 p-5">
+        <h2 className="text-[11px] uppercase tracking-widest text-destructive font-medium">
+          Danger Zone
+        </h2>
+
+        <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-medium">Sign Out</p>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm font-medium">Sign Out</p>
+              <p className="text-xs text-muted-foreground">
                 Sign out of your account on this device
               </p>
             </div>
-            <Button variant="outline" onClick={handleLogout}>
+            <Button variant="outline" size="sm" onClick={handleLogout}>
               Sign Out
             </Button>
           </div>
-          <Separator />
+          <div className="border-t" />
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-medium">Delete Account</p>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm font-medium">Delete Account</p>
+              <p className="text-xs text-muted-foreground">
                 Permanently delete your account and all data
               </p>
             </div>
-            <Button variant="destructive">Delete Account</Button>
+            <Button variant="destructive" size="sm">Delete Account</Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
     </div>
   );
 }
