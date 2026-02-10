@@ -19,11 +19,13 @@ export interface SubmissionsService {
   delete(id: string): Promise<ServiceResponse<void>>;
 
   // Queries
-  list(options?: QueryOptions & { status?: Submission["status"] }): Promise<PaginatedResponse<Submission>>;
+  list(options?: QueryOptions & { status?: Submission["status"]; cohortId?: string; search?: string }): Promise<PaginatedResponse<Submission>>;
   getByUser(userId: string): Promise<ServiceResponse<Submission[]>>;
   getByCohort(cohortId: string, options?: QueryOptions & { status?: Submission["status"] }): Promise<PaginatedResponse<Submission>>;
   getByTeam(teamId: string): Promise<ServiceResponse<Submission[]>>;
   getByTrack(trackId: string): Promise<ServiceResponse<Submission[]>>;
+  getByTracks(trackIds: string[]): Promise<ServiceResponse<Submission[]>>;
+  getByTrackSponsor(sponsorOrgId: string): Promise<ServiceResponse<Submission[]>>;
 
   // Status
   submit(id: string): Promise<ServiceResponse<Submission>>;
@@ -72,6 +74,98 @@ function toSubmission(
     createdAt: new Date(row.created_at as string),
     updatedAt: new Date(row.updated_at as string),
   };
+}
+
+// Joined select string for batch queries — collapses N+1 into 1 query
+const SUBMISSION_JOINED_SELECT = `
+  *,
+  submission_tracks(tracks(*, sponsor_orgs(name, logo))),
+  teams(*, team_members(role, joined_at, users(*))),
+  cohorts(*)
+`;
+
+// Convert a PostgREST joined row to Submission type
+function toSubmissionFromJoinedRow(row: Record<string, unknown>): Submission {
+  // Extract tracks from submission_tracks junction
+  const submissionTracks = (row.submission_tracks as Array<{ tracks: Record<string, unknown> }>) || [];
+  const tracks: Track[] = submissionTracks
+    .filter((st) => st.tracks)
+    .map((st) => {
+      const t = st.tracks;
+      const sponsor = t.sponsor_orgs as { name: string; logo: string } | null;
+      return {
+        id: t.id as string,
+        cohortId: t.cohort_id as string,
+        sponsorOrgId: t.sponsor_org_id as string | undefined,
+        name: t.name as string,
+        description: t.description as string,
+        prizePool: t.prize_pool as string | undefined,
+        requirements: (t.requirements as string[]) || [],
+        sponsorName: sponsor?.name,
+        sponsorLogo: sponsor?.logo,
+      };
+    });
+
+  // Extract team with members (null when team_id is null)
+  const teamData = row.teams as Record<string, unknown> | null;
+  let team: Team | undefined;
+  if (teamData) {
+    const membersData = (teamData.team_members as Array<Record<string, unknown>>) || [];
+    const members = membersData.map((m) => {
+      const u = m.users as Record<string, unknown>;
+      return {
+        userId: u.id as string,
+        user: {
+          id: u.id as string,
+          email: u.email as string,
+          name: u.name as string,
+          role: u.role as User["role"],
+          avatar: u.avatar as string | undefined,
+          walletAddress: u.wallet_address as string | undefined,
+          bio: u.bio as string | undefined,
+          twitter: u.twitter as string | undefined,
+          github: u.github as string | undefined,
+          createdAt: new Date(u.created_at as string),
+        } as User,
+        role: m.role as "lead" | "member",
+        joinedAt: new Date(m.joined_at as string),
+      };
+    });
+    team = {
+      id: teamData.id as string,
+      cohortId: teamData.cohort_id as string,
+      name: teamData.name as string,
+      slug: teamData.slug as string,
+      description: teamData.description as string | undefined,
+      logoUrl: teamData.logo_url as string | undefined,
+      members,
+    };
+  }
+
+  // Extract cohort (null when cohort_id doesn't match)
+  const cohortData = row.cohorts as Record<string, unknown> | null;
+  let cohort: Cohort | undefined;
+  if (cohortData) {
+    cohort = {
+      id: cohortData.id as string,
+      slug: cohortData.slug as string,
+      name: cohortData.name as string,
+      description: cohortData.description as string,
+      tagline: cohortData.tagline as string | undefined,
+      bannerImage: cohortData.banner_image as string | undefined,
+      startDate: new Date(cohortData.start_date as string),
+      endDate: new Date(cohortData.end_date as string),
+      submissionDeadline: new Date(cohortData.submission_deadline as string),
+      judgingStart: new Date(cohortData.judging_start as string),
+      judgingEnd: new Date(cohortData.judging_end as string),
+      status: cohortData.status as Cohort["status"],
+      isPublic: cohortData.is_public as boolean,
+      maxTeamSize: cohortData.max_team_size as number,
+      prizes: (cohortData.prizes as unknown as Prize[]) || [],
+    };
+  }
+
+  return toSubmission(row, tracks, team, cohort);
 }
 
 // Helper to fetch team with members (for submission relations)
@@ -409,17 +503,23 @@ async function deleteSubmission(id: string): Promise<ServiceResponse<void>> {
 // Queries
 
 async function list(
-  options?: QueryOptions & { status?: Submission["status"] }
+  options?: QueryOptions & { status?: Submission["status"]; cohortId?: string; search?: string }
 ): Promise<PaginatedResponse<Submission>> {
   const supabase = createClient();
   const page = options?.page || 1;
   const pageSize = options?.pageSize || 20;
   const offset = (page - 1) * pageSize;
 
-  let query = supabase.from("submissions").select("*", { count: "exact" });
+  let query = supabase.from("submissions").select(SUBMISSION_JOINED_SELECT, { count: "exact" });
 
   if (options?.status) {
     query = query.eq("status", options.status);
+  }
+  if (options?.cohortId) {
+    query = query.eq("cohort_id", options.cohortId);
+  }
+  if (options?.search) {
+    query = query.ilike("title", `%${options.search}%`);
   }
 
   if (options?.sortBy) {
@@ -442,12 +542,7 @@ async function list(
     return { data: [], success: false, error: dbError.message, total: 0, page, pageSize, hasMore: false };
   }
 
-  const submissions: Submission[] = [];
-  for (const row of data || []) {
-    const sub = await fetchSubmissionWithRelations(supabase, row.id);
-    if (sub) submissions.push(sub);
-  }
-
+  const submissions = (data || []).map((row) => toSubmissionFromJoinedRow(row as Record<string, unknown>));
   return paginated(submissions, count || 0, page, pageSize);
 }
 
@@ -470,10 +565,10 @@ async function getByUser(userId: string): Promise<ServiceResponse<Submission[]>>
     return error("Invalid team ID", []);
   }
 
-  // Query submissions: team-based OR solo (created_by with null team_id)
+  // Query submissions with all relations in a single joined query
   let query = supabase
     .from("submissions")
-    .select("id")
+    .select(SUBMISSION_JOINED_SELECT)
     .order("created_at", { ascending: false });
 
   if (teamIds.length > 0) {
@@ -490,12 +585,7 @@ async function getByUser(userId: string): Promise<ServiceResponse<Submission[]>>
     return error(dbError.message, []);
   }
 
-  const submissions: Submission[] = [];
-  for (const row of data || []) {
-    const sub = await fetchSubmissionWithRelations(supabase, row.id);
-    if (sub) submissions.push(sub);
-  }
-
+  const submissions = (data || []).map((row) => toSubmissionFromJoinedRow(row as Record<string, unknown>));
   return success(submissions);
 }
 
@@ -510,7 +600,7 @@ async function getByCohort(
 
   let query = supabase
     .from("submissions")
-    .select("*", { count: "exact" })
+    .select(SUBMISSION_JOINED_SELECT, { count: "exact" })
     .eq("cohort_id", cohortId);
 
   if (options?.status) {
@@ -537,12 +627,7 @@ async function getByCohort(
     return { data: [], success: false, error: dbError.message, total: 0, page, pageSize, hasMore: false };
   }
 
-  const submissions: Submission[] = [];
-  for (const row of data || []) {
-    const sub = await fetchSubmissionWithRelations(supabase, row.id);
-    if (sub) submissions.push(sub);
-  }
-
+  const submissions = (data || []).map((row) => toSubmissionFromJoinedRow(row as Record<string, unknown>));
   return paginated(submissions, count || 0, page, pageSize);
 }
 
@@ -551,7 +636,7 @@ async function getByTeam(teamId: string): Promise<ServiceResponse<Submission[]>>
 
   const { data, error: dbError } = await supabase
     .from("submissions")
-    .select("id")
+    .select(SUBMISSION_JOINED_SELECT)
     .eq("team_id", teamId)
     .order("created_at", { ascending: false });
 
@@ -559,34 +644,97 @@ async function getByTeam(teamId: string): Promise<ServiceResponse<Submission[]>>
     return error(dbError.message, []);
   }
 
-  const submissions: Submission[] = [];
-  for (const row of data || []) {
-    const sub = await fetchSubmissionWithRelations(supabase, row.id);
-    if (sub) submissions.push(sub);
-  }
-
+  const submissions = (data || []).map((row) => toSubmissionFromJoinedRow(row as Record<string, unknown>));
   return success(submissions);
 }
 
 async function getByTrack(trackId: string): Promise<ServiceResponse<Submission[]>> {
   const supabase = createClient();
 
-  const { data, error: dbError } = await supabase
+  // Get submission IDs from junction table
+  const { data: junctionData, error: junctionError } = await supabase
     .from("submission_tracks")
     .select("submission_id")
     .eq("track_id", trackId);
+
+  if (junctionError) {
+    return error(junctionError.message, []);
+  }
+
+  const submissionIds = (junctionData || []).map((r) => r.submission_id);
+  if (submissionIds.length === 0) {
+    return success([]);
+  }
+
+  const { data, error: dbError } = await supabase
+    .from("submissions")
+    .select(SUBMISSION_JOINED_SELECT)
+    .in("id", submissionIds)
+    .order("created_at", { ascending: false });
 
   if (dbError) {
     return error(dbError.message, []);
   }
 
-  const submissions: Submission[] = [];
-  for (const row of data || []) {
-    const sub = await fetchSubmissionWithRelations(supabase, row.submission_id);
-    if (sub) submissions.push(sub);
+  const submissions = (data || []).map((row) => toSubmissionFromJoinedRow(row as Record<string, unknown>));
+  return success(submissions);
+}
+
+async function getByTracks(trackIds: string[]): Promise<ServiceResponse<Submission[]>> {
+  const supabase = createClient();
+
+  if (trackIds.length === 0) {
+    return success([]);
   }
 
+  // Get unique submission IDs from junction table for all tracks
+  const { data: junctionData, error: junctionError } = await supabase
+    .from("submission_tracks")
+    .select("submission_id")
+    .in("track_id", trackIds);
+
+  if (junctionError) {
+    return error(junctionError.message, []);
+  }
+
+  const submissionIds = [...new Set((junctionData || []).map((r) => r.submission_id))];
+  if (submissionIds.length === 0) {
+    return success([]);
+  }
+
+  const { data, error: dbError } = await supabase
+    .from("submissions")
+    .select(SUBMISSION_JOINED_SELECT)
+    .in("id", submissionIds)
+    .order("created_at", { ascending: false });
+
+  if (dbError) {
+    return error(dbError.message, []);
+  }
+
+  const submissions = (data || []).map((row) => toSubmissionFromJoinedRow(row as Record<string, unknown>));
   return success(submissions);
+}
+
+async function getByTrackSponsor(sponsorOrgId: string): Promise<ServiceResponse<Submission[]>> {
+  const supabase = createClient();
+
+  // Get all track IDs for this sponsor
+  const { data: trackData, error: trackError } = await supabase
+    .from("tracks")
+    .select("id")
+    .eq("sponsor_org_id", sponsorOrgId);
+
+  if (trackError) {
+    return error(trackError.message, []);
+  }
+
+  const trackIds = (trackData || []).map((t) => t.id);
+  if (trackIds.length === 0) {
+    return success([]);
+  }
+
+  return getByTracks(trackIds);
 }
 
 // Status
@@ -659,6 +807,8 @@ export const submissionsService: SubmissionsService = {
   getByCohort,
   getByTeam,
   getByTrack,
+  getByTracks,
+  getByTrackSponsor,
   submit,
   updateStatus,
   saveDraft,
