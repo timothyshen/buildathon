@@ -25,17 +25,21 @@ export default function DashboardLayout({
     }
   }, [user, isLoading, pathname, router]);
 
-  // Safety valve: if loading is done but no user, sign out to clear cookies
-  // then hard redirect to /login. Signing out first prevents a redirect loop
-  // where middleware still sees valid cookies and redirects /login back to /dashboard.
+  // Safety valve: if loading is done but no user for an extended period,
+  // sign out to clear cookies then redirect to /login.
+  // Uses a 2-second delay to avoid firing on transient null states
+  // (e.g. React strict mode remounts, auth listener race conditions).
   const redirectingRef = useRef(false);
   useEffect(() => {
     if (!isLoading && !user && !redirectingRef.current) {
-      redirectingRef.current = true;
-      const supabase = createClient();
-      supabase.auth.signOut().finally(() => {
-        window.location.href = "/login";
-      });
+      const timer = setTimeout(() => {
+        redirectingRef.current = true;
+        const supabase = createClient();
+        supabase.auth.signOut().finally(() => {
+          window.location.href = "/login";
+        });
+      }, 2000);
+      return () => clearTimeout(timer);
     }
   }, [isLoading, user]);
 

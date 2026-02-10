@@ -21,6 +21,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const isMountedRef = useRef(true);
+  const initRef = useRef(false);
+  // Tracks whether loadUser() has finished — prevents the auth listener's
+  // SIGNED_IN handler from racing with loadUser and causing duplicate getUser() calls.
+  const initialLoadDoneRef = useRef(false);
   // Track when we've just completed login/register to skip redundant SIGNED_IN handler.
   // Uses a counter instead of a boolean so concurrent login attempts don't interfere.
   const authRequestIdRef = useRef<number>(0);
@@ -84,76 +88,103 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Set up Supabase auth listener
   useEffect(() => {
+    // Always mark as mounted — even on React Strict Mode remount.
+    // This is critical: the first mount's async loadUser() checks this ref
+    // AFTER the remount has occurred, so it must be true for state updates to land.
     isMountedRef.current = true;
 
     const supabase = createClient();
 
-    // Initial load with guaranteed timeout
-    async function loadUser() {
-      try {
-        // Race between session fetch and timeout
-        const sessionResult = await Promise.race([
-          supabase.auth.getSession(),
-          new Promise<{ data: { session: null }; error: Error }>((_, reject) =>
-            setTimeout(() => reject(new Error("Session timeout")), 5000)
-          )
-        ]);
+    // Initial load with guaranteed timeout — only run once across strict mode cycles.
+    // loadUser from the first mount will still complete because isMountedRef is true.
+    if (!initRef.current) {
+      initRef.current = true;
 
-        const { data: { session }, error: sessionError } = sessionResult;
+      async function loadUser() {
+        try {
+          // Race between session fetch and timeout
+          const sessionResult = await Promise.race([
+            supabase.auth.getSession(),
+            new Promise<{ data: { session: null }; error: Error }>((_, reject) =>
+              setTimeout(() => reject(new Error("Session timeout")), 5000)
+            )
+          ]);
 
-        if (sessionError) {
-          console.error("Session error:", sessionError);
-          if (isMountedRef.current) setIsLoading(false);
-          return;
-        }
+          const { data: { session }, error: sessionError } = sessionResult;
 
-        if (session?.user && isMountedRef.current) {
-          // Try to fetch profile from database
-          const { user: profile, accountDeleted } = await fetchUserProfile();
-          if (!isMountedRef.current) return;
-
-          if (accountDeleted) {
-            // Account was deleted - sign out and redirect
-            await supabase.auth.signOut();
-            setUser(null);
-            window.location.href = "/login?error=account_deleted";
+          if (sessionError) {
+            console.error("Session error:", sessionError);
+            if (isMountedRef.current) setIsLoading(false);
             return;
           }
 
-          if (profile) {
-            setUser(profile);
-          } else {
-            // Only fall back to session data for NEW users (< 5 minutes old)
-            // This allows onboarding to work while preventing role downgrade for existing users
-            const createdAt = new Date(session.user.created_at);
-            const isNewUser = Date.now() - createdAt.getTime() < 5 * 60 * 1000;
-            if (isNewUser) {
-              setUser(createUserFromSession(session.user));
-            } else {
-              // Existing user but couldn't fetch profile - this is an error state
-              // Sign out to force re-login rather than showing wrong role
-              console.error("Could not fetch profile for existing user - signing out");
+          if (session?.user && isMountedRef.current) {
+            // Try to fetch profile from database
+            const { user: profile, accountDeleted } = await fetchUserProfile();
+            if (!isMountedRef.current) return;
+
+            if (accountDeleted) {
+              // Account was deleted - sign out and redirect
               await supabase.auth.signOut();
               setUser(null);
+              window.location.href = "/login?error=account_deleted";
+              return;
+            }
+
+            if (profile) {
+              setUser(profile);
+            } else {
+              // Only fall back to session data for NEW users (< 5 minutes old)
+              // This allows onboarding to work while preventing role downgrade for existing users
+              const createdAt = new Date(session.user.created_at);
+              const isNewUser = Date.now() - createdAt.getTime() < 5 * 60 * 1000;
+              if (isNewUser) {
+                setUser(createUserFromSession(session.user));
+              } else {
+                // Existing user but couldn't fetch profile — retry once before giving up
+                await new Promise(r => setTimeout(r, 500));
+                if (!isMountedRef.current) return;
+                const retry = await fetchUserProfile();
+                if (!isMountedRef.current) return;
+
+                if (retry.user) {
+                  setUser(retry.user);
+                } else if (retry.accountDeleted) {
+                  await supabase.auth.signOut();
+                  setUser(null);
+                  window.location.href = "/login?error=account_deleted";
+                  return;
+                } else {
+                  // Still can't fetch — use session data as safe fallback rather than signing out.
+                  // The middleware already verified the user's role, so this is acceptable.
+                  console.warn("Could not fetch profile for existing user - using session fallback");
+                  setUser(createUserFromSession(session.user));
+                }
+              }
             }
           }
+        } catch (error) {
+          console.error("Error loading user:", error);
+        } finally {
+          initialLoadDoneRef.current = true;
+          if (isMountedRef.current) setIsLoading(false);
         }
-      } catch (error) {
-        console.error("Error loading user:", error);
-      } finally {
-        if (isMountedRef.current) setIsLoading(false);
       }
+
+      loadUser();
     }
 
-    loadUser();
-
-    // Listen for auth state changes
+    // Auth listener must be set up on every mount since cleanup unsubscribes it
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!isMountedRef.current) return;
 
         try {
           if (event === "SIGNED_IN" && session?.user) {
+            // Skip if initial load is still in progress — loadUser handles the first profile fetch.
+            // Running concurrent fetchUserProfile() calls causes token refresh races.
+            if (!initialLoadDoneRef.current) return;
+
             // Skip if we just completed login/register - user is already set correctly.
             // This prevents race conditions where timeout fallback overwrites correct role.
             if (authRequestIdRef.current > 0) {
