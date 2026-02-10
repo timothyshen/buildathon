@@ -113,6 +113,16 @@ export default function TeamDetailPage({ params }: TeamDetailPageProps) {
     if (success) {
       const { data: invites } = await teamsService.getInvites(teamId);
       setPendingInvites(invites.filter((i) => i.status === "pending"));
+
+      // Fire-and-forget notification trigger
+      fetch("/api/notifications/trigger", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          event: "team_invite_created",
+          data: { teamName: team.name, email },
+        }),
+      }).catch(() => {});
     } else {
       toast.error(error || "Failed to send invite");
     }

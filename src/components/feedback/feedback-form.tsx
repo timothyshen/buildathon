@@ -58,6 +58,16 @@ export function FeedbackForm({ open, onOpenChange, onSuccess }: FeedbackFormProp
     );
 
     if (res.success) {
+      // Fire-and-forget notification trigger
+      fetch("/api/notifications/trigger", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          event: "feedback_created",
+          data: { feedbackId: res.data.id, title: values.title },
+        }),
+      }).catch(() => {});
+
       toast.success("Feedback submitted!");
       reset();
       setDescription("");

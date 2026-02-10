@@ -161,6 +161,18 @@ export default function AdminJudgesPage() {
       toast.error(`${failCount} assignment${failCount > 1 ? "s" : ""} failed. ${successCount} succeeded.`);
     }
 
+    // Fire-and-forget notification trigger for review assignment
+    if (successCount > 0) {
+      fetch("/api/notifications/trigger", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          event: "review_assigned",
+          data: { judgeId: assignJudge.id },
+        }),
+      }).catch(() => {});
+    }
+
     handleCloseAssignDialog();
   };
 
