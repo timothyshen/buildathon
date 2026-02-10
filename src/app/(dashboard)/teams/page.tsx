@@ -83,21 +83,21 @@ export default function TeamsPage() {
       </div>
 
       {/* Stats strip */}
-      <div className="flex items-center divide-x">
-        <div className="pr-8">
+      <div className="grid grid-cols-2 gap-4 md:flex md:items-center md:divide-x md:gap-0">
+        <div className="md:pr-8">
           <div className="text-3xl font-mono font-semibold tabular-nums">
             {userTeams.length}
           </div>
           <div className="text-xs text-muted-foreground mt-1">Teams</div>
         </div>
-        <div className="px-8">
+        <div className="md:px-8">
           <div className="text-3xl font-mono font-semibold tabular-nums">
             {userTeams.reduce((sum, t) => sum + t.members.length, 0)}
           </div>
           <div className="text-xs text-muted-foreground mt-1">Total members</div>
         </div>
         {pendingInvites.length > 0 && (
-          <div className="pl-8">
+          <div className="md:pl-8">
             <div className="text-3xl font-mono font-semibold tabular-nums text-violet-600">
               {pendingInvites.length}
             </div>

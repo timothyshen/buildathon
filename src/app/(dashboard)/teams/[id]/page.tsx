@@ -180,20 +180,20 @@ export default function TeamDetailPage({ params }: TeamDetailPageProps) {
       </div>
 
       {/* Stats strip */}
-      <div className="flex items-center divide-x">
-        <div className="pr-8">
+      <div className="grid grid-cols-2 gap-4 md:flex md:items-center md:divide-x md:gap-0">
+        <div className="md:pr-8">
           <div className="text-3xl font-mono font-semibold tabular-nums">
             {team.members.length}
           </div>
           <div className="text-xs text-muted-foreground mt-1">Members</div>
         </div>
-        <div className="px-8">
+        <div className="md:px-8">
           <div className="text-3xl font-mono font-semibold tabular-nums text-violet-600">
             {pendingInvites.length}
           </div>
           <div className="text-xs text-muted-foreground mt-1">Pending invites</div>
         </div>
-        <div className="pl-8">
+        <div className="md:pl-8">
           <div className="text-3xl font-mono font-semibold tabular-nums">
             5
           </div>

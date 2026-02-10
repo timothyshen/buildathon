@@ -70,26 +70,26 @@ export function AdminDashboard() {
       </div>
 
       {/* Stats strip */}
-      <div className="flex items-center divide-x">
-        <div className="pr-8">
+      <div className="grid grid-cols-2 gap-4 md:flex md:items-center md:divide-x md:gap-0">
+        <div className="md:pr-8">
           <div className="text-3xl font-mono font-semibold tabular-nums text-emerald-600">
             {activeCohorts.length}
           </div>
           <div className="text-xs text-muted-foreground mt-1">Active Cohorts</div>
         </div>
-        <div className="px-8">
+        <div className="md:px-8">
           <div className="text-3xl font-mono font-semibold tabular-nums">
             {totalSubmissions}
           </div>
           <div className="text-xs text-muted-foreground mt-1">Submissions</div>
         </div>
-        <div className="px-8">
+        <div className="md:px-8">
           <div className="text-3xl font-mono font-semibold tabular-nums text-amber-600">
             {pendingReviewCount}
           </div>
           <div className="text-xs text-muted-foreground mt-1">Pending Reviews</div>
         </div>
-        <div className="pl-8">
+        <div className="md:pl-8">
           <div className="text-3xl font-mono font-semibold tabular-nums">
             {judgeCount}
           </div>

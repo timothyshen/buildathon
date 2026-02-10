@@ -141,26 +141,26 @@ export default function SponsorReviewsPage() {
       </div>
 
       {/* Stats strip */}
-      <div className="flex items-center divide-x">
-        <div className="pr-8">
+      <div className="grid grid-cols-2 gap-4 md:flex md:items-center md:divide-x md:gap-0">
+        <div className="md:pr-8">
           <div className="text-3xl font-mono font-semibold tabular-nums">
             {trackSubmissions.length}
           </div>
           <div className="text-xs text-muted-foreground mt-1">Total</div>
         </div>
-        <div className="px-8">
+        <div className="md:px-8">
           <div className="text-3xl font-mono font-semibold tabular-nums text-emerald-600">
             {reviewedCount}
           </div>
           <div className="text-xs text-muted-foreground mt-1">Reviewed</div>
         </div>
-        <div className="px-8">
+        <div className="md:px-8">
           <div className="text-3xl font-mono font-semibold tabular-nums text-blue-600">
             {inProgressCount}
           </div>
           <div className="text-xs text-muted-foreground mt-1">In Progress</div>
         </div>
-        <div className="pl-8">
+        <div className="md:pl-8">
           <div className="text-3xl font-mono font-semibold tabular-nums text-amber-600">
             {notStartedCount}
           </div>
@@ -169,7 +169,7 @@ export default function SponsorReviewsPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border overflow-hidden">
+      <div className="rounded-xl border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -194,9 +194,9 @@ export default function SponsorReviewsPage() {
               trackSubmissions.map((item) => (
                 <TableRow key={item.submission.id}>
                   <TableCell>
-                    <div>
-                      <p className="text-sm font-medium">{item.submission.title}</p>
-                      <p className="text-xs text-muted-foreground">
+                    <div className="max-w-[200px] md:max-w-none">
+                      <p className="text-sm font-medium truncate">{item.submission.title}</p>
+                      <p className="text-xs text-muted-foreground truncate">
                         {item.submission.tagline}
                       </p>
                     </div>

@@ -87,20 +87,20 @@ export default function ReviewsPage() {
       <h1 className="text-2xl font-semibold tracking-tight">Review Queue</h1>
 
       {/* Stats strip */}
-      <div className="flex items-center divide-x">
-        <div className="pr-8">
+      <div className="grid grid-cols-2 gap-4 md:flex md:items-center md:divide-x md:gap-0">
+        <div className="md:pr-8">
           <div className="text-3xl font-mono font-semibold tabular-nums text-amber-600">
             {pendingReviews.length}
           </div>
           <div className="text-xs text-muted-foreground mt-1">Pending</div>
         </div>
-        <div className="px-8">
+        <div className="md:px-8">
           <div className="text-3xl font-mono font-semibold tabular-nums text-blue-600">
             {inProgressReviews.length}
           </div>
           <div className="text-xs text-muted-foreground mt-1">In Progress</div>
         </div>
-        <div className="pl-8">
+        <div className="md:pl-8">
           <div className="text-3xl font-mono font-semibold tabular-nums text-emerald-600">
             {completedReviews.length}
           </div>

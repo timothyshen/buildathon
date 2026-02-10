@@ -88,20 +88,20 @@ export default function SponsorTracksPage() {
       </div>
 
       {/* Stats strip */}
-      <div className="flex items-center divide-x">
-        <div className="pr-8">
+      <div className="grid grid-cols-2 gap-4 md:flex md:items-center md:divide-x md:gap-0">
+        <div className="md:pr-8">
           <div className="text-3xl font-mono font-semibold tabular-nums">
             {sponsorCohortLinks.length}
           </div>
           <div className="text-xs text-muted-foreground mt-1">Cohorts</div>
         </div>
-        <div className="px-8">
+        <div className="md:px-8">
           <div className="text-3xl font-mono font-semibold tabular-nums">
             {sponsorTracks.length}
           </div>
           <div className="text-xs text-muted-foreground mt-1">Tracks</div>
         </div>
-        <div className="pl-8">
+        <div className="md:pl-8">
           <div className="text-3xl font-mono font-semibold tabular-nums text-emerald-600">
             {totalPrizePool > 0 ? `$${totalPrizePool.toLocaleString()}` : "—"}
           </div>
@@ -143,16 +143,16 @@ export default function SponsorTracksPage() {
                       <span className="text-xs text-muted-foreground capitalize">{cohort.status}</span>
                     </div>
                   </div>
-                  <div className="flex flex-wrap items-center gap-3 mt-1.5 text-[11px] text-muted-foreground">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1.5 text-[11px] text-muted-foreground">
                     <span>{formatDate(cohort.startDate)} – {formatDate(cohort.endDate)}</span>
-                    <span>&middot;</span>
+                    <span className="hidden md:inline">&middot;</span>
                     <span>${cohortSponsor.prizePoolContribution.toLocaleString()} contribution</span>
-                    <span>&middot;</span>
+                    <span className="hidden md:inline">&middot;</span>
                     <span>{cohortTracks.length} track{cohortTracks.length !== 1 ? "s" : ""}</span>
                   </div>
 
                   {cohortTracks.length > 0 && (
-                    <p className="text-[11px] text-muted-foreground mt-1.5">
+                    <p className="text-[11px] text-muted-foreground mt-1.5 line-clamp-2">
                       {cohortTracks.map((t) => `${t.name}${t.prizePool ? ` (${t.prizePool})` : ""}`).join(", ")}
                     </p>
                   )}
