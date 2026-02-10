@@ -87,7 +87,7 @@ export default function SubmissionsPage() {
       setIsLoading(false);
     }
     loadData();
-  }, [user]);
+  }, [user?.id]);
 
   const filtered = filter === "all"
     ? userSubmissions

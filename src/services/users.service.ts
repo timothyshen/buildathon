@@ -120,23 +120,15 @@ async function update(id: string, data: Partial<User>): Promise<ServiceResponse<
   if (data.role !== undefined) updateData.role = data.role;
   if (data.sponsorOrgId !== undefined) updateData.sponsor_org_id = data.sponsorOrgId;
 
-  const { error: updateError } = await supabase
+  const { data: updated, error: updateError } = await supabase
     .from("users")
     .update(updateData)
-    .eq("id", id);
+    .eq("id", id)
+    .select("*")
+    .single();
 
   if (updateError) {
     return error(updateError.message, null as unknown as User);
-  }
-
-  const { data: updated, error: fetchError } = await supabase
-    .from("users")
-    .select("*")
-    .eq("id", id)
-    .single();
-
-  if (fetchError) {
-    return error(fetchError.message, null as unknown as User);
   }
 
   return success(toUser(updated));

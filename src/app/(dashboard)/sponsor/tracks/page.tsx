@@ -45,7 +45,7 @@ export default function SponsorTracksPage() {
       setIsLoading(false);
     }
     loadData();
-  }, [user]);
+  }, [user?.id]);
 
   if (isLoading) {
     return (

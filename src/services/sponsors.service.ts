@@ -166,23 +166,15 @@ async function updateOrg(id: string, data: Partial<SponsorOrg>): Promise<Service
   if (data.contactName !== undefined) dbData.contact_name = data.contactName;
   if (data.contactEmail !== undefined) dbData.contact_email = data.contactEmail;
 
-  const { error: updateError } = await supabase
+  const { data: updated, error: updateError } = await supabase
     .from("sponsor_orgs")
     .update(dbData)
-    .eq("id", id);
+    .eq("id", id)
+    .select("*")
+    .single();
 
   if (updateError) {
     return error(updateError.message, null as unknown as SponsorOrg);
-  }
-
-  const { data: updated, error: fetchError } = await supabase
-    .from("sponsor_orgs")
-    .select("*")
-    .eq("id", id)
-    .single();
-
-  if (fetchError) {
-    return error(fetchError.message, null as unknown as SponsorOrg);
   }
 
   return success(toSponsorOrg(updated));
@@ -334,24 +326,15 @@ async function updateCohortSponsor(
   if (data.hasDedicatedTrack !== undefined) dbData.has_dedicated_track = data.hasDedicatedTrack;
   if (data.description !== undefined) dbData.description = data.description;
 
-  const { error: updateError } = await supabase
+  const { data: updated, error: updateError } = await supabase
     .from("cohort_sponsors")
     .update(dbData)
-    .eq("id", id);
+    .eq("id", id)
+    .select("*")
+    .single();
 
   if (updateError) {
     return error(updateError.message, null as unknown as CohortSponsor);
-  }
-
-  // Re-fetch separately (chained .update().select().single() can fail with PostgREST)
-  const { data: updated, error: fetchError } = await supabase
-    .from("cohort_sponsors")
-    .select("*")
-    .eq("id", id)
-    .single();
-
-  if (fetchError) {
-    return error(fetchError.message, null as unknown as CohortSponsor);
   }
 
   return success(toCohortSponsor(updated));

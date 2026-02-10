@@ -25,7 +25,7 @@ export default function ReviewsPage() {
       setIsLoading(false);
     }
     loadData();
-  }, [user]);
+  }, [user?.id]);
 
   if (isLoading) {
     return (

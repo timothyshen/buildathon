@@ -213,24 +213,15 @@ async function update(id: string, data: Partial<Track>): Promise<ServiceResponse
 
   const dbData = toDbTrack(data) as TablesUpdate<"tracks">;
 
-  const { error: updateError } = await supabase
+  const { data: updated, error: updateError } = await supabase
     .from("tracks")
     .update(dbData)
-    .eq("id", id);
+    .eq("id", id)
+    .select("*")
+    .single();
 
   if (updateError) {
     return error(updateError.message);
-  }
-
-  // Re-fetch with sponsor data
-  const { data: updated, error: fetchError } = await supabase
-    .from("tracks")
-    .select("*")
-    .eq("id", id)
-    .single();
-
-  if (fetchError) {
-    return error(fetchError.message);
   }
 
   let sponsorData: { name: string; logo: string } | null = null;

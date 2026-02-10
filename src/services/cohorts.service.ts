@@ -171,23 +171,15 @@ async function update(id: string, data: Partial<Cohort>): Promise<ServiceRespons
 
   const dbData = toDbCohort(data) as TablesUpdate<"cohorts">;
 
-  const { error: updateError } = await supabase
+  const { data: updated, error: updateError } = await supabase
     .from("cohorts")
     .update(dbData)
-    .eq("id", id);
+    .eq("id", id)
+    .select("*")
+    .single();
 
   if (updateError) {
     return error(updateError.message, null as unknown as Cohort);
-  }
-
-  const { data: updated, error: fetchError } = await supabase
-    .from("cohorts")
-    .select("*")
-    .eq("id", id)
-    .single();
-
-  if (fetchError) {
-    return error(fetchError.message, null as unknown as Cohort);
   }
 
   return success(toCohort(updated));

@@ -35,7 +35,7 @@ export default function TeamsPage() {
       setIsLoading(false);
     }
     loadData();
-  }, [user]);
+  }, [user?.id]);
 
   if (!user) return null;
 
