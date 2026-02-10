@@ -9,28 +9,32 @@ import {
   ChevronRight,
   Loader2,
 } from "lucide-react";
-import type { Cohort, Submission, Review, User } from "@/types";
+import type { Cohort, Submission } from "@/types";
 
 export function AdminDashboard() {
   const [cohorts, setCohorts] = useState<Cohort[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [judges, setJudges] = useState<User[]>([]);
+  const [totalSubmissions, setTotalSubmissions] = useState(0);
+  const [pendingReviewCount, setPendingReviewCount] = useState(0);
+  const [judgeCount, setJudgeCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function loadData() {
-      const [cohortsResult, submissionsResult, reviewsResult, usersResult] = await Promise.all([
+      const [cohortsResult, submissionsResult, pendingReviewsResult, judgesResult] = await Promise.all([
         cohortsService.list(),
-        submissionsService.list(),
-        reviewsService.list(),
-        usersService.list(),
+        submissionsService.list({ pageSize: 5, sortBy: "createdAt", sortOrder: "desc" }),
+        reviewsService.list({ status: "pending", pageSize: 1 }),
+        usersService.list({ role: "judge", pageSize: 1 }),
       ]);
 
       if (cohortsResult.success) setCohorts(cohortsResult.data);
-      if (submissionsResult.success) setSubmissions(submissionsResult.data);
-      if (reviewsResult.success) setReviews(reviewsResult.data);
-      if (usersResult.success) setJudges(usersResult.data.filter((u) => u.role === "judge"));
+      if (submissionsResult.success) {
+        setSubmissions(submissionsResult.data);
+        setTotalSubmissions(submissionsResult.total);
+      }
+      if (pendingReviewsResult.success) setPendingReviewCount(pendingReviewsResult.total);
+      if (judgesResult.success) setJudgeCount(judgesResult.total);
 
       setIsLoading(false);
     }
@@ -46,9 +50,6 @@ export function AdminDashboard() {
   }
 
   const activeCohorts = cohorts.filter((c) => c.status === "active");
-  const totalSubmissions = submissions.length;
-  const pendingReviews = reviews.filter((r) => r.status === "pending").length;
-  const totalJudges = judges.length;
 
   return (
     <div className="space-y-10">
@@ -84,13 +85,13 @@ export function AdminDashboard() {
         </div>
         <div className="px-8">
           <div className="text-3xl font-mono font-semibold tabular-nums text-amber-600">
-            {pendingReviews}
+            {pendingReviewCount}
           </div>
           <div className="text-xs text-muted-foreground mt-1">Pending Reviews</div>
         </div>
         <div className="pl-8">
           <div className="text-3xl font-mono font-semibold tabular-nums">
-            {totalJudges}
+            {judgeCount}
           </div>
           <div className="text-xs text-muted-foreground mt-1">Judges</div>
         </div>

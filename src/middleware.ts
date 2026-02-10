@@ -66,9 +66,13 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  // Role-based route protection
-  if (user) {
-    // Fetch user profile to get role
+  // Role-based route protection — only query DB when the route needs it
+  const roleProtectedPrefixes = ["/admin", "/sponsor", "/reviews"];
+  const needsRoleCheck = roleProtectedPrefixes.some((p) =>
+    request.nextUrl.pathname.startsWith(p)
+  );
+
+  if (user && needsRoleCheck) {
     const { data: profile } = await supabase
       .from("users")
       .select("role, has_completed_onboarding")
@@ -76,16 +80,12 @@ export async function middleware(request: NextRequest) {
       .maybeSingle();
 
     // Check if account was deleted (auth exists but no DB profile)
-    // Allow onboarding page for new accounts that may not have profile yet
-    if (!profile && !request.nextUrl.pathname.startsWith("/onboarding")) {
-      // Check if this is a new account (created within last 5 minutes)
+    if (!profile) {
       const createdAt = new Date(user.created_at);
       const accountAgeMs = Date.now() - createdAt.getTime();
       const isNewAccount = accountAgeMs < 5 * 60 * 1000; // 5 minutes
 
       if (!isNewAccount) {
-        // Old account with no profile = deleted account
-        // Sign out and redirect to login with error
         await supabase.auth.signOut();
         const redirectUrl = new URL("/login", request.url);
         redirectUrl.searchParams.set("error", "account_deleted");
@@ -93,8 +93,8 @@ export async function middleware(request: NextRequest) {
       }
     }
 
-    // If user hasn't completed onboarding and isn't already on the onboarding page, redirect them
-    if (profile && !profile.has_completed_onboarding && !request.nextUrl.pathname.startsWith('/onboarding')) {
+    // Onboarding redirect for role-protected routes
+    if (profile && !profile.has_completed_onboarding) {
       return NextResponse.redirect(new URL("/onboarding", request.url));
     }
 

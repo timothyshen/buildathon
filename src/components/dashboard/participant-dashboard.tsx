@@ -37,7 +37,7 @@ export function ParticipantDashboard() {
       }
 
       const [cohortsResult, submissionsResult] = await Promise.all([
-        cohortsService.list(),
+        cohortsService.list({ isPublic: true, pageSize: 50 }),
         submissionsService.getByUser(user.id),
       ]);
 
@@ -53,8 +53,8 @@ export function ParticipantDashboard() {
     return <Loading />;
   }
 
-  const activeCohorts = cohorts.filter((c) => c.status === "active" && c.isPublic);
-  const allCohorts = cohorts.filter((c) => c.isPublic);
+  const activeCohorts = cohorts.filter((c) => c.status === "active");
+  const allCohorts = cohorts;
   const wins = submissions.filter((s) => s.status === "winner").length;
   const drafts = submissions.filter((s) => s.status === "draft").length;
 

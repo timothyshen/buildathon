@@ -33,37 +33,31 @@ export function SponsorDashboard() {
 
   useEffect(() => {
     async function loadData() {
-      if (!user?.id) {
+      if (!user?.sponsorOrgId) {
         setIsLoading(false);
         return;
       }
 
-      // First, get the sponsor org for this user
-      const sponsorResult = await sponsorsService.getOrgByUser(user.id);
+      const orgId = user.sponsorOrgId;
 
-      if (!sponsorResult.success || !sponsorResult.data) {
-        setIsLoading(false);
-        return;
-      }
-
-      const sponsorOrg = sponsorResult.data;
-      setSponsor(sponsorOrg);
-
-      // Load all related data in parallel
+      // Load all data in a single parallel batch using sponsorOrgId from auth context
       const [
+        sponsorResult,
         cohortSponsorsResult,
         cohortsResult,
         tracksResult,
         submissionsResult,
         workshopsResult,
       ] = await Promise.all([
-        sponsorsService.getSponsorCohorts(sponsorOrg.id),
+        sponsorsService.getOrgById(orgId),
+        sponsorsService.getSponsorCohorts(orgId),
         cohortsService.list(),
-        tracksService.getBySponsor(sponsorOrg.id),
+        tracksService.getBySponsor(orgId),
         submissionsService.list(),
-        workshopsService.getBySponsor(sponsorOrg.id),
+        workshopsService.getBySponsor(orgId),
       ]);
 
+      if (sponsorResult.success) setSponsor(sponsorResult.data);
       if (cohortSponsorsResult.success) setSponsorCohorts(cohortSponsorsResult.data);
       if (cohortsResult.success) setCohorts(cohortsResult.data);
       if (tracksResult.success) setTracks(tracksResult.data);
@@ -73,7 +67,7 @@ export function SponsorDashboard() {
       setIsLoading(false);
     }
     loadData();
-  }, [user?.id]);
+  }, [user?.sponsorOrgId]);
 
   if (isLoading) {
     return (
