@@ -1,14 +1,15 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
+import { useWalletLogin } from "@/hooks/use-wallet-login";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle, Wallet } from "lucide-react";
 
 function LoginForm() {
   const router = useRouter();
@@ -19,6 +20,16 @@ function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [accountDeletedError, setAccountDeletedError] = useState(false);
+
+  const onWalletSuccess = useCallback(() => {
+    router.push("/dashboard");
+  }, [router]);
+
+  const {
+    connectWallet,
+    isLoading: isWalletLoading,
+    error: walletError,
+  } = useWalletLogin(onWalletSuccess);
 
   // Check for account_deleted error in URL params
   useEffect(() => {
@@ -48,6 +59,8 @@ function LoginForm() {
     setIsLoading(false);
   };
 
+  const anyLoading = isLoading || isWalletLoading;
+
   return (
     <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center px-4">
       <Card className="w-full max-w-md">
@@ -74,7 +87,7 @@ function LoginForm() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                disabled={isLoading}
+                disabled={anyLoading}
               />
             </div>
 
@@ -87,7 +100,7 @@ function LoginForm() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                disabled={isLoading}
+                disabled={anyLoading}
               />
             </div>
 
@@ -95,7 +108,7 @@ function LoginForm() {
               <p className="text-sm text-red-500">{error}</p>
             )}
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full" disabled={anyLoading}>
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -106,6 +119,43 @@ function LoginForm() {
               )}
             </Button>
           </form>
+
+          {/* Divider */}
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card px-2 text-muted-foreground">or</span>
+            </div>
+          </div>
+
+          {/* Wallet Login */}
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={connectWallet}
+            disabled={anyLoading}
+          >
+            {isWalletLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Connecting...
+              </>
+            ) : (
+              <>
+                <Wallet className="mr-2 h-4 w-4" />
+                Sign in with Wallet
+              </>
+            )}
+          </Button>
+
+          {walletError && (
+            <div className="mt-3 flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-400">
+              <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+              <span>{walletError}</span>
+            </div>
+          )}
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
             Don&apos;t have an account?{" "}

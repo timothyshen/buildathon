@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import { WalletConnect } from "@/components/wallet/wallet-connect";
 import { Loader2, Save, Bell } from "lucide-react";
 import { toast } from "sonner";
 import type { NotificationPreferences } from "@/types";
@@ -80,9 +81,16 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      {/* Profile Settings */}
-      <section className="rounded-xl border p-5 space-y-5">
-        <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">Profile</h2>
+      {/* Profile */}
+      <section className="space-y-5 rounded-xl border p-5">
+        <div>
+          <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">
+            Profile
+          </h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Your public profile information
+          </p>
+        </div>
 
         <div className="flex items-center gap-4">
           <img
@@ -117,8 +125,10 @@ export default function SettingsPage() {
       </section>
 
       {/* Social Links */}
-      <section className="rounded-xl border p-5 space-y-5">
-        <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">Social Links</h2>
+      <section className="space-y-5 rounded-xl border p-5">
+        <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">
+          Social Links
+        </h2>
 
         <div className="space-y-4">
           <div className="space-y-1.5">
@@ -156,28 +166,20 @@ export default function SettingsPage() {
       </section>
 
       {/* Wallet */}
-      <section className="rounded-xl border p-5 space-y-4">
+      <section className="space-y-5 rounded-xl border p-5">
         <div>
-          <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">Wallet</h2>
-          <p className="text-xs text-muted-foreground mt-1">Connect your wallet for IP registration</p>
+          <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">
+            Wallet
+          </h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Connect your wallet for IP registration
+          </p>
         </div>
-        {user?.walletAddress ? (
-          <div className="flex items-center justify-between rounded-lg border p-4">
-            <div>
-              <p className="font-mono text-sm">{user.walletAddress}</p>
-              <p className="text-xs text-muted-foreground">Connected</p>
-            </div>
-            <Button variant="outline" size="sm">
-              Disconnect
-            </Button>
-          </div>
-        ) : (
-          <Button>Connect Wallet</Button>
-        )}
+        <WalletConnect />
       </section>
 
       {/* Notification Preferences */}
-      <section className="rounded-xl border p-5 space-y-5">
+      <section className="space-y-5 rounded-xl border p-5">
         <div className="flex items-center gap-2">
           <Bell className="h-4 w-4 text-muted-foreground" />
           <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">Notifications</h2>
@@ -270,31 +272,34 @@ export default function SettingsPage() {
         </Button>
       </div>
 
-      <Separator />
-
       {/* Danger Zone */}
-      <section className="rounded-xl border border-destructive/30 p-5 space-y-4">
-        <h2 className="text-[11px] uppercase tracking-widest text-destructive font-medium">Danger Zone</h2>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium">Sign Out</p>
-            <p className="text-xs text-muted-foreground">
-              Sign out of your account on this device
-            </p>
+      <section className="space-y-5 rounded-xl border border-destructive/30 p-5">
+        <h2 className="text-[11px] uppercase tracking-widest text-destructive font-medium">
+          Danger Zone
+        </h2>
+
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Sign Out</p>
+              <p className="text-xs text-muted-foreground">
+                Sign out of your account on this device
+              </p>
+            </div>
+            <Button variant="outline" size="sm" onClick={handleLogout}>
+              Sign Out
+            </Button>
           </div>
-          <Button variant="outline" size="sm" onClick={handleLogout}>
-            Sign Out
-          </Button>
-        </div>
-        <Separator />
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium">Delete Account</p>
-            <p className="text-xs text-muted-foreground">
-              Permanently delete your account and all data
-            </p>
+          <div className="border-t" />
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Delete Account</p>
+              <p className="text-xs text-muted-foreground">
+                Permanently delete your account and all data
+              </p>
+            </div>
+            <Button variant="destructive" size="sm">Delete Account</Button>
           </div>
-          <Button variant="destructive" size="sm">Delete Account</Button>
         </div>
       </section>
     </div>

@@ -11,6 +11,7 @@ import { success, error, paginated } from "./types";
 export interface UsersService {
   getById(id: string): Promise<ServiceResponse<User | null>>;
   getByEmail(email: string): Promise<ServiceResponse<User | null>>;
+  getByWalletAddress(address: string): Promise<ServiceResponse<User | null>>;
   list(options?: QueryOptions & { role?: User["role"] }): Promise<PaginatedResponse<User>>;
   update(id: string, data: Partial<User>): Promise<ServiceResponse<User>>;
 }
@@ -65,6 +66,25 @@ async function getByEmail(email: string): Promise<ServiceResponse<User | null>> 
       return success(null);
     }
     return error(dbError.message, null);
+  }
+
+  return success(toUser(data));
+}
+
+async function getByWalletAddress(address: string): Promise<ServiceResponse<User | null>> {
+  const supabase = createClient();
+  const { data, error: dbError } = await supabase
+    .from("users")
+    .select("*")
+    .ilike("wallet_address", address)
+    .maybeSingle();
+
+  if (dbError) {
+    return error(dbError.message, null);
+  }
+
+  if (!data) {
+    return success(null);
   }
 
   return success(toUser(data));
@@ -139,6 +159,7 @@ async function update(id: string, data: Partial<User>): Promise<ServiceResponse<
 export const usersService: UsersService = {
   getById,
   getByEmail,
+  getByWalletAddress,
   list,
   update,
 };
