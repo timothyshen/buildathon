@@ -21,7 +21,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const isMountedRef = useRef(true);
-  const initRef = useRef(false);
   // Track when we've just completed login/register to skip redundant SIGNED_IN handler.
   // Uses a counter instead of a boolean so concurrent login attempts don't interfere.
   const authRequestIdRef = useRef<number>(0);
@@ -85,9 +84,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Set up Supabase auth listener
   useEffect(() => {
-    // Prevent double initialization in React Strict Mode
-    if (initRef.current) return;
-    initRef.current = true;
     isMountedRef.current = true;
 
     const supabase = createClient();

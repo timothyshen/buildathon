@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
+import { createClient } from "@/lib/supabase/client";
 import { Sidebar } from "@/components/layout/sidebar";
 import { DashboardHeader } from "@/components/layout/dashboard-header";
 import { Loading } from "@/components/ui/loading";
@@ -24,11 +25,17 @@ export default function DashboardLayout({
     }
   }, [user, isLoading, pathname, router]);
 
-  // Safety valve: if loading is done but no user, hard redirect to /login.
-  // Uses window.location.href (not router.push) to clear stale middleware cookies.
+  // Safety valve: if loading is done but no user, sign out to clear cookies
+  // then hard redirect to /login. Signing out first prevents a redirect loop
+  // where middleware still sees valid cookies and redirects /login back to /dashboard.
+  const redirectingRef = useRef(false);
   useEffect(() => {
-    if (!isLoading && !user) {
-      window.location.href = "/login";
+    if (!isLoading && !user && !redirectingRef.current) {
+      redirectingRef.current = true;
+      const supabase = createClient();
+      supabase.auth.signOut().finally(() => {
+        window.location.href = "/login";
+      });
     }
   }, [isLoading, user]);
 
