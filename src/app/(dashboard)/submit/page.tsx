@@ -357,6 +357,16 @@ export default function SubmitPage() {
         return;
       }
 
+      // Fire-and-forget notification trigger
+      fetch("/api/notifications/trigger", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          event: "submission_submitted",
+          data: { submissionId: result.data.id, title: result.data.title, cohortId: result.data.cohortId },
+        }),
+      }).catch(() => {});
+
       localStorage.removeItem(STORAGE_KEY);
       toast.success("Project submitted successfully!");
       router.push("/submissions");

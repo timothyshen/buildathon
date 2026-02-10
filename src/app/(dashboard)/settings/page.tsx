@@ -4,14 +4,15 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { usersService } from "@/services";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, Save } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Loader2, Save, Bell } from "lucide-react";
 import { toast } from "sonner";
+import type { NotificationPreferences } from "@/types";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -26,6 +27,13 @@ export default function SettingsPage() {
   const [bio, setBio] = useState("");
   const [twitter, setTwitter] = useState("");
   const [github, setGithub] = useState("");
+  const [notifPrefs, setNotifPrefs] = useState<NotificationPreferences>({
+    push_enabled: false,
+    submission_updates: true,
+    review_alerts: true,
+    deadline_reminders: true,
+    team_activity: true,
+  });
 
   useEffect(() => {
     if (user) {
@@ -33,6 +41,9 @@ export default function SettingsPage() {
       setBio(user.bio || "");
       setTwitter(user.twitter || "");
       setGithub(user.github || "");
+      if (user.notificationPreferences) {
+        setNotifPrefs(user.notificationPreferences);
+      }
     }
   }, [user]);
 
@@ -45,6 +56,7 @@ export default function SettingsPage() {
         bio: bio.trim() || undefined,
         twitter: twitter.trim() || undefined,
         github: github.trim() || undefined,
+        notificationPreferences: notifPrefs,
       });
 
       if (!result.success) {
@@ -60,67 +72,57 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl space-y-8">
+    <div className="mx-auto max-w-2xl space-y-10">
       <div>
-        <h1 className="text-3xl font-bold">Settings</h1>
-        <p className="mt-2 text-muted-foreground">
+        <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           Manage your account settings and preferences
         </p>
       </div>
 
       {/* Profile Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Profile</CardTitle>
-          <CardDescription>
-            Your public profile information
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center gap-4">
-            <img
-              src={user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`}
-              alt={user?.name}
-              className="h-20 w-20 rounded-full"
-            />
-            <Button variant="outline">Change Avatar</Button>
-          </div>
+      <section className="rounded-xl border p-5 space-y-5">
+        <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">Profile</h2>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
-              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" defaultValue={user?.email} disabled />
-            </div>
-          </div>
+        <div className="flex items-center gap-4">
+          <img
+            src={user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`}
+            alt={user?.name}
+            className="h-16 w-16 rounded-full"
+          />
+          <Button variant="outline" size="sm">Change Avatar</Button>
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="bio">Bio</Label>
-            <Textarea
-              id="bio"
-              placeholder="Tell us about yourself..."
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
-              rows={3}
-            />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="name" className="text-xs text-muted-foreground">Name</Label>
+            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
           </div>
-        </CardContent>
-      </Card>
+          <div className="space-y-1.5">
+            <Label htmlFor="email" className="text-xs text-muted-foreground">Email</Label>
+            <Input id="email" type="email" defaultValue={user?.email} disabled />
+          </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="bio" className="text-xs text-muted-foreground">Bio</Label>
+          <Textarea
+            id="bio"
+            placeholder="Tell us about yourself..."
+            value={bio}
+            onChange={(e) => setBio(e.target.value)}
+            rows={3}
+          />
+        </div>
+      </section>
 
       {/* Social Links */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Social Links</CardTitle>
-          <CardDescription>
-            Connect your social profiles
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="twitter">Twitter</Label>
+      <section className="rounded-xl border p-5 space-y-5">
+        <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">Social Links</h2>
+
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="twitter" className="text-xs text-muted-foreground">Twitter</Label>
             <div className="flex">
               <span className="flex items-center rounded-l-md border border-r-0 bg-muted px-3 text-sm text-muted-foreground">
                 @
@@ -135,8 +137,8 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="github">GitHub</Label>
+          <div className="space-y-1.5">
+            <Label htmlFor="github" className="text-xs text-muted-foreground">GitHub</Label>
             <div className="flex">
               <span className="flex items-center rounded-l-md border border-r-0 bg-muted px-3 text-sm text-muted-foreground">
                 github.com/
@@ -150,33 +152,106 @@ export default function SettingsPage() {
               />
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
       {/* Wallet */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Wallet</CardTitle>
-          <CardDescription>
-            Connect your wallet for IP registration
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {user?.walletAddress ? (
-            <div className="flex items-center justify-between rounded-lg border p-4">
-              <div>
-                <p className="font-mono text-sm">{user.walletAddress}</p>
-                <p className="text-xs text-muted-foreground">Connected</p>
-              </div>
-              <Button variant="outline" size="sm">
-                Disconnect
-              </Button>
+      <section className="rounded-xl border p-5 space-y-4">
+        <div>
+          <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">Wallet</h2>
+          <p className="text-xs text-muted-foreground mt-1">Connect your wallet for IP registration</p>
+        </div>
+        {user?.walletAddress ? (
+          <div className="flex items-center justify-between rounded-lg border p-4">
+            <div>
+              <p className="font-mono text-sm">{user.walletAddress}</p>
+              <p className="text-xs text-muted-foreground">Connected</p>
             </div>
-          ) : (
-            <Button>Connect Wallet</Button>
-          )}
-        </CardContent>
-      </Card>
+            <Button variant="outline" size="sm">
+              Disconnect
+            </Button>
+          </div>
+        ) : (
+          <Button>Connect Wallet</Button>
+        )}
+      </section>
+
+      {/* Notification Preferences */}
+      <section className="rounded-xl border p-5 space-y-5">
+        <div className="flex items-center gap-2">
+          <Bell className="h-4 w-4 text-muted-foreground" />
+          <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">Notifications</h2>
+        </div>
+
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Push notifications</p>
+              <p className="text-xs text-muted-foreground">Receive browser push notifications</p>
+            </div>
+            <Switch
+              checked={notifPrefs.push_enabled}
+              onCheckedChange={(checked) =>
+                setNotifPrefs((prev) => ({ ...prev, push_enabled: checked }))
+              }
+            />
+          </div>
+
+          <Separator />
+
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Submission updates</p>
+              <p className="text-xs text-muted-foreground">Status changes on your submissions</p>
+            </div>
+            <Switch
+              checked={notifPrefs.submission_updates}
+              onCheckedChange={(checked) =>
+                setNotifPrefs((prev) => ({ ...prev, submission_updates: checked }))
+              }
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Review alerts</p>
+              <p className="text-xs text-muted-foreground">New reviews and review assignments</p>
+            </div>
+            <Switch
+              checked={notifPrefs.review_alerts}
+              onCheckedChange={(checked) =>
+                setNotifPrefs((prev) => ({ ...prev, review_alerts: checked }))
+              }
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Deadline reminders</p>
+              <p className="text-xs text-muted-foreground">Upcoming submission and review deadlines</p>
+            </div>
+            <Switch
+              checked={notifPrefs.deadline_reminders}
+              onCheckedChange={(checked) =>
+                setNotifPrefs((prev) => ({ ...prev, deadline_reminders: checked }))
+              }
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Team activity</p>
+              <p className="text-xs text-muted-foreground">Team invitations and member updates</p>
+            </div>
+            <Switch
+              checked={notifPrefs.team_activity}
+              onCheckedChange={(checked) =>
+                setNotifPrefs((prev) => ({ ...prev, team_activity: checked }))
+              }
+            />
+          </div>
+        </div>
+      </section>
 
       {/* Save Button */}
       <div className="flex justify-end">
@@ -198,37 +273,30 @@ export default function SettingsPage() {
       <Separator />
 
       {/* Danger Zone */}
-      <Card className="border-red-200">
-        <CardHeader>
-          <CardTitle className="text-red-600">Danger Zone</CardTitle>
-          <CardDescription>
-            Irreversible account actions
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">Sign Out</p>
-              <p className="text-sm text-muted-foreground">
-                Sign out of your account on this device
-              </p>
-            </div>
-            <Button variant="outline" onClick={handleLogout}>
-              Sign Out
-            </Button>
+      <section className="rounded-xl border border-destructive/30 p-5 space-y-4">
+        <h2 className="text-[11px] uppercase tracking-widest text-destructive font-medium">Danger Zone</h2>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium">Sign Out</p>
+            <p className="text-xs text-muted-foreground">
+              Sign out of your account on this device
+            </p>
           </div>
-          <Separator />
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">Delete Account</p>
-              <p className="text-sm text-muted-foreground">
-                Permanently delete your account and all data
-              </p>
-            </div>
-            <Button variant="destructive">Delete Account</Button>
+          <Button variant="outline" size="sm" onClick={handleLogout}>
+            Sign Out
+          </Button>
+        </div>
+        <Separator />
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium">Delete Account</p>
+            <p className="text-xs text-muted-foreground">
+              Permanently delete your account and all data
+            </p>
           </div>
-        </CardContent>
-      </Card>
+          <Button variant="destructive" size="sm">Delete Account</Button>
+        </div>
+      </section>
     </div>
   );
 }

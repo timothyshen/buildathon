@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Menu, LogOut, Settings, ChevronRight } from "lucide-react";
+import { NotificationBell } from "./notification-bell";
 import {
   Sheet,
   SheetContent,
@@ -98,7 +99,10 @@ export function DashboardHeader() {
 
       <div className="flex-1" />
 
-      <UserDropdown />
+      <div className="flex items-center gap-1">
+        <NotificationBell />
+        <UserDropdown />
+      </div>
     </header>
   );
 }

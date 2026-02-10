@@ -21,6 +21,7 @@ export { tractionService } from "./traction.service";
 export { referralsService } from "./referrals.service";
 export { feedbackService } from "./feedback.service";
 export { eventsService } from "./events.service";
+export { notificationsService } from "./notifications.service";
 
 // Export types
 export type { ServiceResponse, PaginatedResponse, QueryOptions } from "./types";
@@ -39,3 +40,4 @@ export type { SponsorsService, CohortSponsorWithOrg } from "./sponsors.service";
 export type { TractionService } from "./traction.service";
 export type { ReferralsService } from "./referrals.service";
 export type { FeedbackService, FeedbackListOptions, CreateFeedbackData } from "./feedback.service";
+export type { NotificationsService } from "./notifications.service";

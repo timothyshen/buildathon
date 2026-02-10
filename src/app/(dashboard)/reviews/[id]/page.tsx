@@ -115,6 +115,16 @@ export default function ReviewDetailPage({ params }: ReviewDetailPageProps) {
         internalNotes: internalNotes || undefined,
       });
       if (result.success) {
+        // Fire-and-forget notification trigger
+        fetch("/api/notifications/trigger", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            event: "review_completed",
+            data: { submissionId: review.submissionId },
+          }),
+        }).catch(() => {});
+
         toast.success("Review submitted successfully");
         router.push(backHref);
       } else {

@@ -155,6 +155,21 @@ export default function AdminSubmissionDetailPage({ params }: AdminSubmissionDet
       if (success) {
         setStatus(newStatus);
         toast.success(`Status updated to ${newStatus}`);
+
+        // Fire-and-forget notification trigger
+        fetch("/api/notifications/trigger", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            event: "submission_status_changed",
+            data: {
+              submissionId: submission.id,
+              title: submission.title,
+              newStatus,
+              userId: submission.createdBy,
+            },
+          }),
+        }).catch(() => {});
       } else {
         toast.error(error || "Failed to update status");
       }
