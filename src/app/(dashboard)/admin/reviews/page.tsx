@@ -45,47 +45,48 @@ export default function AdminReviewsPage() {
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [selectedJudge, setSelectedJudge] = useState<string>("all");
 
+  // Load cohorts and judges once
   useEffect(() => {
-    async function loadData() {
-      const [reviewsResult, cohortsResult, usersResult] = await Promise.all([
-        reviewsService.list(),
-        cohortsService.list(),
-        usersService.list({ role: "judge" }),
-      ]);
-
-      if (reviewsResult.success) setReviews(reviewsResult.data);
+    Promise.all([
+      cohortsService.list(),
+      usersService.list({ role: "judge" }),
+    ]).then(([cohortsResult, usersResult]) => {
       if (cohortsResult.success) setCohorts(cohortsResult.data);
       if (usersResult.success) setJudges(usersResult.data as User[]);
-
-      setIsLoading(false);
-    }
-    loadData();
+    });
   }, []);
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
+  // Re-fetch reviews when server-side filters change
+  useEffect(() => {
+    let cancelled = false;
+    setIsLoading(true);
 
+    reviewsService
+      .list({
+        pageSize: 100,
+        status: selectedStatus !== "all" ? (selectedStatus as Review["status"]) : undefined,
+        cohortId: selectedCohort !== "all" ? selectedCohort : undefined,
+      })
+      .then((result) => {
+        if (cancelled) return;
+        if (result.success) setReviews(result.data);
+        setIsLoading(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [selectedStatus, selectedCohort]);
+
+  // Status and cohort are filtered server-side; search and judge are client-side
   const filteredReviews = reviews.filter((review) => {
     const matchesSearch =
       search === "" ||
       review.judge?.name.toLowerCase().includes(search.toLowerCase()) ||
       review.submission?.title?.toLowerCase().includes(search.toLowerCase());
 
-    const matchesCohort =
-      selectedCohort === "all" || review.submission?.cohortId === selectedCohort;
-
-    const matchesStatus =
-      selectedStatus === "all" || review.status === selectedStatus;
-
     const matchesJudge =
       selectedJudge === "all" || review.judgeId === selectedJudge;
 
-    return matchesSearch && matchesCohort && matchesStatus && matchesJudge;
+    return matchesSearch && matchesJudge;
   });
 
   const completedReviews = reviews.filter((r) => r.status === "completed").length;
@@ -193,7 +194,13 @@ export default function AdminReviewsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredReviews.length === 0 ? (
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-12">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground mx-auto" />
+                </TableCell>
+              </TableRow>
+            ) : filteredReviews.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-8">
                   <p className="text-muted-foreground">No reviews found</p>

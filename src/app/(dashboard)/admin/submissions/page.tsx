@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { submissionsService, cohortsService } from "@/services";
 import { AdminNav } from "@/components/admin/admin-nav";
@@ -27,49 +27,51 @@ import type { Submission, Cohort } from "@/types";
 
 export default function AdminSubmissionsPage() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [cohorts, setCohorts] = useState<Cohort[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedCohort, setSelectedCohort] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  useEffect(() => {
-    async function loadData() {
-      const [submissionsResult, cohortsResult] = await Promise.all([
-        submissionsService.list(),
-        cohortsService.list(),
-      ]);
-
-      if (submissionsResult.success) setSubmissions(submissionsResult.data);
-      if (cohortsResult.success) setCohorts(cohortsResult.data);
-
-      setIsLoading(false);
-    }
-    loadData();
+  const handleSearchChange = useCallback((value: string) => {
+    setSearch(value);
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => setDebouncedSearch(value), 300);
   }, []);
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
+  // Load cohorts once
+  useEffect(() => {
+    cohortsService.list().then((result) => {
+      if (result.success) setCohorts(result.data);
+    });
+  }, []);
 
-  const filteredSubmissions = submissions.filter((submission) => {
-    const matchesSearch =
-      search === "" ||
-      submission.title.toLowerCase().includes(search.toLowerCase()) ||
-      (submission.team?.name || "Solo").toLowerCase().includes(search.toLowerCase());
+  // Re-fetch submissions when server-side filters change
+  useEffect(() => {
+    let cancelled = false;
+    setIsLoading(true);
 
-    const matchesCohort =
-      selectedCohort === "all" || submission.cohortId === selectedCohort;
+    submissionsService
+      .list({
+        pageSize: 100,
+        status: selectedStatus !== "all" ? (selectedStatus as Submission["status"]) : undefined,
+        cohortId: selectedCohort !== "all" ? selectedCohort : undefined,
+        search: debouncedSearch || undefined,
+      })
+      .then((result) => {
+        if (cancelled) return;
+        if (result.success) {
+          setSubmissions(result.data);
+          setTotalCount(result.total);
+        }
+        setIsLoading(false);
+      });
 
-    const matchesStatus =
-      selectedStatus === "all" || submission.status === selectedStatus;
-
-    return matchesSearch && matchesCohort && matchesStatus;
-  });
+    return () => { cancelled = true; };
+  }, [selectedStatus, selectedCohort, debouncedSearch]);
 
   return (
     <div className="space-y-10">
@@ -93,9 +95,9 @@ export default function AdminSubmissionsPage() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search by title or team..."
+            placeholder="Search by title..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             className="pl-10"
           />
         </div>
@@ -142,14 +144,20 @@ export default function AdminSubmissionsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredSubmissions.length === 0 ? (
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-12">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground mx-auto" />
+                </TableCell>
+              </TableRow>
+            ) : submissions.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="text-center py-12">
                   <p className="text-sm text-muted-foreground">No submissions found.</p>
                 </TableCell>
               </TableRow>
             ) : (
-              filteredSubmissions.map((submission) => (
+              submissions.map((submission) => (
                 <TableRow key={submission.id}>
                   <TableCell>
                     <div>
@@ -215,7 +223,7 @@ export default function AdminSubmissionsPage() {
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Showing {filteredSubmissions.length} of {submissions.length} submissions
+        Showing {submissions.length} of {totalCount} submissions
       </p>
     </div>
   );

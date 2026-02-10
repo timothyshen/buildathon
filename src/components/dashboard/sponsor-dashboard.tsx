@@ -53,7 +53,7 @@ export function SponsorDashboard() {
         sponsorsService.getSponsorCohorts(orgId),
         cohortsService.list(),
         tracksService.getBySponsor(orgId),
-        submissionsService.list(),
+        submissionsService.getByTrackSponsor(orgId),
         workshopsService.getBySponsor(orgId),
       ]);
 
@@ -99,14 +99,9 @@ export function SponsorDashboard() {
 
   // Get sponsor's tracks
   const sponsorTracks = tracks;
-  const sponsorTrackIds = sponsorTracks.map((t) => t.id);
 
-  // Get submissions to sponsor tracks (review queue)
-  const trackSubmissions = submissions.filter(
-    (s) =>
-      (s.trackId && sponsorTrackIds.includes(s.trackId)) ||
-      (s.trackIds && s.trackIds.some((id) => sponsorTrackIds.includes(id)))
-  );
+  // Submissions are already scoped to sponsor tracks via getByTrackSponsor
+  const trackSubmissions = submissions;
   const pendingSubmissions = trackSubmissions.filter((s) => s.status === "submitted" || s.status === "under_review");
 
   // Get sponsor's workshops

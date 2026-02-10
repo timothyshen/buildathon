@@ -5,11 +5,10 @@ import { useRouter } from "next/navigation";
 import {
   reviewsService,
   submissionsService,
-  sponsorsService,
   tracksService,
 } from "@/services";
 import { useAuth } from "@/contexts/auth-context";
-import type { Review, Submission, Track, SponsorOrg } from "@/types";
+import type { Review, Submission, Track } from "@/types";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -32,75 +31,59 @@ export default function SponsorReviewsPage() {
   const { user } = useAuth();
   const router = useRouter();
 
-  const [sponsorOrg, setSponsorOrg] = useState<SponsorOrg | null>(null);
   const [trackSubmissions, setTrackSubmissions] = useState<TrackSubmission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [creatingReviewFor, setCreatingReviewFor] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadData() {
-      if (!user) {
+      if (!user?.sponsorOrgId) {
         setIsLoading(false);
         return;
       }
 
-      // Get sponsor org for this user
-      const orgResult = await sponsorsService.getOrgByUser(user.id);
-      if (!orgResult.success || !orgResult.data) {
-        setIsLoading(false);
-        return;
-      }
-      setSponsorOrg(orgResult.data);
+      // Fetch tracks and submissions in parallel (no sequential waterfall)
+      const [tracksResult, submissionsResult] = await Promise.all([
+        tracksService.getBySponsor(user.sponsorOrgId),
+        submissionsService.getByTrackSponsor(user.sponsorOrgId),
+      ]);
 
-      // Get tracks for this sponsor org
-      const tracksResult = await tracksService.getBySponsor(orgResult.data.id);
-      if (!tracksResult.success) {
+      if (!tracksResult.success || !submissionsResult.success) {
         setIsLoading(false);
         return;
       }
 
-      // Fetch all track submissions in parallel
-      const trackSubmissionResults = await Promise.all(
-        tracksResult.data.map((track) => submissionsService.getByTrack(track.id))
-      );
+      const submissions = submissionsResult.data;
+      const tracks = tracksResult.data;
 
-      // Deduplicate submissions across tracks
-      const seenSubmissionIds = new Set<string>();
-      const uniqueSubmissions: { submission: Submission; track: Track }[] = [];
+      // Build a track lookup for display
+      const trackMap = new Map<string, Track>(tracks.map((t) => [t.id, t]));
 
-      tracksResult.data.forEach((track, index) => {
-        const subResult = trackSubmissionResults[index];
-        if (!subResult.success) return;
+      // Batch-fetch all reviews for these submissions (1 query instead of N)
+      const submissionIds = submissions.map((s) => s.id);
+      const reviewsResult = await reviewsService.getBySubmissions(submissionIds);
+      const allReviews = reviewsResult.success ? reviewsResult.data : [];
 
-        for (const submission of subResult.data) {
-          if (seenSubmissionIds.has(submission.id)) continue;
-          seenSubmissionIds.add(submission.id);
-          uniqueSubmissions.push({ submission, track });
-        }
+      // Group reviews by submission ID
+      const reviewsBySubmission = new Map<string, Review[]>();
+      for (const review of allReviews) {
+        const existing = reviewsBySubmission.get(review.submissionId) || [];
+        existing.push(review);
+        reviewsBySubmission.set(review.submissionId, existing);
+      }
+
+      const allTrackSubmissions: TrackSubmission[] = submissions.map((submission) => {
+        const track = (submission.trackId && trackMap.get(submission.trackId)) || tracks[0];
+        const submissionReviews = reviewsBySubmission.get(submission.id) || [];
+        const existingReview = submissionReviews.find((r) => r.judgeId === user.id) || null;
+        return { submission, track, review: existingReview };
       });
-
-      // Fetch all reviews in parallel
-      const reviewResults = await Promise.all(
-        uniqueSubmissions.map(({ submission }) =>
-          reviewsService.getBySubmission(submission.id)
-        )
-      );
-
-      const allTrackSubmissions: TrackSubmission[] = uniqueSubmissions.map(
-        ({ submission, track }, index) => {
-          const reviewsResult = reviewResults[index];
-          const existingReview = reviewsResult.success
-            ? reviewsResult.data.find((r) => r.judgeId === user.id)
-            : null;
-          return { submission, track, review: existingReview || null };
-        }
-      );
 
       setTrackSubmissions(allTrackSubmissions);
       setIsLoading(false);
     }
     loadData();
-  }, [user]);
+  }, [user?.sponsorOrgId, user?.id]);
 
   const handleReview = async (item: TrackSubmission) => {
     if (!user) return;
@@ -138,16 +121,6 @@ export default function SponsorReviewsPage() {
     );
   }
 
-  if (!sponsorOrg) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <p className="text-sm text-muted-foreground">
-          No sponsor organization found for your account.
-        </p>
-      </div>
-    );
-  }
-
   const reviewedCount = trackSubmissions.filter(
     (ts) => ts.review?.status === "completed"
   ).length;
@@ -163,7 +136,7 @@ export default function SponsorReviewsPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Track Reviews</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Review submissions that selected your track ({sponsorOrg.name})
+          Review submissions that selected your track
         </p>
       </div>
 

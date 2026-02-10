@@ -31,6 +31,7 @@ export interface ReviewsService {
   // Queries
   getByJudge(judgeId: string): Promise<ServiceResponse<Review[]>>;
   getBySubmission(submissionId: string): Promise<ServiceResponse<Review[]>>;
+  getBySubmissions(submissionIds: string[]): Promise<ServiceResponse<Review[]>>;
   list(options?: QueryOptions & { status?: Review["status"]; cohortId?: string }): Promise<PaginatedResponse<Review>>;
 
   // Actions
@@ -291,6 +292,32 @@ async function getBySubmission(submissionId: string): Promise<ServiceResponse<Re
   return success(reviews);
 }
 
+async function getBySubmissions(submissionIds: string[]): Promise<ServiceResponse<Review[]>> {
+  if (submissionIds.length === 0) return success([]);
+
+  const supabase = createClient();
+
+  const { data, error: dbError } = await supabase
+    .from("reviews")
+    .select(`
+      *,
+      users!reviews_judge_id_fkey (*)
+    `)
+    .in("submission_id", submissionIds)
+    .order("created_at", { ascending: false });
+
+  if (dbError) {
+    return error(dbError.message, []);
+  }
+
+  const reviews = (data || []).map((row) => {
+    const judge = row.users ? toUser(row.users as Record<string, unknown>) : undefined;
+    return toReview(row, judge);
+  });
+
+  return success(reviews);
+}
+
 async function list(
   options?: QueryOptions & { status?: Review["status"]; cohortId?: string }
 ): Promise<PaginatedResponse<Review>> {
@@ -441,6 +468,7 @@ export const reviewsService: ReviewsService = {
   delete: deleteReview,
   getByJudge,
   getBySubmission,
+  getBySubmissions,
   list,
   submitReview,
 };
