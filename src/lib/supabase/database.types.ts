@@ -26,6 +26,7 @@ export type Database = {
           github: string | null;
           sponsor_org_id: string | null;
           has_completed_onboarding: boolean;
+          notification_preferences: Json;
           created_at: string;
           updated_at: string;
         };
@@ -41,6 +42,7 @@ export type Database = {
           github?: string | null;
           sponsor_org_id?: string | null;
           has_completed_onboarding?: boolean;
+          notification_preferences?: Json;
           created_at?: string;
           updated_at?: string;
         };
@@ -56,6 +58,7 @@ export type Database = {
           github?: string | null;
           sponsor_org_id?: string | null;
           has_completed_onboarding?: boolean;
+          notification_preferences?: Json;
           created_at?: string;
           updated_at?: string;
         };
@@ -1429,6 +1432,85 @@ export type Database = {
           }
         ];
       };
+      notifications: {
+        Row: {
+          id: string;
+          user_id: string;
+          type: "submission_status_changed" | "review_received" | "deadline_reminder" | "team_invite" | "winner_announced" | "review_assigned" | "review_deadline" | "new_track_submission" | "track_review_completed" | "new_submission" | "new_user" | "new_feedback";
+          title: string;
+          body: string;
+          href: string | null;
+          read_at: string | null;
+          metadata: Json;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          type: "submission_status_changed" | "review_received" | "deadline_reminder" | "team_invite" | "winner_announced" | "review_assigned" | "review_deadline" | "new_track_submission" | "track_review_completed" | "new_submission" | "new_user" | "new_feedback";
+          title: string;
+          body: string;
+          href?: string | null;
+          read_at?: string | null;
+          metadata?: Json;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          type?: "submission_status_changed" | "review_received" | "deadline_reminder" | "team_invite" | "winner_announced" | "review_assigned" | "review_deadline" | "new_track_submission" | "track_review_completed" | "new_submission" | "new_user" | "new_feedback";
+          title?: string;
+          body?: string;
+          href?: string | null;
+          read_at?: string | null;
+          metadata?: Json;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      push_subscriptions: {
+        Row: {
+          id: string;
+          user_id: string;
+          endpoint: string;
+          p256dh: string;
+          auth: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          endpoint: string;
+          p256dh: string;
+          auth: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          endpoint?: string;
+          p256dh?: string;
+          auth?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -1476,6 +1558,7 @@ export type Database = {
       referral_status: "pending" | "credited";
       feedback_status: "open" | "planned" | "in_progress" | "completed" | "declined";
       feedback_category: "feature_request" | "bug_report" | "improvement";
+      notification_type: "submission_status_changed" | "review_received" | "deadline_reminder" | "team_invite" | "winner_announced" | "review_assigned" | "review_deadline" | "new_track_submission" | "track_review_completed" | "new_submission" | "new_user" | "new_feedback";
     };
     CompositeTypes: Record<string, never>;
   };

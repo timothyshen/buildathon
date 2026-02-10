@@ -1,5 +1,13 @@
 export type UserRole = "admin" | "sponsor" | "judge" | "participant";
 
+export interface NotificationPreferences {
+  push_enabled: boolean;
+  submission_updates: boolean;
+  review_alerts: boolean;
+  deadline_reminders: boolean;
+  team_activity: boolean;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -12,6 +20,7 @@ export interface User {
   twitter?: string;
   github?: string;
   hasCompletedOnboarding?: boolean;
+  notificationPreferences?: NotificationPreferences;
   createdAt: Date;
 }
 
@@ -456,4 +465,40 @@ export interface FeedbackComment {
   createdAt: Date;
   updatedAt: Date;
   replies?: FeedbackComment[];
+}
+
+// Notifications
+export type NotificationType =
+  | "submission_status_changed"
+  | "review_received"
+  | "deadline_reminder"
+  | "team_invite"
+  | "winner_announced"
+  | "review_assigned"
+  | "review_deadline"
+  | "new_track_submission"
+  | "track_review_completed"
+  | "new_submission"
+  | "new_user"
+  | "new_feedback";
+
+export interface Notification {
+  id: string;
+  userId: string;
+  type: NotificationType;
+  title: string;
+  body: string;
+  href?: string;
+  readAt?: Date;
+  metadata?: Record<string, unknown>;
+  createdAt: Date;
+}
+
+export interface PushSubscription {
+  id: string;
+  userId: string;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  createdAt: Date;
 }

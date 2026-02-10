@@ -4,7 +4,7 @@
  */
 
 import { createClient } from "@/lib/supabase/client";
-import type { User } from "@/types";
+import type { User, NotificationPreferences } from "@/types";
 import type { ServiceResponse, QueryOptions, PaginatedResponse } from "./types";
 import { success, error, paginated } from "./types";
 
@@ -29,6 +29,7 @@ function toUser(row: Record<string, unknown>): User {
     github: row.github as string | undefined,
     sponsorOrgId: row.sponsor_org_id as string | undefined,
     hasCompletedOnboarding: row.has_completed_onboarding as boolean | undefined,
+    notificationPreferences: row.notification_preferences as NotificationPreferences | undefined,
     createdAt: new Date(row.created_at as string),
   };
 }
@@ -119,6 +120,7 @@ async function update(id: string, data: Partial<User>): Promise<ServiceResponse<
   if (data.hasCompletedOnboarding !== undefined) updateData.has_completed_onboarding = data.hasCompletedOnboarding;
   if (data.role !== undefined) updateData.role = data.role;
   if (data.sponsorOrgId !== undefined) updateData.sponsor_org_id = data.sponsorOrgId;
+  if (data.notificationPreferences !== undefined) updateData.notification_preferences = data.notificationPreferences;
 
   const { data: updated, error: updateError } = await supabase
     .from("users")
