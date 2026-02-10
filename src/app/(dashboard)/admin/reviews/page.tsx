@@ -111,7 +111,7 @@ export default function AdminReviewsPage() {
       </div>
 
       {/* Stats */}
-      <div className="rounded-xl border divide-x grid grid-cols-4">
+      <div className="rounded-xl border grid grid-cols-2 md:grid-cols-4 md:divide-x">
         <div className="px-6 py-4">
           <p className="text-xs text-muted-foreground mb-1">Total Reviews</p>
           <p className="text-3xl font-mono font-semibold tabular-nums">{reviews.length}</p>
@@ -217,20 +217,20 @@ export default function AdminReviewsPage() {
                           {review.judge?.name ? getInitials(review.judge.name) : "?"}
                         </AvatarFallback>
                       </Avatar>
-                      <div>
-                        <p className="font-medium">{review.judge?.name || "Unknown"}</p>
-                        <p className="text-xs text-muted-foreground">
+                      <div className="min-w-0">
+                        <p className="font-medium truncate">{review.judge?.name || "Unknown"}</p>
+                        <p className="text-xs text-muted-foreground truncate">
                           {review.judge?.email}
                         </p>
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div>
-                      <p className="font-medium">
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">
                         {review.submission?.title || "Unknown Submission"}
                       </p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground truncate">
                         {review.submission?.team?.name || "Solo"}
                       </p>
                     </div>
@@ -267,7 +267,7 @@ export default function AdminReviewsPage() {
                       : new Date(review.createdAt).toLocaleDateString()}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
+                    <Button variant="ghost" size="icon" className="h-9 w-9 md:h-7 md:w-7" asChild>
                       <Link href={`/admin/reviews/${review.id}`}>
                         <Eye className="h-4 w-4" />
                       </Link>
