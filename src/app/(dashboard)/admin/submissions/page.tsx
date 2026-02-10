@@ -198,19 +198,19 @@ export default function AdminSubmissionsPage() {
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
                       {submission.demoUrl && (
-                        <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
+                        <Button variant="ghost" size="icon" className="h-9 w-9 md:h-7 md:w-7" asChild>
                           <a
                             href={submission.demoUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                           >
-                            <ExternalLink className="h-3.5 w-3.5" />
+                            <ExternalLink className="h-4 w-4 md:h-3.5 md:w-3.5" />
                           </a>
                         </Button>
                       )}
-                      <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
+                      <Button variant="ghost" size="icon" className="h-9 w-9 md:h-7 md:w-7" asChild>
                         <Link href={`/admin/submissions/${submission.id}`}>
-                          <Eye className="h-3.5 w-3.5" />
+                          <Eye className="h-4 w-4 md:h-3.5 md:w-3.5" />
                         </Link>
                       </Button>
                     </div>
