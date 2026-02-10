@@ -24,12 +24,15 @@ export default function DashboardLayout({
     }
   }, [user, isLoading, pathname, router]);
 
-  if (isLoading) {
-    return <Loading fullScreen label="Loading..." />;
-  }
+  // Safety valve: if loading is done but no user, hard redirect to /login.
+  // Uses window.location.href (not router.push) to clear stale middleware cookies.
+  useEffect(() => {
+    if (!isLoading && !user) {
+      window.location.href = "/login";
+    }
+  }, [isLoading, user]);
 
-  if (!user) {
-    // Middleware will redirect to /login - render nothing while that happens
+  if (isLoading || !user) {
     return <Loading fullScreen label="Loading..." />;
   }
 

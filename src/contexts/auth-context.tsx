@@ -252,8 +252,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
-    await authService.logout();
     setUser(null);
+    authRequestIdRef.current = 0;
+    await authService.logout();
   }, []);
 
   // Complete onboarding and update user profile

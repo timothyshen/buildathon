@@ -141,7 +141,7 @@ async function register(data: RegisterData): Promise<ServiceResponse<User>> {
 async function logout(): Promise<ServiceResponse<void>> {
   const supabase = createClient();
 
-  const { error: authError } = await supabase.auth.signOut();
+  const { error: authError } = await supabase.auth.signOut({ scope: 'global' });
 
   if (authError) {
     return error(authError.message, undefined);
