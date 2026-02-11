@@ -69,6 +69,7 @@ export default function EditCohortPage({ params }: EditCohortPageProps) {
         status: data.status,
         isPublic: data.isPublic,
         maxTeamSize: data.maxTeamSize,
+        minReviewsPerSubmission: data.minReviewsPerSubmission,
         prizes: data.prizes || [],
       };
 

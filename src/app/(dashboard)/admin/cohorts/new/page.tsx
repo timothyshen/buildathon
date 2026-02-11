@@ -48,6 +48,7 @@ export default function NewCohortPage() {
         status: data.status,
         isPublic: data.isPublic,
         maxTeamSize: data.maxTeamSize,
+        minReviewsPerSubmission: data.minReviewsPerSubmission,
         prizes: data.prizes || [],
       };
 

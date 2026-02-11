@@ -106,11 +106,13 @@ export function CohortPageForm({
           status: cohort.status,
           isPublic: cohort.isPublic,
           maxTeamSize: cohort.maxTeamSize,
+          minReviewsPerSubmission: cohort.minReviewsPerSubmission,
         }
       : {
           status: "draft",
           isPublic: false,
           maxTeamSize: 5,
+          minReviewsPerSubmission: 3,
           bannerImage: "",
         },
   });
@@ -147,7 +149,7 @@ export function CohortPageForm({
     const fieldsToValidate: (keyof CohortFormData)[][] = [
       ["name", "slug", "description"],
       ["startDate", "endDate", "submissionDeadline", "judgingStart", "judgingEnd"],
-      ["status", "isPublic", "maxTeamSize"],
+      ["status", "isPublic", "maxTeamSize", "minReviewsPerSubmission"],
       [], // Prizes - no form validation needed
       [], // Sponsors - no form validation needed
     ];
@@ -203,7 +205,7 @@ export function CohortPageForm({
   const fieldStepMap: Record<string, number> = {
     name: 0, slug: 0, description: 0, tagline: 0, bannerImage: 0,
     startDate: 1, endDate: 1, submissionDeadline: 1, judgingStart: 1, judgingEnd: 1,
-    status: 2, isPublic: 2, maxTeamSize: 2,
+    status: 2, isPublic: 2, maxTeamSize: 2, minReviewsPerSubmission: 2,
   };
 
   const onValidationError = useCallback((fieldErrors: FieldErrors<CohortFormData>) => {
@@ -426,6 +428,20 @@ export function CohortPageForm({
                 />
                 {errors.maxTeamSize && (
                   <p className="text-xs text-destructive">{errors.maxTeamSize.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="minReviewsPerSubmission" className="text-xs text-muted-foreground">Min Reviews Per Submission</Label>
+                <Input
+                  id="minReviewsPerSubmission"
+                  type="number"
+                  min={1}
+                  max={10}
+                  {...register("minReviewsPerSubmission", { valueAsNumber: true })}
+                />
+                {errors.minReviewsPerSubmission && (
+                  <p className="text-xs text-destructive">{errors.minReviewsPerSubmission.message}</p>
                 )}
               </div>
 

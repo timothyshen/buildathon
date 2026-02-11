@@ -10,6 +10,9 @@ import {
   tracksService,
   sponsorsService,
   submissionsService,
+  cohortJudgesService,
+  reviewsService,
+  usersService,
 } from "@/services";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
@@ -31,15 +34,28 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import {
   ExternalLink,
   Eye,
   Pencil,
   Loader2,
+  Plus,
+  Trash2,
+  Wand2,
+  Search,
 } from "lucide-react";
 import { RichTextDisplay } from "@/components/ui/rich-text-editor";
 import { toast } from "sonner";
-import type { Cohort, Track, Submission } from "@/types";
+import type { Cohort, Track, Submission, Review, User } from "@/types";
 import type { CohortSponsorWithOrg } from "@/services/sponsors.service";
+import type { CohortJudgeWithUser } from "@/services/cohort-judges.service";
 
 function getStatusDotColor(status: string) {
   switch (status) {
@@ -84,9 +100,15 @@ export default function AdminCohortDetailPage({ params }: AdminCohortDetailPageP
   const [tracks, setTracks] = useState<Track[]>([]);
   const [sponsors, setSponsors] = useState<CohortSponsorWithOrg[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [cohortJudges, setCohortJudges] = useState<CohortJudgeWithUser[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [status, setStatus] = useState<Cohort["status"] | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isAutoAssigning, setIsAutoAssigning] = useState(false);
+  const [showAddJudge, setShowAddJudge] = useState(false);
+  const [allJudges, setAllJudges] = useState<User[]>([]);
+  const [judgeSearch, setJudgeSearch] = useState("");
 
   useEffect(() => {
     async function loadData() {
@@ -105,15 +127,19 @@ export default function AdminCohortDetailPage({ params }: AdminCohortDetailPageP
 
       setCohort(cohortResult.data);
 
-      const [tracksResult, sponsorsResult, submissionsResult] = await Promise.all([
+      const [tracksResult, sponsorsResult, submissionsResult, judgesResult, reviewsResult] = await Promise.all([
         tracksService.getByCohort(id),
         sponsorsService.getCohortSponsors(id),
         submissionsService.getByCohort(id),
+        cohortJudgesService.getByCohort(id),
+        reviewsService.list({ cohortId: id, pageSize: 200 }),
       ]);
 
       if (tracksResult.success) setTracks(tracksResult.data);
       if (sponsorsResult.success) setSponsors(sponsorsResult.data);
       if (submissionsResult.success) setSubmissions(submissionsResult.data);
+      if (judgesResult.success) setCohortJudges(judgesResult.data);
+      if (reviewsResult.success) setReviews(reviewsResult.data);
 
       setIsLoading(false);
     }
@@ -142,6 +168,61 @@ export default function AdminCohortDetailPage({ params }: AdminCohortDetailPageP
   }
 
   const currentStatus = status ?? cohort.status;
+
+  const handleOpenAddJudge = async () => {
+    setJudgeSearch("");
+    setShowAddJudge(true);
+    const result = await usersService.list({ role: "judge", pageSize: 100 });
+    if (result.success) setAllJudges(result.data);
+  };
+
+  const handleAddJudge = async (judgeId: string) => {
+    const result = await cohortJudgesService.add(id, judgeId);
+    if (result.success) {
+      // Reload judges list to get the full user data
+      const judgesResult = await cohortJudgesService.getByCohort(id);
+      if (judgesResult.success) setCohortJudges(judgesResult.data);
+      toast.success("Judge added to cohort");
+    } else {
+      toast.error(result.error || "Failed to add judge");
+    }
+  };
+
+  const handleRemoveJudge = async (cohortJudgeId: string) => {
+    const result = await cohortJudgesService.remove(cohortJudgeId);
+    if (result.success) {
+      setCohortJudges((prev) => prev.filter((cj) => cj.id !== cohortJudgeId));
+      toast.success("Judge removed from cohort");
+    } else {
+      toast.error(result.error || "Failed to remove judge");
+    }
+  };
+
+  const handleAutoAssign = async () => {
+    setIsAutoAssigning(true);
+    try {
+      const res = await fetch("/api/reviews/auto-assign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cohortId: id }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Auto-assign failed");
+        return;
+      }
+      toast.success(
+        `Created ${data.created} review assignments (${data.skipped} conflicts skipped)`
+      );
+      // Refresh reviews
+      const reviewsResult = await reviewsService.list({ cohortId: id, pageSize: 200 });
+      if (reviewsResult.success) setReviews(reviewsResult.data);
+    } catch {
+      toast.error("Auto-assign failed");
+    } finally {
+      setIsAutoAssigning(false);
+    }
+  };
 
   const handleStatusChange = async (newStatus: Cohort["status"]) => {
     setIsUpdating(true);
@@ -235,6 +316,7 @@ export default function AdminCohortDetailPage({ params }: AdminCohortDetailPageP
           <TabsTrigger value="submissions">Submissions ({submissions.length})</TabsTrigger>
           <TabsTrigger value="sponsors">Sponsors ({sponsors.length})</TabsTrigger>
           <TabsTrigger value="tracks">Tracks ({tracks.length})</TabsTrigger>
+          <TabsTrigger value="judging">Judging ({cohortJudges.length})</TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
@@ -339,6 +421,12 @@ export default function AdminCohortDetailPage({ params }: AdminCohortDetailPageP
                     <span className="text-sm">Max Team Size</span>
                     <span className="text-sm text-muted-foreground">
                       {cohort.maxTeamSize} members
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Min Reviews</span>
+                    <span className="text-sm text-muted-foreground">
+                      {cohort.minReviewsPerSubmission} per submission
                     </span>
                   </div>
                 </div>
@@ -488,7 +576,197 @@ export default function AdminCohortDetailPage({ params }: AdminCohortDetailPageP
             )}
           </div>
         </TabsContent>
+
+        {/* Judging Tab */}
+        <TabsContent value="judging" className="space-y-8">
+          {/* Assigned Judges */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">
+                Assigned Judges
+              </p>
+              <div className="flex gap-2">
+                <Button variant="ghost" size="sm" onClick={handleOpenAddJudge}>
+                  <Plus className="mr-1 h-3.5 w-3.5" />
+                  Add Judge
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleAutoAssign}
+                  disabled={isAutoAssigning || cohortJudges.length === 0}
+                  className="bg-foreground text-background hover:bg-foreground/90"
+                >
+                  {isAutoAssigning ? (
+                    <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Wand2 className="mr-1 h-3.5 w-3.5" />
+                  )}
+                  Auto-Assign Reviews
+                </Button>
+              </div>
+            </div>
+
+            {cohortJudges.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground text-sm">No judges assigned yet</p>
+                <p className="text-xs text-muted-foreground mt-1">Add judges to start assigning reviews</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {cohortJudges.map((cj) => {
+                  const judgeReviews = reviews.filter((r) => r.judgeId === cj.judgeId);
+                  const completed = judgeReviews.filter((r) => r.status === "completed").length;
+                  return (
+                    <div key={cj.id} className="rounded-xl border py-3 px-4 flex items-center justify-between group">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={cj.judge.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${cj.judge.email}`}
+                          alt={cj.judge.name}
+                          className="h-8 w-8 rounded-full"
+                        />
+                        <div>
+                          <p className="text-sm font-medium">{cj.judge.name}</p>
+                          <p className="text-xs text-muted-foreground">{cj.judge.email}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="text-right">
+                          <p className="text-xs text-muted-foreground">Reviews</p>
+                          <p className="text-sm font-mono tabular-nums">
+                            <span className="text-emerald-600">{completed}</span>
+                            <span className="text-muted-foreground">/{judgeReviews.length}</span>
+                          </p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100"
+                          onClick={() => handleRemoveJudge(cj.id)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Review Progress */}
+          <div>
+            <p className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
+              Review Progress
+            </p>
+            <div className="rounded-xl border overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Submission</TableHead>
+                    <TableHead className="hidden md:table-cell">Team</TableHead>
+                    <TableHead>Reviews</TableHead>
+                    <TableHead className="hidden md:table-cell">Avg Score</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {submissions.filter((s) => s.status !== "draft").length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center py-8">
+                        <p className="text-muted-foreground text-sm">No submissions to review</p>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    submissions
+                      .filter((s) => s.status !== "draft")
+                      .map((sub) => {
+                        const subReviews = reviews.filter((r) => r.submissionId === sub.id);
+                        const completedReviews = subReviews.filter((r) => r.status === "completed");
+                        const needed = cohort.minReviewsPerSubmission || 3;
+                        const avgScore = completedReviews.length > 0
+                          ? completedReviews.reduce((sum, r) => sum + (r.overallScore || 0), 0) / completedReviews.length
+                          : 0;
+                        return (
+                          <TableRow key={sub.id}>
+                            <TableCell>
+                              <Link href={`/admin/submissions/${sub.id}`} className="hover:underline">
+                                <p className="text-sm font-medium">{sub.title}</p>
+                              </Link>
+                            </TableCell>
+                            <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
+                              {sub.team?.name || "Solo"}
+                            </TableCell>
+                            <TableCell>
+                              <span className={`font-mono text-sm tabular-nums ${completedReviews.length >= needed ? "text-emerald-600" : "text-amber-600"}`}>
+                                {completedReviews.length}/{needed}
+                              </span>
+                            </TableCell>
+                            <TableCell className="hidden md:table-cell">
+                              {completedReviews.length > 0 ? (
+                                <span className="font-mono text-sm tabular-nums">{avgScore.toFixed(1)}</span>
+                              ) : (
+                                <span className="text-muted-foreground text-sm">-</span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </TabsContent>
       </Tabs>
+
+      {/* Add Judge Dialog */}
+      <Dialog open={showAddJudge} onOpenChange={setShowAddJudge}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Judge to {cohort.name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search judges..."
+                value={judgeSearch}
+                onChange={(e) => setJudgeSearch(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <div className="max-h-[300px] overflow-y-auto space-y-1">
+              {allJudges
+                .filter((j) => !cohortJudges.some((cj) => cj.judgeId === j.id))
+                .filter((j) =>
+                  judgeSearch
+                    ? j.name.toLowerCase().includes(judgeSearch.toLowerCase()) ||
+                      j.email.toLowerCase().includes(judgeSearch.toLowerCase())
+                    : true
+                )
+                .map((judge) => (
+                  <button
+                    key={judge.id}
+                    onClick={() => handleAddJudge(judge.id)}
+                    className="w-full flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-muted/50 transition-colors text-left"
+                  >
+                    <img
+                      src={judge.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${judge.email}`}
+                      alt={judge.name}
+                      className="h-8 w-8 rounded-full"
+                    />
+                    <div>
+                      <p className="text-sm font-medium">{judge.name}</p>
+                      <p className="text-xs text-muted-foreground">{judge.email}</p>
+                    </div>
+                  </button>
+                ))}
+              {allJudges.filter((j) => !cohortJudges.some((cj) => cj.judgeId === j.id)).length === 0 && (
+                <p className="text-center text-sm text-muted-foreground py-4">No available judges</p>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
