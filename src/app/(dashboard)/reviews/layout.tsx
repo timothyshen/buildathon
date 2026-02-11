@@ -13,9 +13,10 @@ export default function ReviewsLayout({
   const router = useRouter();
   const { user, isLoading } = useAuth();
 
+  const allowedRoles = ["judge", "admin", "sponsor"];
+
   useEffect(() => {
-    // Only judges can access the reviews section
-    if (!isLoading && user && user.role !== "judge") {
+    if (!isLoading && user && !allowedRoles.includes(user.role)) {
       router.push("/dashboard");
     }
   }, [user, isLoading, router]);
@@ -24,7 +25,7 @@ export default function ReviewsLayout({
     return <Loading fullScreen label="Loading..." />;
   }
 
-  if (!user || user.role !== "judge") {
+  if (!user || !allowedRoles.includes(user.role)) {
     return <Loading fullScreen label="Loading..." />;
   }
 

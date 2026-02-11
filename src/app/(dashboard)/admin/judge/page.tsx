@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
 import {
   reviewsService,
@@ -95,11 +96,6 @@ export default function AdminJudgePage() {
 
   const handleJudge = async (item: SubmissionWithReview) => {
     if (!user) return;
-
-    if (item.review) {
-      router.push(`/reviews/${item.review.id}?from=admin`);
-      return;
-    }
 
     setCreatingReviewFor(item.submission.id);
     try {
@@ -295,19 +291,16 @@ export default function AdminJudgePage() {
                     )}
                   </TableCell>
                   <TableCell className="text-right">
-                    {item.review?.status === "completed" ? (
+                    {item.review ? (
                       <Button
-                        variant="ghost"
+                        asChild
+                        variant={item.review.status === "completed" ? "ghost" : "default"}
                         size="sm"
-                        className="text-xs"
-                        onClick={() => handleJudge(item)}
-                        disabled={creatingReviewFor === item.submission.id}
+                        className={item.review.status === "completed" ? "text-xs" : "bg-foreground text-background hover:bg-foreground/90 text-xs"}
                       >
-                        {creatingReviewFor === item.submission.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          "View"
-                        )}
+                        <Link href={`/reviews/${item.review.id}?from=admin`}>
+                          {item.review.status === "completed" ? "View" : "Continue"}
+                        </Link>
                       </Button>
                     ) : (
                       <Button
@@ -318,8 +311,6 @@ export default function AdminJudgePage() {
                       >
                         {creatingReviewFor === item.submission.id ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : item.review ? (
-                          "Continue"
                         ) : (
                           "Judge"
                         )}
