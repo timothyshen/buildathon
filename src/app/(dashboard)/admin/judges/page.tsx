@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { usersService, reviewsService, submissionsService } from "@/services";
-import type { User, Review, Submission } from "@/types";
+import { usersService, reviewsService, submissionsService, cohortJudgesService, cohortsService } from "@/services";
+import type { User, Review, Submission, Cohort } from "@/types";
+import type { CohortJudgeWithCohort } from "@/services/cohort-judges.service";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,13 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Search, UserPlus, Loader2, Users } from "lucide-react";
 import { toast } from "sonner";
 
@@ -46,16 +54,34 @@ export default function AdminJudgesPage() {
   const [isLoadingSubmissions, setIsLoadingSubmissions] = useState(false);
   const [isAssigning, setIsAssigning] = useState(false);
   const [assignSearch, setAssignSearch] = useState("");
+  const [cohortAssignments, setCohortAssignments] = useState<Map<string, CohortJudgeWithCohort[]>>(new Map());
+  const [cohorts, setCohorts] = useState<Cohort[]>([]);
+  const [assignCohortFilter, setAssignCohortFilter] = useState<string>("all");
 
   useEffect(() => {
     async function loadData() {
-      const [usersResult, reviewsResult] = await Promise.all([
+      const [usersResult, reviewsResult, cohortsResult] = await Promise.all([
         usersService.list({ role: "judge" }),
         reviewsService.list(),
+        cohortsService.list(),
       ]);
 
-      if (usersResult.success) setJudges(usersResult.data as User[]);
+      if (usersResult.success) {
+        setJudges(usersResult.data as User[]);
+        // Fetch cohort assignments for all judges
+        const assignmentResults = await Promise.all(
+          (usersResult.data as User[]).map((j) => cohortJudgesService.getByJudge(j.id))
+        );
+        const map = new Map<string, CohortJudgeWithCohort[]>();
+        (usersResult.data as User[]).forEach((j, i) => {
+          if (assignmentResults[i].success) {
+            map.set(j.id, assignmentResults[i].data);
+          }
+        });
+        setCohortAssignments(map);
+      }
       if (reviewsResult.success) setReviews(reviewsResult.data);
+      if (cohortsResult.success) setCohorts(cohortsResult.data);
       setIsLoading(false);
     }
     loadData();
@@ -76,9 +102,10 @@ export default function AdminJudgesPage() {
     setAssignJudge(judge);
     setSelectedSubmissionIds(new Set());
     setAssignSearch("");
+    setAssignCohortFilter("all");
     setIsLoadingSubmissions(true);
 
-    const result = await submissionsService.list({ status: "submitted" });
+    const result = await submissionsService.list({ status: "submitted", pageSize: 200 });
     if (result.success) {
       // Filter out submissions already assigned to this judge
       const judgeReviewSubmissionIds = new Set(
@@ -178,9 +205,10 @@ export default function AdminJudgesPage() {
 
   const filteredSubmissions = submissions.filter(
     (s) =>
-      assignSearch === "" ||
-      s.title.toLowerCase().includes(assignSearch.toLowerCase()) ||
-      (s.team?.name || "Solo").toLowerCase().includes(assignSearch.toLowerCase())
+      (assignCohortFilter === "all" || s.cohortId === assignCohortFilter) &&
+      (assignSearch === "" ||
+        s.title.toLowerCase().includes(assignSearch.toLowerCase()) ||
+        (s.team?.name || "Solo").toLowerCase().includes(assignSearch.toLowerCase()))
   );
 
   if (isLoading) {
@@ -309,6 +337,7 @@ export default function AdminJudgesPage() {
               <TableRow>
                 <TableHead>Judge</TableHead>
                 <TableHead className="hidden md:table-cell">Email</TableHead>
+                <TableHead className="hidden lg:table-cell">Cohorts</TableHead>
                 <TableHead className="hidden md:table-cell">Assigned</TableHead>
                 <TableHead>Completed</TableHead>
                 <TableHead className="hidden md:table-cell">Pending</TableHead>
@@ -351,6 +380,18 @@ export default function AdminJudgesPage() {
                       </div>
                     </TableCell>
                     <TableCell className="hidden md:table-cell">{judge.email}</TableCell>
+                    <TableCell className="hidden lg:table-cell">
+                      <div className="flex flex-wrap gap-1">
+                        {(cohortAssignments.get(judge.id) || []).map((ca) => (
+                          <span key={ca.id} className="px-2 py-0.5 text-[11px] rounded-md bg-muted text-muted-foreground">
+                            {ca.cohort.name}
+                          </span>
+                        ))}
+                        {(cohortAssignments.get(judge.id) || []).length === 0 && (
+                          <span className="text-[11px] text-muted-foreground">None</span>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell className="hidden md:table-cell">{judgeReviews.length}</TableCell>
                     <TableCell>
                       <span className="font-mono text-xs tabular-nums text-emerald-600">
@@ -394,14 +435,27 @@ export default function AdminJudgesPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search submissions..."
-              value={assignSearch}
-              onChange={(e) => setAssignSearch(e.target.value)}
-              className="pl-9"
-            />
+          <div className="flex gap-2">
+            <Select value={assignCohortFilter} onValueChange={setAssignCohortFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="All Cohorts" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Cohorts</SelectItem>
+                {cohorts.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search submissions..."
+                value={assignSearch}
+                onChange={(e) => setAssignSearch(e.target.value)}
+                className="pl-9"
+              />
+            </div>
           </div>
 
           <div className="flex-1 overflow-y-auto min-h-0 border rounded-md">

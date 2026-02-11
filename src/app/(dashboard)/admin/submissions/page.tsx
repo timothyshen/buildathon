@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
-import { submissionsService, cohortsService } from "@/services";
+import { submissionsService, cohortsService, reviewsService } from "@/services";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,7 @@ export default function AdminSubmissionsPage() {
   const [totalCount, setTotalCount] = useState(0);
   const [cohorts, setCohorts] = useState<Cohort[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [reviewCounts, setReviewCounts] = useState<Map<string, number>>(new Map());
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedCohort, setSelectedCohort] = useState<string>("all");
@@ -61,11 +62,17 @@ export default function AdminSubmissionsPage() {
         cohortId: selectedCohort !== "all" ? selectedCohort : undefined,
         search: debouncedSearch || undefined,
       })
-      .then((result) => {
+      .then(async (result) => {
         if (cancelled) return;
         if (result.success) {
           setSubmissions(result.data);
           setTotalCount(result.total);
+          // Fetch review counts for all submissions
+          const ids = result.data.map((s) => s.id);
+          if (ids.length > 0) {
+            const countsResult = await reviewsService.getReviewCountsBySubmission(ids);
+            if (!cancelled && countsResult.success) setReviewCounts(countsResult.data);
+          }
         }
         setIsLoading(false);
       });
@@ -139,6 +146,7 @@ export default function AdminSubmissionsPage() {
               <TableHead className="hidden md:table-cell">Cohort</TableHead>
               <TableHead className="hidden md:table-cell">Track</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead className="hidden md:table-cell">Reviews</TableHead>
               <TableHead className="hidden md:table-cell">Submitted</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -146,13 +154,13 @@ export default function AdminSubmissionsPage() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-12">
+                <TableCell colSpan={8} className="text-center py-12">
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground mx-auto" />
                 </TableCell>
               </TableRow>
             ) : submissions.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-12">
+                <TableCell colSpan={8} className="text-center py-12">
                   <p className="text-sm text-muted-foreground">No submissions found.</p>
                 </TableCell>
               </TableRow>
@@ -189,6 +197,19 @@ export default function AdminSubmissionsPage() {
                       }`} />
                       <span className="text-xs capitalize">{submission.status.replace("_", " ")}</span>
                     </div>
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    {submission.status !== "draft" ? (() => {
+                      const count = reviewCounts.get(submission.id) || 0;
+                      const needed = submission.cohort?.minReviewsPerSubmission || 3;
+                      return (
+                        <span className={`font-mono text-xs tabular-nums ${count >= needed ? "text-emerald-600" : "text-amber-600"}`}>
+                          {count}/{needed}
+                        </span>
+                      );
+                    })() : (
+                      <span className="text-xs text-muted-foreground">-</span>
+                    )}
                   </TableCell>
                   <TableCell className="hidden md:table-cell text-xs text-muted-foreground">
                     {submission.submittedAt
