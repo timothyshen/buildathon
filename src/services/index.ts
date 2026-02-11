@@ -22,6 +22,7 @@ export { referralsService } from "./referrals.service";
 export { feedbackService } from "./feedback.service";
 export { eventsService } from "./events.service";
 export { notificationsService } from "./notifications.service";
+export { cohortJudgesService } from "./cohort-judges.service";
 
 // Export types
 export type { ServiceResponse, PaginatedResponse, QueryOptions } from "./types";
@@ -41,3 +42,4 @@ export type { TractionService } from "./traction.service";
 export type { ReferralsService } from "./referrals.service";
 export type { FeedbackService, FeedbackListOptions, CreateFeedbackData } from "./feedback.service";
 export type { NotificationsService } from "./notifications.service";
+export type { CohortJudgesService, CohortJudgeWithUser, CohortJudgeWithCohort } from "./cohort-judges.service";

@@ -161,6 +161,7 @@ function toSubmissionFromJoinedRow(row: Record<string, unknown>): Submission {
       status: cohortData.status as Cohort["status"],
       isPublic: cohortData.is_public as boolean,
       maxTeamSize: cohortData.max_team_size as number,
+      minReviewsPerSubmission: (cohortData.min_reviews_per_submission as number) ?? 3,
       prizes: (cohortData.prizes as unknown as Prize[]) || [],
     };
   }
@@ -290,6 +291,7 @@ async function fetchSubmissionWithRelations(
       status: c.status as Cohort["status"],
       isPublic: c.is_public as boolean,
       maxTeamSize: c.max_team_size as number,
+      minReviewsPerSubmission: (c.min_reviews_per_submission as number) ?? 3,
       prizes: (c.prizes as unknown as Prize[]) || [],
     };
   }

@@ -15,6 +15,7 @@ export const cohortSchema = z.object({
   status: z.enum(["draft", "upcoming", "active", "judging", "completed"]),
   isPublic: z.boolean(),
   maxTeamSize: z.number().min(1).max(10),
+  minReviewsPerSubmission: z.number().min(1).max(10),
   prizes: z.array(z.object({
     place: z.string().min(1),
     amount: z.string().min(1),

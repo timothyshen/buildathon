@@ -36,6 +36,7 @@ function toCohort(row: Record<string, unknown>): Cohort {
     status: row.status as Cohort["status"],
     isPublic: row.is_public as boolean,
     maxTeamSize: row.max_team_size as number,
+    minReviewsPerSubmission: (row.min_reviews_per_submission as number) ?? 3,
     prizes: (row.prizes as Prize[]) || [],
   };
 }
@@ -57,6 +58,7 @@ function toDbCohort(data: Partial<Cohort>): Record<string, unknown> {
   if (data.status !== undefined) dbData.status = data.status;
   if (data.isPublic !== undefined) dbData.is_public = data.isPublic;
   if (data.maxTeamSize !== undefined) dbData.max_team_size = data.maxTeamSize;
+  if (data.minReviewsPerSubmission !== undefined) dbData.min_reviews_per_submission = data.minReviewsPerSubmission;
   if (data.prizes !== undefined) dbData.prizes = data.prizes;
 
   return dbData;

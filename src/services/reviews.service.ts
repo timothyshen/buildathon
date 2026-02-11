@@ -34,6 +34,9 @@ export interface ReviewsService {
   getBySubmissions(submissionIds: string[]): Promise<ServiceResponse<Review[]>>;
   list(options?: QueryOptions & { status?: Review["status"]; cohortId?: string }): Promise<PaginatedResponse<Review>>;
 
+  // Aggregation
+  getReviewCountsBySubmission(submissionIds: string[]): Promise<ServiceResponse<Map<string, number>>>;
+
   // Actions
   submitReview(id: string, data: SubmitReviewData): Promise<ServiceResponse<Review>>;
 }
@@ -81,6 +84,7 @@ function toSubmissionFromJoin(row: Record<string, unknown>): Submission {
         status: cohortRow.status as Cohort["status"],
         isPublic: cohortRow.is_public as boolean,
         maxTeamSize: cohortRow.max_team_size as number,
+        minReviewsPerSubmission: (cohortRow.min_reviews_per_submission as number) ?? 3,
       }
     : undefined;
 
@@ -376,6 +380,31 @@ async function list(
   return paginated(reviews, count || 0, page, pageSize);
 }
 
+// Aggregation
+
+async function getReviewCountsBySubmission(submissionIds: string[]): Promise<ServiceResponse<Map<string, number>>> {
+  if (submissionIds.length === 0) return success(new Map());
+
+  const supabase = createClient();
+
+  const { data, error: dbError } = await supabase
+    .from("reviews")
+    .select("submission_id, status")
+    .in("submission_id", submissionIds);
+
+  if (dbError) {
+    return error(dbError.message, new Map());
+  }
+
+  const counts = new Map<string, number>();
+  for (const row of data || []) {
+    const subId = row.submission_id as string;
+    counts.set(subId, (counts.get(subId) || 0) + 1);
+  }
+
+  return success(counts);
+}
+
 // Actions
 
 async function submitReview(id: string, data: SubmitReviewData): Promise<ServiceResponse<Review>> {
@@ -470,5 +499,6 @@ export const reviewsService: ReviewsService = {
   getBySubmission,
   getBySubmissions,
   list,
+  getReviewCountsBySubmission,
   submitReview,
 };
