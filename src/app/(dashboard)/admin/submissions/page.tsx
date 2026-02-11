@@ -137,7 +137,7 @@ export default function AdminSubmissionsPage() {
       </div>
 
       {/* Results */}
-      <div className="rounded-xl border overflow-hidden">
+      <div className="rounded-xl border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>

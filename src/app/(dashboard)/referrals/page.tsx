@@ -195,7 +195,7 @@ export default function ReferralsPage() {
             </span>
           )}
         </h2>
-        <div className="rounded-xl border overflow-hidden">
+        <div className="rounded-xl border overflow-x-auto">
           <ReferralLeaderboard
             entries={leaderboard}
             currentUserId={user?.id}

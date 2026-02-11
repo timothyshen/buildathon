@@ -87,7 +87,7 @@ export default function CohortsPage() {
         </div>
       </div>
 
-      <div className="rounded-xl border overflow-hidden">
+      <div className="rounded-xl border overflow-x-auto">
         <CohortTable cohorts={cohorts} />
       </div>
     </div>

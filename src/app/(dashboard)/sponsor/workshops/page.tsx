@@ -159,7 +159,7 @@ export default function SponsorWorkshopsPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border overflow-hidden">
+      <div className="rounded-xl border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>

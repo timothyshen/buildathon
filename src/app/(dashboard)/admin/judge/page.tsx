@@ -215,7 +215,7 @@ export default function AdminJudgePage() {
       </div>
 
       {/* Submissions Table */}
-      <div className="rounded-xl border overflow-hidden">
+      <div className="rounded-xl border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>

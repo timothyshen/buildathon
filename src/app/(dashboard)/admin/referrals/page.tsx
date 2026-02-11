@@ -126,7 +126,7 @@ export default function AdminReferralsPage() {
         <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
           All Referrals
         </h2>
-        <div className="rounded-xl border overflow-hidden">
+        <div className="rounded-xl border overflow-x-auto">
           {referrals.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-muted-foreground">No referrals for this cohort yet.</p>

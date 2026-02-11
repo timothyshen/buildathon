@@ -401,7 +401,7 @@ export default function AdminSponsorsPage() {
           </p>
         </div>
       ) : (
-        <div className="rounded-xl border overflow-hidden">
+        <div className="rounded-xl border overflow-x-auto">
           <SponsorTable
             sponsors={filteredSponsors}
             onEdit={handleEdit}

@@ -267,7 +267,7 @@ export default function AdminUsersPage() {
           </p>
         </div>
       ) : (
-        <div className="rounded-xl border overflow-hidden">
+        <div className="rounded-xl border overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>

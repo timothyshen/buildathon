@@ -231,7 +231,7 @@ export default function TeamDetailPage({ params }: TeamDetailPageProps) {
             {team.members.length}/5
           </span>
         </div>
-        <div className="rounded-xl border overflow-hidden">
+        <div className="rounded-xl border overflow-x-auto">
           <TeamMemberList
             members={team.members}
             currentUserId={user.id}

@@ -452,7 +452,7 @@ export default function AdminCohortDetailPage({ params }: AdminCohortDetailPageP
 
         {/* Submissions Tab */}
         <TabsContent value="submissions">
-          <div className="rounded-xl border overflow-hidden">
+          <div className="rounded-xl border overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -658,7 +658,7 @@ export default function AdminCohortDetailPage({ params }: AdminCohortDetailPageP
             <p className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
               Review Progress
             </p>
-            <div className="rounded-xl border overflow-hidden">
+            <div className="rounded-xl border overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>

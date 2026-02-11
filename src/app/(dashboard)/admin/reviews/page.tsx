@@ -181,7 +181,7 @@ export default function AdminReviewsPage() {
       </div>
 
       {/* Reviews Table */}
-      <div className="rounded-xl border overflow-hidden">
+      <div className="rounded-xl border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
