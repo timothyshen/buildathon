@@ -70,6 +70,7 @@ export const mockCohorts: Cohort[] = [
     status: "completed",
     isPublic: true,
     maxTeamSize: 5,
+    minReviewsPerSubmission: 3,
     prizes: [
       { place: "1st", amount: "$10,000", description: "Grand Prize" },
       { place: "2nd", amount: "$5,000" },
@@ -90,6 +91,7 @@ export const mockCohorts: Cohort[] = [
     status: "active",
     isPublic: true,
     maxTeamSize: 5,
+    minReviewsPerSubmission: 3,
     prizes: [
       { place: "1st", amount: "$15,000" },
       { place: "2nd", amount: "$7,500" },
@@ -109,6 +111,7 @@ export const mockCohorts: Cohort[] = [
     status: "upcoming",
     isPublic: false,
     maxTeamSize: 5,
+    minReviewsPerSubmission: 3,
   },
 ];
 

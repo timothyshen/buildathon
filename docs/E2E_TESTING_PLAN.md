@@ -17,10 +17,20 @@
 | Email | Password | Role |
 |-------|----------|------|
 | timothy.shen@piplabs.xyz | password123 | admin |
+| alex.chen@piplabs.xyz | password123 | admin |
 | judge@example.com | password123 | judge |
+| maria@vc.example.com | password123 | judge |
+| david.kim@protocol.example.com | password123 | judge |
 | builder@example.com | password123 | participant |
-| sponsor@gamefi.com | password123 | sponsor |
 | sam@example.com | password123 | participant |
+| elena@dev.example.com | password123 | participant |
+| marcus@indie.dev | password123 | participant |
+| yuki@creative.studio | password123 | participant |
+| omar@protocol.builder | password123 | participant |
+| sponsor@gamefi.com | password123 | sponsor |
+| michael@ailabs.example.com | password123 | sponsor |
+| jen@story.foundation | password123 | sponsor |
+| robert@defi.ventures | password123 | sponsor |
 
 ---
 
