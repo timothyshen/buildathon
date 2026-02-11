@@ -160,15 +160,15 @@ export default function SponsorWorkshopsPage() {
 
       {/* Table */}
       <div className="rounded-xl border overflow-x-auto">
-        <Table>
+        <Table className="min-w-[700px]">
           <TableHeader>
             <TableRow>
               <TableHead>Title</TableHead>
-              <TableHead className="hidden md:table-cell">Category</TableHead>
+              <TableHead>Category</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="hidden md:table-cell">RSVPs</TableHead>
-              <TableHead className="hidden md:table-cell">Content</TableHead>
-              <TableHead className="hidden md:table-cell">Duration</TableHead>
+              <TableHead>RSVPs</TableHead>
+              <TableHead>Content</TableHead>
+              <TableHead>Duration</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -195,7 +195,7 @@ export default function SponsorWorkshopsPage() {
                       </p>
                     </Link>
                   </TableCell>
-                  <TableCell className="hidden md:table-cell text-xs text-muted-foreground">
+                  <TableCell className="text-xs text-muted-foreground">
                     {workshop.category}
                   </TableCell>
                   <TableCell>
@@ -208,7 +208,7 @@ export default function SponsorWorkshopsPage() {
                       <span className="text-xs capitalize">{workshop.status}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">
+                  <TableCell>
                     <span className="font-mono text-xs tabular-nums">
                       {rsvpCounts[workshop.id] || 0}
                       {workshop.maxAttendees && (
@@ -216,7 +216,7 @@ export default function SponsorWorkshopsPage() {
                       )}
                     </span>
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">
+                  <TableCell>
                     <span className="text-xs text-muted-foreground">
                       {[
                         workshop.videoUrl && "Video",
@@ -224,7 +224,7 @@ export default function SponsorWorkshopsPage() {
                       ].filter(Boolean).join(", ") || "—"}
                     </span>
                   </TableCell>
-                  <TableCell className="hidden md:table-cell text-xs text-muted-foreground">
+                  <TableCell className="text-xs text-muted-foreground">
                     {workshop.duration || "—"}
                   </TableCell>
                   <TableCell className="text-right">

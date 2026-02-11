@@ -268,14 +268,14 @@ export default function AdminUsersPage() {
         </div>
       ) : (
         <div className="rounded-xl border overflow-x-auto">
-          <Table>
+          <Table className="min-w-[700px]">
             <TableHeader>
               <TableRow>
                 <TableHead>User</TableHead>
-                <TableHead className="hidden md:table-cell">Email</TableHead>
+                <TableHead>Email</TableHead>
                 <TableHead>Role</TableHead>
-                <TableHead className="hidden md:table-cell">Sponsor Org</TableHead>
-                <TableHead className="hidden md:table-cell">Joined</TableHead>
+                <TableHead>Sponsor Org</TableHead>
+                <TableHead>Joined</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -303,7 +303,7 @@ export default function AdminUsersPage() {
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">
+                  <TableCell>
                     {user.email || "-"}
                   </TableCell>
                   <TableCell>
@@ -312,10 +312,10 @@ export default function AdminUsersPage() {
                       <span className="text-xs capitalize">{user.role}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">
+                  <TableCell>
                     {getSponsorOrgName(user.sponsorOrgId)}
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">
+                  <TableCell>
                     {formatDate(user.createdAt)}
                   </TableCell>
                   <TableCell className="text-right">

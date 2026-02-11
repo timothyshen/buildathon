@@ -170,14 +170,14 @@ export default function SponsorReviewsPage() {
 
       {/* Table */}
       <div className="rounded-xl border overflow-x-auto">
-        <Table>
+        <Table className="min-w-[700px]">
           <TableHeader>
             <TableRow>
               <TableHead>Project</TableHead>
-              <TableHead className="hidden md:table-cell">Team</TableHead>
-              <TableHead className="hidden md:table-cell">Track</TableHead>
+              <TableHead>Team</TableHead>
+              <TableHead>Track</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="hidden md:table-cell">Score</TableHead>
+              <TableHead>Score</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -201,10 +201,10 @@ export default function SponsorReviewsPage() {
                       </p>
                     </div>
                   </TableCell>
-                  <TableCell className="hidden md:table-cell text-xs text-muted-foreground">
+                  <TableCell className="text-xs text-muted-foreground">
                     {item.submission.team?.name || "Solo"}
                   </TableCell>
-                  <TableCell className="hidden md:table-cell text-xs text-muted-foreground">
+                  <TableCell className="text-xs text-muted-foreground">
                     {item.track.name}
                   </TableCell>
                   <TableCell>
@@ -219,7 +219,7 @@ export default function SponsorReviewsPage() {
                       </span>
                     </div>
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">
+                  <TableCell>
                     {item.review?.overallScore ? (
                       <div className="flex items-center gap-1">
                         <Star className="h-3.5 w-3.5 text-amber-500" />

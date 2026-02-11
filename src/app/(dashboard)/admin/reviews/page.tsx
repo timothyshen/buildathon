@@ -182,14 +182,14 @@ export default function AdminReviewsPage() {
 
       {/* Reviews Table */}
       <div className="rounded-xl border overflow-x-auto">
-        <Table>
+        <Table className="min-w-[700px]">
           <TableHeader>
             <TableRow>
               <TableHead>Judge</TableHead>
               <TableHead>Submission</TableHead>
-              <TableHead className="hidden md:table-cell">Score</TableHead>
+              <TableHead>Score</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="hidden md:table-cell">Date</TableHead>
+              <TableHead>Date</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -235,7 +235,7 @@ export default function AdminReviewsPage() {
                       </p>
                     </div>
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">
+                  <TableCell>
                     {review.overallScore ? (
                       <div className="flex items-center gap-1">
                         <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />
@@ -261,7 +261,7 @@ export default function AdminReviewsPage() {
                       </span>
                     </div>
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">
+                  <TableCell>
                     {review.completedAt
                       ? new Date(review.completedAt).toLocaleDateString()
                       : new Date(review.createdAt).toLocaleDateString()}

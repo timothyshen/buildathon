@@ -332,16 +332,16 @@ export default function AdminJudgesPage() {
         </div>
       ) : (
         <div className="rounded-xl border overflow-x-auto">
-          <Table>
+          <Table className="min-w-[700px]">
             <TableHeader>
               <TableRow>
                 <TableHead>Judge</TableHead>
-                <TableHead className="hidden md:table-cell">Email</TableHead>
-                <TableHead className="hidden lg:table-cell">Cohorts</TableHead>
-                <TableHead className="hidden md:table-cell">Assigned</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Cohorts</TableHead>
+                <TableHead>Assigned</TableHead>
                 <TableHead>Completed</TableHead>
-                <TableHead className="hidden md:table-cell">Pending</TableHead>
-                <TableHead className="hidden md:table-cell">Avg Score</TableHead>
+                <TableHead>Pending</TableHead>
+                <TableHead>Avg Score</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -379,8 +379,8 @@ export default function AdminJudgesPage() {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="hidden md:table-cell">{judge.email}</TableCell>
-                    <TableCell className="hidden lg:table-cell">
+                    <TableCell>{judge.email}</TableCell>
+                    <TableCell>
                       <div className="flex flex-wrap gap-1">
                         {(cohortAssignments.get(judge.id) || []).map((ca) => (
                           <span key={ca.id} className="px-2 py-0.5 text-[11px] rounded-md bg-muted text-muted-foreground">
@@ -392,18 +392,18 @@ export default function AdminJudgesPage() {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell className="hidden md:table-cell">{judgeReviews.length}</TableCell>
+                    <TableCell>{judgeReviews.length}</TableCell>
                     <TableCell>
                       <span className="font-mono text-xs tabular-nums text-emerald-600">
                         {completed.length}
                       </span>
                     </TableCell>
-                    <TableCell className="hidden md:table-cell">
+                    <TableCell>
                       <span className="font-mono text-xs tabular-nums text-amber-600">
                         {pending.length}
                       </span>
                     </TableCell>
-                    <TableCell className="hidden md:table-cell">
+                    <TableCell>
                       <span className="font-mono text-xs tabular-nums">
                         {avgScore > 0 ? avgScore.toFixed(1) : "-"}
                       </span>
@@ -470,7 +470,7 @@ export default function AdminJudgesPage() {
                   : "No submissions match your search"}
               </div>
             ) : (
-              <Table>
+              <Table className="min-w-[700px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-10">
@@ -483,7 +483,7 @@ export default function AdminJudgesPage() {
                       />
                     </TableHead>
                     <TableHead>Project</TableHead>
-                    <TableHead className="hidden sm:table-cell">Team</TableHead>
+                    <TableHead>Team</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -507,7 +507,7 @@ export default function AdminJudgesPage() {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="hidden sm:table-cell text-muted-foreground">
+                      <TableCell className="text-muted-foreground">
                         {submission.team?.name || "Solo"}
                       </TableCell>
                     </TableRow>

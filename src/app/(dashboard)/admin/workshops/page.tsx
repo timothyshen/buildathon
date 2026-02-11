@@ -307,15 +307,15 @@ export default function AdminWorkshopPage() {
           ) : (
             <>
               <div className="rounded-xl border overflow-x-auto">
-                <Table>
+                <Table className="min-w-[700px]">
                   <TableHeader>
                     <TableRow className="bg-muted/50">
                       <TableHead className="w-[300px]">Title</TableHead>
                       <TableHead>Category</TableHead>
-                      <TableHead className="hidden md:table-cell">Partner</TableHead>
-                      <TableHead className="hidden md:table-cell">Duration</TableHead>
-                      <TableHead className="hidden md:table-cell">Content</TableHead>
-                      <TableHead className="hidden md:table-cell">Published</TableHead>
+                      <TableHead>Partner</TableHead>
+                      <TableHead>Duration</TableHead>
+                      <TableHead>Content</TableHead>
+                      <TableHead>Published</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -333,13 +333,13 @@ export default function AdminWorkshopPage() {
                         <TableCell>
                           <span className="text-xs text-muted-foreground">{workshop.category}</span>
                         </TableCell>
-                        <TableCell className="hidden md:table-cell text-muted-foreground">
+                        <TableCell className="text-muted-foreground">
                           {workshop.partnerName}
                         </TableCell>
-                        <TableCell className="hidden md:table-cell text-muted-foreground">
+                        <TableCell className="text-muted-foreground">
                           {workshop.duration || "-"}
                         </TableCell>
-                        <TableCell className="hidden md:table-cell">
+                        <TableCell>
                           <span className="text-xs text-muted-foreground">
                             {[
                               workshop.videoUrl ? "Video" : null,
@@ -349,7 +349,7 @@ export default function AdminWorkshopPage() {
                               .join(", ") || "-"}
                           </span>
                         </TableCell>
-                        <TableCell className="hidden md:table-cell text-muted-foreground">
+                        <TableCell className="text-muted-foreground">
                           {workshop.publishedAt
                             ? new Date(workshop.publishedAt).toLocaleDateString()
                             : "-"}

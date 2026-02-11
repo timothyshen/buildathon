@@ -216,14 +216,14 @@ export default function AdminJudgePage() {
 
       {/* Submissions Table */}
       <div className="rounded-xl border overflow-x-auto">
-        <Table>
+        <Table className="min-w-[700px]">
           <TableHeader>
             <TableRow>
               <TableHead>Project</TableHead>
-              <TableHead className="hidden md:table-cell">Team</TableHead>
-              <TableHead className="hidden md:table-cell">Tracks</TableHead>
+              <TableHead>Team</TableHead>
+              <TableHead>Tracks</TableHead>
               <TableHead>Your Review</TableHead>
-              <TableHead className="hidden md:table-cell">Score</TableHead>
+              <TableHead>Score</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -245,10 +245,10 @@ export default function AdminJudgePage() {
                       </p>
                     </div>
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">
+                  <TableCell>
                     {item.submission.team?.name || "Solo"}
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">
+                  <TableCell>
                     {item.submission.tracks && item.submission.tracks.length > 0 ? (
                       <span className="text-[11px] text-muted-foreground">
                         {item.submission.tracks.map((t) => t.name).join(", ")}
@@ -278,7 +278,7 @@ export default function AdminJudgePage() {
                       </span>
                     )}
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">
+                  <TableCell>
                     {item.review?.overallScore ? (
                       <div className="flex items-center gap-1">
                         <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />

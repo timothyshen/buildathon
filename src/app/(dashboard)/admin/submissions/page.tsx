@@ -138,16 +138,16 @@ export default function AdminSubmissionsPage() {
 
       {/* Results */}
       <div className="rounded-xl border overflow-x-auto">
-        <Table>
+        <Table className="min-w-[700px]">
           <TableHeader>
             <TableRow>
               <TableHead>Project</TableHead>
-              <TableHead className="hidden md:table-cell">Team</TableHead>
-              <TableHead className="hidden md:table-cell">Cohort</TableHead>
-              <TableHead className="hidden md:table-cell">Track</TableHead>
+              <TableHead>Team</TableHead>
+              <TableHead>Cohort</TableHead>
+              <TableHead>Track</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="hidden md:table-cell">Reviews</TableHead>
-              <TableHead className="hidden md:table-cell">Submitted</TableHead>
+              <TableHead>Reviews</TableHead>
+              <TableHead>Submitted</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -176,13 +176,13 @@ export default function AdminSubmissionsPage() {
                       </p>
                     </div>
                   </TableCell>
-                  <TableCell className="hidden md:table-cell text-xs text-muted-foreground">
+                  <TableCell className="text-xs text-muted-foreground">
                     {submission.team?.name || "Solo"}
                   </TableCell>
-                  <TableCell className="hidden md:table-cell text-xs text-muted-foreground">
+                  <TableCell className="text-xs text-muted-foreground">
                     {submission.cohort?.name}
                   </TableCell>
-                  <TableCell className="hidden md:table-cell text-xs text-muted-foreground">
+                  <TableCell className="text-xs text-muted-foreground">
                     {submission.track?.name || "Open"}
                   </TableCell>
                   <TableCell>
@@ -198,7 +198,7 @@ export default function AdminSubmissionsPage() {
                       <span className="text-xs capitalize">{submission.status.replace("_", " ")}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">
+                  <TableCell>
                     {submission.status !== "draft" ? (() => {
                       const count = reviewCounts.get(submission.id) || 0;
                       const needed = submission.cohort?.minReviewsPerSubmission || 3;
@@ -211,7 +211,7 @@ export default function AdminSubmissionsPage() {
                       <span className="text-xs text-muted-foreground">-</span>
                     )}
                   </TableCell>
-                  <TableCell className="hidden md:table-cell text-xs text-muted-foreground">
+                  <TableCell className="text-xs text-muted-foreground">
                     {submission.submittedAt
                       ? new Date(submission.submittedAt).toLocaleDateString()
                       : "—"}

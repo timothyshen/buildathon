@@ -453,12 +453,12 @@ export default function AdminCohortDetailPage({ params }: AdminCohortDetailPageP
         {/* Submissions Tab */}
         <TabsContent value="submissions">
           <div className="rounded-xl border overflow-x-auto">
-            <Table>
+            <Table className="min-w-[700px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Project</TableHead>
-                  <TableHead className="hidden md:table-cell">Team</TableHead>
-                  <TableHead className="hidden md:table-cell">Track</TableHead>
+                  <TableHead>Team</TableHead>
+                  <TableHead>Track</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -484,10 +484,10 @@ export default function AdminCohortDetailPage({ params }: AdminCohortDetailPageP
                           </p>
                         </div>
                       </TableCell>
-                      <TableCell className="hidden md:table-cell">
+                      <TableCell>
                         {submission.team?.name || "Solo"}
                       </TableCell>
-                      <TableCell className="hidden md:table-cell">
+                      <TableCell>
                         {submission.track?.name || "Open"}
                       </TableCell>
                       <TableCell>
@@ -659,13 +659,13 @@ export default function AdminCohortDetailPage({ params }: AdminCohortDetailPageP
               Review Progress
             </p>
             <div className="rounded-xl border overflow-x-auto">
-              <Table>
+              <Table className="min-w-[700px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Submission</TableHead>
-                    <TableHead className="hidden md:table-cell">Team</TableHead>
+                    <TableHead>Team</TableHead>
                     <TableHead>Reviews</TableHead>
-                    <TableHead className="hidden md:table-cell">Avg Score</TableHead>
+                    <TableHead>Avg Score</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -692,7 +692,7 @@ export default function AdminCohortDetailPage({ params }: AdminCohortDetailPageP
                                 <p className="text-sm font-medium">{sub.title}</p>
                               </Link>
                             </TableCell>
-                            <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
+                            <TableCell className="text-sm text-muted-foreground">
                               {sub.team?.name || "Solo"}
                             </TableCell>
                             <TableCell>
@@ -700,7 +700,7 @@ export default function AdminCohortDetailPage({ params }: AdminCohortDetailPageP
                                 {completedReviews.length}/{needed}
                               </span>
                             </TableCell>
-                            <TableCell className="hidden md:table-cell">
+                            <TableCell>
                               {completedReviews.length > 0 ? (
                                 <span className="font-mono text-sm tabular-nums">{avgScore.toFixed(1)}</span>
                               ) : (

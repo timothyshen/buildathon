@@ -132,14 +132,14 @@ export default function AdminReferralsPage() {
               <p className="text-muted-foreground">No referrals for this cohort yet.</p>
             </div>
           ) : (
-            <Table>
+            <Table className="min-w-[700px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Referrer</TableHead>
                   <TableHead>Referred User</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="hidden md:table-cell">Date</TableHead>
-                  <TableHead className="hidden md:table-cell">Credited</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Credited</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -185,10 +185,10 @@ export default function AdminReferralsPage() {
                         </span>
                       </span>
                     </TableCell>
-                    <TableCell className="hidden md:table-cell text-muted-foreground">
+                    <TableCell className="text-muted-foreground">
                       {new Date(referral.createdAt).toLocaleDateString()}
                     </TableCell>
-                    <TableCell className="hidden md:table-cell text-muted-foreground">
+                    <TableCell className="text-muted-foreground">
                       {referral.creditedAt
                         ? new Date(referral.creditedAt).toLocaleDateString()
                         : "-"}
