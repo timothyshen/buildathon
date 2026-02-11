@@ -5,9 +5,13 @@
 ### Prerequisites
 - Supabase project configured with database schema
 - Storage buckets created (`banners`, `screenshots`) via migration `003_storage_buckets.sql`
+- Notifications migration applied (`009_notifications.sql`)
 - Seed data loaded (`npx tsx scripts/seed.ts`)
 - Sponsor invites migration applied (`003_sponsor_invites.sql`)
+- VAPID keys configured (`NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`) for push notifications
+- Dynamic Labs environment ID configured (`NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID`) for wallet integration
 - Dev server running (`pnpm dev`)
+- MetaMask or compatible EVM wallet extension installed (for wallet tests)
 
 ### Test Accounts
 | Email | Password | Role |
@@ -30,7 +34,17 @@
 - [ ] Login persists after page refresh
 - [ ] Logout clears session and redirects to home
 
-### 1.2 Registration Flow
+### 1.2 Wallet Login Flow
+- [ ] Login page shows "Sign in with Wallet" button below the email/password form
+- [ ] Click "Sign in with Wallet" → Dynamic wallet connect modal opens
+- [ ] Connect MetaMask with a wallet that IS bound to an account → auto-logs in → redirects to `/dashboard`
+- [ ] Connect MetaMask with a wallet NOT bound to any account → shows error: "No account found with this wallet. Register with email first, then connect your wallet in Settings."
+- [ ] Wallet login error clears when clicking "Sign in with Wallet" again
+- [ ] Dynamic modal can be dismissed without side effects
+- [ ] After failed wallet login attempt, Dynamic session is cleaned up (no stale wallet state)
+- [ ] Network error during wallet login → shows "Network error. Please try again."
+
+### 1.3 Registration Flow
 - [ ] Navigate to `/register`
 - [ ] Register with new email → creates account
 - [ ] Register with existing email → shows error
@@ -38,7 +52,7 @@
 - [ ] Password confirmation must match
 - [ ] Redirects to onboarding after registration
 
-### 1.3 Sponsor Invite Registration Flow
+### 1.4 Sponsor Invite Registration Flow
 - [ ] Navigate to `/register?invite=<valid-token>` → shows org banner with name, logo, "Sponsor" badge
 - [ ] Navigate to `/register?invite=<invalid-token>` → shows "Invalid Invite" error with fallback link
 - [ ] Navigate to `/register?invite=<expired-token>` → shows expiry error
@@ -49,7 +63,7 @@
 - [ ] Sponsor user proceeds through onboarding → role preserved as `sponsor` (not overwritten to `participant`)
 - [ ] Sponsor lands in sponsor dashboard after onboarding
 
-### 1.4 Onboarding Flow
+### 1.5 Onboarding Flow
 - [ ] New user redirected to `/onboarding`
 - [ ] Can fill out profile details (name, bio, social links)
 - [ ] Completing onboarding redirects to dashboard
@@ -110,8 +124,17 @@
 ## 3. Participant Dashboard Tests
 
 ### 3.1 Dashboard Header (All Roles)
-- [ ] Desktop: user avatar dropdown visible on the right
-- [ ] Mobile: hamburger menu + logo + user avatar dropdown
+- [ ] Desktop: notification bell + user avatar dropdown visible on the right
+- [ ] Mobile: hamburger menu + logo + notification bell + user avatar dropdown
+- [ ] Notification bell shows unread count badge when notifications exist
+- [ ] Click notification bell → popover opens with notification list
+- [ ] Notification list shows type-specific icons (submission, review, team, etc.)
+- [ ] Notification list shows relative timestamps (e.g., "2 minutes ago")
+- [ ] Click a notification → navigates to linked page (e.g., submission detail)
+- [ ] Click a notification → marks it as read (removes bold styling)
+- [ ] "Mark all read" button clears all unread notifications
+- [ ] "Load more" appears when there are older notifications to fetch
+- [ ] Empty state shown when no notifications exist
 - [ ] Dropdown shows user name, email, avatar
 - [ ] Dropdown "Settings" link navigates to `/settings`
 - [ ] Dropdown "Sign Out" logs out and redirects to home
@@ -169,10 +192,39 @@
 - [ ] Shows submission status
 
 ### 3.9 Settings (`/settings`)
-- [ ] Can update profile info
-- [ ] Can update social links
-- [ ] Can connect wallet
-- [ ] Changes persist after save
+- [ ] Can update profile info (name, bio)
+- [ ] Can update social links (Twitter, GitHub)
+- [ ] Changes persist after save and page refresh
+- [ ] "Save Changes" button shows loading spinner while saving
+- [ ] Toast confirms successful save
+
+### 3.10 Settings — Wallet Connect (`/settings`)
+- [ ] Wallet section shows "Connect Wallet" button when no wallet is bound
+- [ ] "Loading wallet SDK..." shown while Dynamic SDK initializes
+- [ ] Click "Connect Wallet" → Dynamic modal opens
+- [ ] Approve connection in MetaMask → wallet address saved to account → shows connected state
+- [ ] Connected state shows truncated address (e.g., `0x742d...bD38`) in mono font
+- [ ] Green status dot indicates connected wallet
+- [ ] Copy button copies full wallet address to clipboard
+- [ ] Copy button shows checkmark briefly after copying
+- [ ] Disconnect button (unplug icon) opens confirmation dialog
+- [ ] Confirm disconnect → wallet removed from account → reverts to "Connect Wallet" button
+- [ ] Cancel disconnect → dialog closes, wallet remains connected
+- [ ] Connecting a wallet already bound to another account → error toast: "This wallet is already connected to another account"
+- [ ] Wallet connect/disconnect is immediate (not tied to "Save Changes" button)
+- [ ] After disconnect, wallet login with that address shows "No account found" on login page
+
+### 3.11 Settings — Notification Preferences (`/settings`)
+- [ ] Notifications section shows 5 toggles: Push, Submission updates, Review alerts, Deadline reminders, Team activity
+- [ ] All toggles default to enabled (except Push which defaults to disabled)
+- [ ] Toggling a preference and clicking "Save Changes" persists the change
+- [ ] Preferences survive page refresh after save
+- [ ] Push notifications toggle prompts browser permission dialog when enabled (if not already granted)
+- [ ] Disabling "Submission updates" suppresses submission-related push notifications
+- [ ] Disabling "Review alerts" suppresses review-related push notifications
+- [ ] Disabling "Deadline reminders" suppresses deadline reminder push notifications
+- [ ] Disabling "Team activity" suppresses team invite push notifications
+- [ ] In-app notifications (bell) are always shown regardless of push preference toggles
 
 ---
 
@@ -451,76 +503,171 @@
 
 ---
 
-## 11. Search and Filter Tests
+## 11. Notification System Tests
 
-### 11.1 Explore Page Filters
+### 11.1 Notification Triggers
+- [ ] Submitting a project → admin(s) receive "New submission" notification
+- [ ] Admin changes submission status → submitter receives "Status changed" notification
+- [ ] Judge completes a review → submitter receives "Review completed" notification
+- [ ] Admin assigns reviews to a judge → judge receives "Review assigned" notification
+- [ ] Team lead invites a member → invitee receives "Team invite" notification
+- [ ] User submits feedback → admin receives "New feedback" notification
+
+### 11.2 Realtime Notifications
+- [ ] New notification appears in bell popover without page refresh (Supabase Realtime)
+- [ ] Unread badge count increments in real-time when new notification arrives
+- [ ] Toast notification appears for high-priority types (review_assigned, submission_status_changed)
+- [ ] Multiple rapid notifications all appear correctly (no race conditions)
+
+### 11.3 Notification List Behavior
+- [ ] Notifications sorted by newest first
+- [ ] Unread notifications have bold title styling
+- [ ] Read notifications have normal weight styling
+- [ ] Clicking notification navigates to correct page:
+  - submission_submitted → `/admin/submissions/[id]`
+  - submission_status_changed → `/submissions/[id]`
+  - review_completed → `/submissions/[id]`
+  - review_assigned → `/reviews/[id]`
+  - team_invite_created → `/teams/[id]`
+  - deadline_reminder → `/submissions` or `/reviews`
+- [ ] "Mark all read" clears badge count to 0
+- [ ] Pagination loads older notifications via "Load more"
+- [ ] Empty state shows when user has no notifications
+
+### 11.4 Push Notifications (Browser)
+- [ ] Service worker registers successfully on first visit
+- [ ] Browser permission prompt appears when enabling push in settings
+- [ ] After granting permission, push subscription saved to `push_subscriptions` table
+- [ ] Push notification displays with correct title and body when app is backgrounded
+- [ ] Clicking push notification opens correct page in browser
+- [ ] Denying browser permission → push toggle stays disabled with explanation
+- [ ] Revoking browser permission → push notifications stop (no errors)
+- [ ] Multiple devices: push sent to all subscribed devices for the user
+
+### 11.5 Deadline Reminder Cron
+- [ ] Cron endpoint (`/api/cron/deadline-reminders`) requires `CRON_SECRET` authorization
+- [ ] Sends 24-hour reminder for cohorts with submission deadlines tomorrow
+- [ ] Sends 2-hour reminder for cohorts with submission deadlines in 2 hours
+- [ ] Only reminds users with draft submissions (not already submitted)
+- [ ] Sends judge reminders for pending review deadlines
+- [ ] Does not send duplicate reminders (idempotent within time window)
+
+### 11.6 Notification Preferences Filtering
+- [ ] User with `submission_updates: false` does NOT receive push for submission status changes
+- [ ] User with `review_alerts: false` does NOT receive push for review assignments
+- [ ] User with `deadline_reminders: false` does NOT receive push for deadline reminders
+- [ ] User with `team_activity: false` does NOT receive push for team invites
+- [ ] User with `push_enabled: false` does NOT receive any push notifications
+- [ ] In-app notifications (in the bell) are always created regardless of push preferences
+
+---
+
+## 12. Wallet Integration Tests
+
+### 12.1 Wallet Login API (`POST /api/auth/wallet-login`)
+- [ ] Valid wallet address bound to an account → returns `{ email, token_hash }`
+- [ ] Valid wallet address NOT bound to any account → returns `{ error: "NO_ACCOUNT" }` with 404
+- [ ] Missing `walletAddress` field → returns `{ error: "INVALID_REQUEST" }` with 400
+- [ ] Non-string `walletAddress` → returns 400
+- [ ] Case-insensitive lookup works (lowercase address matches checksummed DB entry)
+- [ ] Server error returns `{ error: "SERVER_ERROR" }` with 500
+
+### 12.2 Wallet Binding Flow (Settings)
+- [ ] Connect wallet in settings → address saved to `users.wallet_address` in database
+- [ ] Wallet address stored case-preserved (checksummed)
+- [ ] Disconnect wallet → `wallet_address` set to null in database
+- [ ] Re-connect same wallet after disconnect → works without error
+- [ ] Connect wallet on Account A → try connecting same wallet on Account B → error "already connected to another account"
+- [ ] After binding wallet in settings, wallet login works on login page
+
+### 12.3 Wallet Login End-to-End
+- [ ] Bind wallet to Account A in settings → log out → go to login page → "Sign in with Wallet" → connect same wallet → logged back into Account A
+- [ ] After wallet login, session persists across page refresh
+- [ ] After wallet login, all dashboard features work normally (submissions, reviews, etc.)
+- [ ] Wallet login works with different EVM chains in MetaMask (Ethereum Mainnet, Base, Polygon) — address is chain-agnostic
+
+### 12.4 Dynamic SDK Integration
+- [ ] Dynamic SDK loads without console errors
+- [ ] Dynamic modal matches app theme (dark/light mode)
+- [ ] Dynamic modal shows supported wallet options (MetaMask, WalletConnect, etc.)
+- [ ] Closing Dynamic modal without connecting does not cause errors
+- [ ] Dynamic session cleaned up properly on page navigation
+- [ ] No stale Dynamic wallet state after logout
+
+---
+
+## 13. Search and Filter Tests
+
+### 13.1 Explore Page Filters
 - [ ] Text search filters results
 - [ ] Track filter works
 - [ ] Tech stack filter works
 - [ ] Multiple filters combine correctly
 - [ ] Clear filters resets view
 
-### 11.2 Admin Table Filters
+### 13.2 Admin Table Filters
 - [ ] Search filters table rows
 - [ ] Dropdown filters work
 - [ ] Pagination works (if implemented)
 
 ---
 
-## 12. Responsive Design Tests
+## 14. Responsive Design Tests
 
-### 12.1 Mobile Views (< 768px)
-- [ ] Dashboard header shows hamburger + logo + avatar dropdown
+### 14.1 Mobile Views (< 768px)
+- [ ] Dashboard header shows hamburger + logo + notification bell + avatar dropdown
 - [ ] Mobile sidebar sheet opens/closes correctly
 - [ ] Tables hide non-essential columns
 - [ ] Forms are usable
 - [ ] Modals fit screen
+- [ ] Notification bell popover fits within mobile viewport
+- [ ] Wallet connect modal (Dynamic) fits within mobile viewport
 
-### 12.2 Tablet Views (768px - 1024px)
+### 14.2 Tablet Views (768px - 1024px)
 - [ ] Layout adapts properly
 - [ ] Sidebar may be collapsed
 - [ ] Tables show more columns
 
-### 12.3 Desktop Views (> 1024px)
+### 14.3 Desktop Views (> 1024px)
 - [ ] Full layout displayed
 - [ ] Sidebar always visible (dashboard)
-- [ ] Dashboard header shows avatar dropdown on the right
+- [ ] Dashboard header shows notification bell + avatar dropdown on the right
 - [ ] Full tables displayed
 
 ---
 
-## 13. Error Handling Tests
+## 15. Error Handling Tests
 
-### 13.1 Network Errors
+### 15.1 Network Errors
 - [ ] Shows error message on API failure
 - [ ] Can retry failed requests
 - [ ] Graceful degradation
 
-### 13.2 Form Validation
+### 15.2 Form Validation
 - [ ] Required fields show errors
 - [ ] Email format validated
 - [ ] URL format validated
 - [ ] Error messages are clear
 
-### 13.3 404 Pages
+### 15.3 404 Pages
 - [ ] Invalid routes show 404 page
 - [ ] 404 has navigation back
 
 ---
 
-## 14. Data Integrity Tests
+## 16. Data Integrity Tests
 
-### 14.1 Submission Flow
+### 16.1 Submission Flow
 - [ ] Creating submission updates team's submissions
 - [ ] Deleting submission removes from lists
 - [ ] Status changes reflect everywhere
 
-### 14.2 Team Management
+### 16.2 Team Management
 - [ ] Adding member updates team list
 - [ ] Removing member updates counts
 - [ ] Team deletion handles submissions
 
-### 14.3 User Role Changes
+### 16.3 User Role Changes
 - [ ] Changing to judge → user appears in judges list
 - [ ] Changing to sponsor → can link to org
 - [ ] Changing from sponsor → org link cleared
