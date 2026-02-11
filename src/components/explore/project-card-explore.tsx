@@ -25,6 +25,12 @@ export function ProjectCardExplore({
   const primaryPrize = prizes[0];
   const prizeConfig = primaryPrize ? prizeBadgeConfig[primaryPrize.type] : null;
 
+  // Collect sponsor logos from all won tracks
+  const sponsorTracks = isWinner
+    ? (submission.tracks || (submission.track ? [submission.track] : []))
+        .filter((t) => t.sponsorLogo)
+    : [];
+
   const handleCardClick = () => {
     router.push(`/projects/${submission.id}`);
   };
@@ -54,11 +60,28 @@ export function ProjectCardExplore({
               {submission.tagline || stripHtml(submission.description)}
             </p>
           </div>
-          {isWinner && prizes.length > 0 && (
+          {isWinner && sponsorTracks.length > 0 ? (
+            <div className="shrink-0 flex items-center -space-x-1.5">
+              {sponsorTracks.slice(0, 3).map((t) => (
+                <img
+                  key={t.id}
+                  src={t.sponsorLogo!}
+                  alt={t.sponsorName || "Sponsor"}
+                  className="h-7 w-7 rounded-md object-contain border bg-white ring-2 ring-card"
+                  title={`${t.sponsorName || "Sponsor"} Bounty Winner`}
+                />
+              ))}
+              {sponsorTracks.length > 3 && (
+                <span className="flex h-7 w-7 items-center justify-center rounded-md border bg-muted text-[10px] font-medium text-muted-foreground ring-2 ring-card">
+                  +{sponsorTracks.length - 3}
+                </span>
+              )}
+            </div>
+          ) : isWinner && prizes.length > 0 ? (
             <div className="shrink-0">
               <PrizeBadges prizes={prizes} maxVisible={3} size="sm" />
             </div>
-          )}
+          ) : null}
         </div>
 
         {/* Tech stack - monospace */}
@@ -81,10 +104,14 @@ export function ProjectCardExplore({
         {/* Meta info */}
         <div className="mt-4 flex items-center gap-3 text-xs text-muted-foreground">
           {submission.cohort && <span>{submission.cohort.name}</span>}
-          {submission.cohort && submission.track && (
+          {submission.cohort && (submission.tracks?.length || submission.track) && (
             <span className="text-muted-foreground/50">/</span>
           )}
-          {submission.track && <span>{submission.track.name}</span>}
+          {submission.tracks && submission.tracks.length > 1 ? (
+            <span>{submission.tracks.map((t) => t.name).join(", ")}</span>
+          ) : submission.track ? (
+            <span>{submission.track.name}</span>
+          ) : null}
         </div>
       </div>
 
