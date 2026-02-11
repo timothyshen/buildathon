@@ -12,6 +12,7 @@ export default function ReviewsPage() {
   const { user } = useAuth();
   const [judgeReviews, setJudgeReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [cohortFilter, setCohortFilter] = useState<string>("all");
 
   useEffect(() => {
     async function loadData() {
@@ -35,9 +36,23 @@ export default function ReviewsPage() {
     );
   }
 
-  const pendingReviews = judgeReviews.filter((r) => r.status === "pending");
-  const inProgressReviews = judgeReviews.filter((r) => r.status === "in_progress");
-  const completedReviews = judgeReviews.filter((r) => r.status === "completed");
+  // Extract unique cohorts from reviews
+  const cohorts = Array.from(
+    new Map(
+      judgeReviews
+        .filter((r) => r.submission?.cohort)
+        .map((r) => [r.submission!.cohort!.id, r.submission!.cohort!.name])
+    )
+  );
+
+  // Filter by cohort
+  const filteredReviews = cohortFilter === "all"
+    ? judgeReviews
+    : judgeReviews.filter((r) => r.submission?.cohort?.id === cohortFilter);
+
+  const pendingReviews = filteredReviews.filter((r) => r.status === "pending");
+  const inProgressReviews = filteredReviews.filter((r) => r.status === "in_progress");
+  const completedReviews = filteredReviews.filter((r) => r.status === "completed");
 
   const ReviewRow = ({ review }: { review: Review }) => (
     <Link
@@ -107,6 +122,35 @@ export default function ReviewsPage() {
           <div className="text-xs text-muted-foreground mt-1">Completed</div>
         </div>
       </div>
+
+      {/* Cohort Filter */}
+      {cohorts.length > 1 && (
+        <div className="flex gap-1.5 flex-wrap">
+          <button
+            onClick={() => setCohortFilter("all")}
+            className={`px-2.5 py-1 text-xs rounded-md transition-colors ${
+              cohortFilter === "all"
+                ? "bg-foreground text-background font-medium"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+            }`}
+          >
+            All Cohorts
+          </button>
+          {cohorts.map(([id, name]) => (
+            <button
+              key={id}
+              onClick={() => setCohortFilter(id)}
+              className={`px-2.5 py-1 text-xs rounded-md transition-colors ${
+                cohortFilter === id
+                  ? "bg-foreground text-background font-medium"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              }`}
+            >
+              {name}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Tabs */}
       <Tabs defaultValue="pending" className="space-y-8">

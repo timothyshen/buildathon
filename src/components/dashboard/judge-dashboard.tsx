@@ -76,7 +76,7 @@ export function JudgeDashboard() {
         </div>
       </div>
 
-      {/* Pending Reviews */}
+      {/* Pending Reviews (grouped by cohort) */}
       <section>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">
@@ -96,73 +96,109 @@ export function JudgeDashboard() {
             <p className="text-xs mt-1">You&apos;ve reviewed all assigned submissions.</p>
           </div>
         ) : (
-          <div className="space-y-2">
-            {pendingReviews.map((review) => (
-              <Link
-                key={review.id}
-                href={`/reviews/${review.id}`}
-                className="flex items-center justify-between rounded-xl border py-3 px-4 hover:bg-muted/50 transition-colors group"
-              >
-                <div className="min-w-0 flex-1">
-                  <span className="text-sm font-medium">
-                    {review.submission?.title}
-                  </span>
-                  {review.submission?.tagline && (
-                    <p className="text-xs text-muted-foreground truncate mt-0.5">
-                      {review.submission.tagline}
-                    </p>
-                  )}
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-[11px] text-muted-foreground">
-                      {review.submission?.team?.name || "Solo"}
-                    </span>
-                    <span className="text-[11px] text-muted-foreground">&middot;</span>
-                    <span className="text-[11px] text-muted-foreground">
-                      {review.submission?.track?.name || "Open Track"}
-                    </span>
-                  </div>
+          <div className="space-y-6">
+            {Object.entries(
+              pendingReviews.reduce<Record<string, { name: string; reviews: Review[] }>>((acc, r) => {
+                const key = r.submission?.cohort?.id || "unknown";
+                const name = r.submission?.cohort?.name || "Unknown Cohort";
+                if (!acc[key]) acc[key] = { name, reviews: [] };
+                acc[key].reviews.push(r);
+                return acc;
+              }, {})
+            ).map(([cohortId, group]) => (
+              <div key={cohortId}>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xs font-medium">{group.name}</span>
+                  <span className="text-[11px] text-muted-foreground font-mono tabular-nums">{group.reviews.length}</span>
                 </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-              </Link>
+                <div className="space-y-2">
+                  {group.reviews.map((review) => (
+                    <Link
+                      key={review.id}
+                      href={`/reviews/${review.id}`}
+                      className="flex items-center justify-between rounded-xl border py-3 px-4 hover:bg-muted/50 transition-colors group"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <span className="text-sm font-medium">
+                          {review.submission?.title}
+                        </span>
+                        {review.submission?.tagline && (
+                          <p className="text-xs text-muted-foreground truncate mt-0.5">
+                            {review.submission.tagline}
+                          </p>
+                        )}
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-[11px] text-muted-foreground">
+                            {review.submission?.team?.name || "Solo"}
+                          </span>
+                          <span className="text-[11px] text-muted-foreground">&middot;</span>
+                          <span className="text-[11px] text-muted-foreground">
+                            {review.submission?.track?.name || "Open Track"}
+                          </span>
+                        </div>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                    </Link>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         )}
       </section>
 
-      {/* Completed Reviews */}
+      {/* Completed Reviews (grouped by cohort) */}
       {completedReviews.length > 0 && (
         <section>
           <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-4">
             Completed Reviews
           </h2>
-          <div className="space-y-2">
-            {completedReviews.map((review) => (
-              <Link
-                key={review.id}
-                href={`/reviews/${review.id}`}
-                className="flex items-center justify-between rounded-xl border py-3 px-4 hover:bg-muted/50 transition-colors group"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">
-                      {review.submission?.title}
-                    </span>
-                    <span className="font-mono text-xs tabular-nums text-emerald-600">
-                      {review.overallScore?.toFixed(1)}/10
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-[11px] text-muted-foreground">
-                      {review.submission?.team?.name || "Solo"}
-                    </span>
-                    <span className="text-[11px] text-muted-foreground">&middot;</span>
-                    <span className="text-[11px] text-muted-foreground">
-                      {review.submission?.track?.name || "Open Track"}
-                    </span>
-                  </div>
+          <div className="space-y-6">
+            {Object.entries(
+              completedReviews.reduce<Record<string, { name: string; reviews: Review[] }>>((acc, r) => {
+                const key = r.submission?.cohort?.id || "unknown";
+                const name = r.submission?.cohort?.name || "Unknown Cohort";
+                if (!acc[key]) acc[key] = { name, reviews: [] };
+                acc[key].reviews.push(r);
+                return acc;
+              }, {})
+            ).map(([cohortId, group]) => (
+              <div key={cohortId}>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xs font-medium">{group.name}</span>
+                  <span className="text-[11px] text-muted-foreground font-mono tabular-nums">{group.reviews.length}</span>
                 </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-              </Link>
+                <div className="space-y-2">
+                  {group.reviews.map((review) => (
+                    <Link
+                      key={review.id}
+                      href={`/reviews/${review.id}`}
+                      className="flex items-center justify-between rounded-xl border py-3 px-4 hover:bg-muted/50 transition-colors group"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">
+                            {review.submission?.title}
+                          </span>
+                          <span className="font-mono text-xs tabular-nums text-emerald-600">
+                            {review.overallScore?.toFixed(1)}/10
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-[11px] text-muted-foreground">
+                            {review.submission?.team?.name || "Solo"}
+                          </span>
+                          <span className="text-[11px] text-muted-foreground">&middot;</span>
+                          <span className="text-[11px] text-muted-foreground">
+                            {review.submission?.track?.name || "Open Track"}
+                          </span>
+                        </div>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                    </Link>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         </section>
