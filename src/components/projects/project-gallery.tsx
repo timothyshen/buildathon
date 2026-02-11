@@ -9,29 +9,36 @@ interface ProjectGalleryProps {
   videoUrl?: string;
 }
 
-function extractYouTubeId(url: string): string | null {
-  const patterns = [
+function parseVideoUrl(url: string): { provider: "youtube" | "loom"; embedUrl: string } | null {
+  // YouTube patterns
+  const ytPatterns = [
     /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
     /youtube\.com\/v\/([^&\n?#]+)/,
   ];
-
-  for (const pattern of patterns) {
+  for (const pattern of ytPatterns) {
     const match = url.match(pattern);
-    if (match && match[1]) {
-      return match[1];
+    if (match?.[1]) {
+      return { provider: "youtube", embedUrl: `https://www.youtube.com/embed/${match[1]}` };
     }
   }
+
+  // Loom pattern
+  const loomMatch = url.match(/loom\.com\/share\/([a-zA-Z0-9]+)/);
+  if (loomMatch?.[1]) {
+    return { provider: "loom", embedUrl: `https://www.loom.com/embed/${loomMatch[1]}` };
+  }
+
   return null;
 }
 
 export function ProjectGallery({ screenshots, videoUrl }: ProjectGalleryProps) {
-  const youtubeId = videoUrl ? extractYouTubeId(videoUrl) : null;
+  const videoInfo = videoUrl ? parseVideoUrl(videoUrl) : null;
 
   // Build items array: video first (if exists), then screenshots
   const items: { type: "video" | "image"; src: string }[] = [];
 
-  if (youtubeId) {
-    items.push({ type: "video", src: youtubeId });
+  if (videoInfo) {
+    items.push({ type: "video", src: videoInfo.embedUrl });
   }
 
   screenshots.forEach((screenshot) => {
@@ -64,7 +71,7 @@ export function ProjectGallery({ screenshots, videoUrl }: ProjectGalleryProps) {
       <div className="relative aspect-video bg-muted rounded-lg overflow-hidden">
         {currentItem.type === "video" ? (
           <iframe
-            src={`https://www.youtube.com/embed/${currentItem.src}`}
+            src={currentItem.src}
             title="Project video"
             className="w-full h-full"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"

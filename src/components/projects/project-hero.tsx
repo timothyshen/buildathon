@@ -1,7 +1,7 @@
 import { Submission } from "@/types";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ExternalLink, Github, Play, FileText, Trophy, Award, Medal, Star } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { ExternalLink, Github, Play, FileText, Trophy, Award } from "lucide-react";
 
 interface ProjectHeroProps {
   project: Submission;
@@ -9,42 +9,25 @@ interface ProjectHeroProps {
   cohortName?: string;
 }
 
-function getStatusBadge(status: Submission["status"]) {
-  switch (status) {
-    case "winner":
-      return (
-        <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">
-          <Trophy className="h-3 w-3 mr-1.5" />
-          Winner
-        </Badge>
-      );
-    case "submitted":
-      return (
-        <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
-          Submitted
-        </Badge>
-      );
-    case "under_review":
-      return (
-        <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">
-          Under Review
-        </Badge>
-      );
-    case "accepted":
-      return (
-        <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
-          <Star className="h-3 w-3 mr-1.5" />
-          Accepted
-        </Badge>
-      );
-    case "draft":
-    default:
-      return (
-        <Badge className="bg-slate-500/20 text-slate-400 border-slate-500/30">
-          Draft
-        </Badge>
-      );
-  }
+function getStatusDot(status: Submission["status"]) {
+  const config: Record<string, { color: string; label: string }> = {
+    winner: { color: "bg-amber-500", label: "Winner" },
+    submitted: { color: "bg-blue-500", label: "Submitted" },
+    under_review: { color: "bg-amber-500", label: "Under Review" },
+    accepted: { color: "bg-emerald-500", label: "Accepted" },
+    draft: { color: "bg-muted-foreground", label: "Draft" },
+  };
+  const { color, label } = config[status] ?? config.draft;
+  return (
+    <div className="flex items-center gap-2">
+      {status === "winner" ? (
+        <Trophy className="h-4 w-4 text-amber-400" />
+      ) : (
+        <span className={cn("h-2 w-2 rounded-full", color)} />
+      )}
+      <span className="text-sm text-slate-300">{label}</span>
+    </div>
+  );
 }
 
 export function ProjectHero({ project, trackName, cohortName }: ProjectHeroProps) {
@@ -59,19 +42,17 @@ export function ProjectHero({ project, trackName, cohortName }: ProjectHeroProps
       />
 
       <div className="relative p-8 lg:p-12">
-        {/* Badges Row */}
-        <div className="flex flex-wrap items-center gap-3 mb-6">
-          {getStatusBadge(project.status)}
+        {/* Status & Meta Row */}
+        <div className="flex flex-wrap items-center gap-4 mb-6">
+          {getStatusDot(project.status)}
           {trackName && (
-            <Badge variant="outline" className="text-slate-300 border-slate-700">
-              <Award className="h-3 w-3 mr-1.5" />
-              {trackName}
-            </Badge>
+            <div className="flex items-center gap-1.5 text-slate-400">
+              <Award className="h-3.5 w-3.5" />
+              <span className="text-xs">{trackName}</span>
+            </div>
           )}
           {cohortName && (
-            <Badge variant="outline" className="text-slate-400 border-slate-700">
-              {cohortName}
-            </Badge>
+            <span className="text-xs text-slate-500">{cohortName}</span>
           )}
         </div>
 

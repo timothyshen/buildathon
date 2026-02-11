@@ -2,23 +2,47 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { submissionsService, tracksService, cohortsService } from "@/services";
+import { submissionsService, tracksService, cohortsService, tractionService } from "@/services";
 import { ProjectHero } from "@/components/projects/project-hero";
 import { ProjectGallery } from "@/components/projects/project-gallery";
 import { ProjectTeam } from "@/components/projects/project-team";
 import { ProjectCard } from "@/components/projects/project-card";
+import { ProjectWinnerBanner } from "@/components/projects/project-winner-banner";
+import { ProjectTractionStats, ProjectTractionChart } from "@/components/projects/project-traction";
+import { ProjectMilestones } from "@/components/projects/project-milestones";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Shield, FileCheck } from "lucide-react";
-
-export const metadata: Metadata = {
-  title: "Project Details - SWA.XYZ",
-  description: "View project details, team info, and submission information on SWA.XYZ.",
-};
 
 interface ProjectPageProps {
   params: Promise<{ id: string }>;
+}
+
+export async function generateMetadata({ params }: ProjectPageProps): Promise<Metadata> {
+  const { id } = await params;
+  const { data: submission } = await submissionsService.getById(id);
+
+  if (!submission || submission.status === "draft") {
+    return { title: "Project Not Found - SWA.XYZ" };
+  }
+
+  const description = submission.tagline || submission.description?.slice(0, 160) || "";
+  const image = submission.screenshots?.[0] || submission.logoUrl;
+
+  return {
+    title: `${submission.title} - SWA.XYZ`,
+    description,
+    openGraph: {
+      title: submission.title,
+      description,
+      ...(image ? { images: [{ url: image }] } : {}),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: submission.title,
+      description,
+      ...(image ? { images: [image] } : {}),
+    },
+  };
 }
 
 export default async function ProjectPage({ params }: ProjectPageProps) {
@@ -32,10 +56,20 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   }
 
   // Fetch related data in parallel
-  const [tracksResponse, cohortResponse, cohortSubmissionsResponse] = await Promise.all([
+  const [
+    tracksResponse,
+    cohortResponse,
+    cohortSubmissionsResponse,
+    snapshotsResponse,
+    latestSnapshotResponse,
+    milestonesResponse,
+  ] = await Promise.all([
     submission.cohortId ? tracksService.getByCohort(submission.cohortId) : Promise.resolve({ data: [] }),
     submission.cohortId ? cohortsService.getById(submission.cohortId) : Promise.resolve({ data: null }),
     submissionsService.getByCohort(submission.cohortId),
+    tractionService.getSnapshots(id),
+    tractionService.getLatestSnapshot(id),
+    tractionService.getMilestones(id),
   ]);
 
   // Get the track info if projectTrack exists
@@ -50,6 +84,11 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   const relatedProjects = cohortSubmissions
     .filter((s) => s.id !== submission.id && s.status !== "draft")
     .slice(0, 3);
+
+  // Traction data
+  const snapshots = snapshotsResponse.data ?? [];
+  const latestSnapshot = latestSnapshotResponse.data ?? null;
+  const milestones = milestonesResponse.data ?? [];
 
   // Format date for IP registration
   const formatDate = (date: Date) => {
@@ -102,6 +141,20 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
         />
       </div>
 
+      {/* Winner Banner */}
+      {submission.status === "winner" && (
+        <div className="max-w-6xl mx-auto px-4 mt-6">
+          <ProjectWinnerBanner project={submission} trackName={projectTrack?.name} />
+        </div>
+      )}
+
+      {/* Traction Stats Strip */}
+      {latestSnapshot && (
+        <div className="max-w-6xl mx-auto px-4 mt-6">
+          <ProjectTractionStats latestSnapshot={latestSnapshot} />
+        </div>
+      )}
+
       {/* Main Content */}
       <div className="max-w-6xl mx-auto px-4 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -113,164 +166,167 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
               videoUrl={submission.videoUrl}
             />
 
-            {/* About Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle>About</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-muted-foreground whitespace-pre-wrap">
-                  {submission.description}
-                </p>
-                {submission.builtWithStory && (
-                  <Badge className="bg-primary text-primary-foreground hover:bg-primary/90">
-                    <Shield className="h-3 w-3 mr-1" />
-                    Built with Story Protocol
-                  </Badge>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Tech Stack Card */}
-            {submission.techStack.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Tech Stack</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-2">
-                    {submission.techStack.map((tech) => (
-                      <Badge key={tech} variant="secondary">
-                        {tech}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+            {/* Traction Chart */}
+            {snapshots.length >= 2 && (
+              <ProjectTractionChart snapshots={snapshots} />
             )}
 
-            {/* Track Card */}
+            {/* About */}
+            <section className="rounded-xl border p-5 space-y-4">
+              <h3 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">
+                About
+              </h3>
+              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                {submission.description}
+              </p>
+              {submission.builtWithStory && (
+                <div className="flex items-center gap-1.5 text-xs text-primary">
+                  <Shield className="h-3.5 w-3.5" />
+                  Built with Story Protocol
+                </div>
+              )}
+            </section>
+
+            {/* Tech Stack */}
+            {submission.techStack.length > 0 && (
+              <section className="rounded-xl border p-5 space-y-4">
+                <h3 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">
+                  Tech Stack
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {submission.techStack.map((tech) => (
+                    <span
+                      key={tech}
+                      className="px-2.5 py-1 text-xs rounded-md bg-muted text-muted-foreground"
+                    >
+                      {tech}
+                    </span>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Track */}
             {projectTrack && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Track</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div>
-                    <h4 className="font-semibold">{projectTrack.name}</h4>
-                    <p className="text-sm text-muted-foreground">
-                      {projectTrack.description}
-                    </p>
+              <section className="rounded-xl border p-5 space-y-4">
+                <h3 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">
+                  Track
+                </h3>
+                <div>
+                  <h4 className="text-sm font-semibold">{projectTrack.name}</h4>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {projectTrack.description}
+                  </p>
+                </div>
+                {projectTrack.sponsorName && (
+                  <div className="flex items-center gap-2 pt-3 border-t">
+                    {projectTrack.sponsorLogo && (
+                      <Image
+                        unoptimized
+                        src={projectTrack.sponsorLogo}
+                        alt={projectTrack.sponsorName}
+                        width={24}
+                        height={24}
+                        className="rounded"
+                      />
+                    )}
+                    <span className="text-xs text-muted-foreground">
+                      Sponsored by {projectTrack.sponsorName}
+                    </span>
                   </div>
-                  {projectTrack.sponsorName && (
-                    <div className="flex items-center gap-2 pt-2 border-t">
-                      {projectTrack.sponsorLogo && (
-                        <Image
-                          unoptimized
-                          src={projectTrack.sponsorLogo}
-                          alt={projectTrack.sponsorName}
-                          width={24}
-                          height={24}
-                          className="rounded"
-                        />
-                      )}
-                      <span className="text-sm text-muted-foreground">
-                        Sponsored by {projectTrack.sponsorName}
-                      </span>
-                    </div>
-                  )}
-                  {projectTrack.prizePool && (
-                    <Badge variant="outline">{projectTrack.prizePool} Prize Pool</Badge>
-                  )}
-                </CardContent>
-              </Card>
+                )}
+                {projectTrack.prizePool && (
+                  <span className="inline-block px-2.5 py-1 text-xs rounded-md border text-muted-foreground">
+                    {projectTrack.prizePool} Prize Pool
+                  </span>
+                )}
+              </section>
             )}
           </div>
 
           {/* Sidebar - 1 column */}
           <div className="space-y-6">
-            {/* Team Card or Solo Badge */}
+            {/* Team */}
             {submission.team ? (
               <ProjectTeam team={submission.team} />
             ) : (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Submitted by</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Badge variant="secondary">Solo submission</Badge>
-                </CardContent>
-              </Card>
+              <section className="rounded-xl border p-5">
+                <h3 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">
+                  Submitted by
+                </h3>
+                <p className="text-sm text-muted-foreground mt-3">Solo submission</p>
+              </section>
             )}
 
-            {/* IP Registration Card */}
-            {submission.ipAssetId && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileCheck className="h-5 w-5 text-success-foreground" />
-                    IP Registration
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <Badge className="bg-success text-success-foreground hover:bg-success/90">
-                    Registered on Story Protocol
-                  </Badge>
+            {/* Milestones */}
+            {milestones.length > 0 && (
+              <ProjectMilestones milestones={milestones} />
+            )}
 
-                  <div className="space-y-2">
+            {/* IP Registration */}
+            {submission.ipAssetId && (
+              <section className="rounded-xl border p-5 space-y-4">
+                <div className="flex items-center gap-2">
+                  <FileCheck className="h-4 w-4 text-emerald-600" />
+                  <h3 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">
+                    IP Registration
+                  </h3>
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                  <span className="text-xs text-emerald-600">Registered on Story Protocol</span>
+                </div>
+
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-[11px] text-muted-foreground">Asset ID</p>
+                    <p className="font-mono text-xs break-all mt-0.5">
+                      {submission.ipAssetId}
+                    </p>
+                  </div>
+
+                  {submission.ipLicenseType && (
                     <div>
-                      <p className="text-xs text-muted-foreground">Asset ID</p>
-                      <p className="font-mono text-sm break-all">
-                        {submission.ipAssetId}
+                      <p className="text-[11px] text-muted-foreground">License Type</p>
+                      <p className="text-xs mt-0.5">
+                        {getLicenseLabel(submission.ipLicenseType)}
                       </p>
                     </div>
+                  )}
 
-                    {submission.ipLicenseType && (
-                      <div>
-                        <p className="text-xs text-muted-foreground">License Type</p>
-                        <p className="text-sm">
-                          {getLicenseLabel(submission.ipLicenseType)}
-                        </p>
-                      </div>
-                    )}
-
-                    {submission.ipRegisteredAt && (
-                      <div>
-                        <p className="text-xs text-muted-foreground">
-                          Registration Date
-                        </p>
-                        <p className="text-sm">
-                          {formatDate(submission.ipRegisteredAt)}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+                  {submission.ipRegisteredAt && (
+                    <div>
+                      <p className="text-[11px] text-muted-foreground">Registration Date</p>
+                      <p className="text-xs mt-0.5">
+                        {formatDate(submission.ipRegisteredAt)}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </section>
             )}
 
-            {/* Cohort Card */}
+            {/* Cohort */}
             {submission.cohort && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Cohort</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Link
-                    href={`/cohorts/${submission.cohort.slug}`}
-                    className="group block"
-                  >
-                    <h4 className="font-semibold group-hover:text-primary transition-colors">
-                      {submission.cohort.name}
-                    </h4>
-                    {submission.cohort.tagline && (
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {submission.cohort.tagline}
-                      </p>
-                    )}
-                  </Link>
-                </CardContent>
-              </Card>
+              <section className="rounded-xl border p-5 space-y-3">
+                <h3 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">
+                  Cohort
+                </h3>
+                <Link
+                  href={`/cohorts/${submission.cohort.slug}`}
+                  className="group block"
+                >
+                  <h4 className="text-sm font-semibold group-hover:text-primary transition-colors">
+                    {submission.cohort.name}
+                  </h4>
+                  {submission.cohort.tagline && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {submission.cohort.tagline}
+                    </p>
+                  )}
+                </Link>
+              </section>
             )}
           </div>
         </div>
@@ -278,7 +334,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
         {/* Related Projects Section */}
         {relatedProjects.length > 0 && (
           <section className="mt-16">
-            <h2 className="text-2xl font-bold mb-6">
+            <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-6">
               More from {submission.cohort?.name || "this cohort"}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
