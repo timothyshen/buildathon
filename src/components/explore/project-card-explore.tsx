@@ -104,14 +104,6 @@ export function ProjectCardExplore({
         {/* Meta info */}
         <div className="mt-4 flex items-center gap-3 text-xs text-muted-foreground">
           {submission.cohort && <span>{submission.cohort.name}</span>}
-          {submission.cohort && (submission.tracks?.length || submission.track) && (
-            <span className="text-muted-foreground/50">/</span>
-          )}
-          {submission.tracks && submission.tracks.length > 1 ? (
-            <span>{submission.tracks.map((t) => t.name).join(", ")}</span>
-          ) : submission.track ? (
-            <span>{submission.track.name}</span>
-          ) : null}
         </div>
       </div>
 
