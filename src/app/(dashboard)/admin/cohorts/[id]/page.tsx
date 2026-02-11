@@ -51,6 +51,7 @@ import {
   Wand2,
   Search,
 } from "lucide-react";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { RichTextDisplay } from "@/components/ui/rich-text-editor";
 import { toast } from "sonner";
 import type { Cohort, Track, Submission, Review, User } from "@/types";
@@ -109,6 +110,8 @@ export default function AdminCohortDetailPage({ params }: AdminCohortDetailPageP
   const [showAddJudge, setShowAddJudge] = useState(false);
   const [allJudges, setAllJudges] = useState<User[]>([]);
   const [judgeSearch, setJudgeSearch] = useState("");
+  const [reviewProgressPage, setReviewProgressPage] = useState(1);
+  const [reviewProgressPageSize, setReviewProgressPageSize] = useState(25);
 
   useEffect(() => {
     async function loadData() {
@@ -669,16 +672,20 @@ export default function AdminCohortDetailPage({ params }: AdminCohortDetailPageP
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {submissions.filter((s) => s.status !== "draft").length === 0 ? (
+                  {(() => {
+                    const nonDraftSubs = submissions.filter((s) => s.status !== "draft");
+                    const paginatedSubs = nonDraftSubs.slice(
+                      (reviewProgressPage - 1) * reviewProgressPageSize,
+                      reviewProgressPage * reviewProgressPageSize
+                    );
+                    return nonDraftSubs.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={4} className="text-center py-8">
                         <p className="text-muted-foreground text-sm">No submissions to review</p>
                       </TableCell>
                     </TableRow>
                   ) : (
-                    submissions
-                      .filter((s) => s.status !== "draft")
-                      .map((sub) => {
+                    paginatedSubs.map((sub) => {
                         const subReviews = reviews.filter((r) => r.submissionId === sub.id);
                         const completedReviews = subReviews.filter((r) => r.status === "completed");
                         const needed = cohort.minReviewsPerSubmission || 3;
@@ -710,10 +717,20 @@ export default function AdminCohortDetailPage({ params }: AdminCohortDetailPageP
                           </TableRow>
                         );
                       })
-                  )}
+                  );
+                  })()}
                 </TableBody>
               </Table>
             </div>
+            {submissions.filter((s) => s.status !== "draft").length > 0 && (
+              <TablePagination
+                page={reviewProgressPage}
+                pageSize={reviewProgressPageSize}
+                total={submissions.filter((s) => s.status !== "draft").length}
+                onPageChange={setReviewProgressPage}
+                onPageSizeChange={(size) => { setReviewProgressPageSize(size); setReviewProgressPage(1); }}
+              />
+            )}
           </div>
         </TabsContent>
       </Tabs>

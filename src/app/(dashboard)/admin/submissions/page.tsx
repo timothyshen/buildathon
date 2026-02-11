@@ -22,6 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { Search, ExternalLink, Eye, Loader2 } from "lucide-react";
 import type { Submission, Cohort } from "@/types";
 
@@ -35,12 +36,14 @@ export default function AdminSubmissionsPage() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedCohort, setSelectedCohort] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const handleSearchChange = useCallback((value: string) => {
     setSearch(value);
     clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => setDebouncedSearch(value), 300);
+    debounceRef.current = setTimeout(() => { setDebouncedSearch(value); setPage(1); }, 300);
   }, []);
 
   // Load cohorts once
@@ -57,7 +60,8 @@ export default function AdminSubmissionsPage() {
 
     submissionsService
       .list({
-        pageSize: 100,
+        page,
+        pageSize,
         status: selectedStatus !== "all" ? (selectedStatus as Submission["status"]) : undefined,
         cohortId: selectedCohort !== "all" ? selectedCohort : undefined,
         search: debouncedSearch || undefined,
@@ -78,7 +82,7 @@ export default function AdminSubmissionsPage() {
       });
 
     return () => { cancelled = true; };
-  }, [selectedStatus, selectedCohort, debouncedSearch]);
+  }, [selectedStatus, selectedCohort, debouncedSearch, page, pageSize]);
 
   return (
     <div className="space-y-10">
@@ -108,7 +112,7 @@ export default function AdminSubmissionsPage() {
             className="pl-10"
           />
         </div>
-        <Select value={selectedCohort} onValueChange={setSelectedCohort}>
+        <Select value={selectedCohort} onValueChange={(v) => { setSelectedCohort(v); setPage(1); }}>
           <SelectTrigger className="w-full sm:w-[200px]">
             <SelectValue placeholder="All Cohorts" />
           </SelectTrigger>
@@ -121,7 +125,7 @@ export default function AdminSubmissionsPage() {
             ))}
           </SelectContent>
         </Select>
-        <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+        <Select value={selectedStatus} onValueChange={(v) => { setSelectedStatus(v); setPage(1); }}>
           <SelectTrigger className="w-full sm:w-[150px]">
             <SelectValue placeholder="All Status" />
           </SelectTrigger>
@@ -243,9 +247,13 @@ export default function AdminSubmissionsPage() {
         </Table>
       </div>
 
-      <p className="text-xs text-muted-foreground">
-        Showing {submissions.length} of {totalCount} submissions
-      </p>
+      <TablePagination
+        page={page}
+        pageSize={pageSize}
+        total={totalCount}
+        onPageChange={setPage}
+        onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
+      />
     </div>
   );
 }

@@ -25,6 +25,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { Pencil, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -35,6 +36,8 @@ export default function SponsorWorkshopsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<Workshop | null>(null);
   const [rsvpCounts, setRsvpCounts] = useState<Record<string, number>>({});
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   useEffect(() => {
     async function loadData() {
@@ -182,7 +185,7 @@ export default function SponsorWorkshopsPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              sponsorWorkshops.map((workshop) => (
+              sponsorWorkshops.slice((page - 1) * pageSize, page * pageSize).map((workshop) => (
                 <TableRow key={workshop.id}>
                   <TableCell>
                     <Link
@@ -250,6 +253,16 @@ export default function SponsorWorkshopsPage() {
           </TableBody>
         </Table>
       </div>
+
+      {sponsorWorkshops.length > 0 && (
+        <TablePagination
+          page={page}
+          pageSize={pageSize}
+          total={sponsorWorkshops.length}
+          onPageChange={setPage}
+          onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
+        />
+      )}
 
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <AlertDialogContent>

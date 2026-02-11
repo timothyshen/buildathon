@@ -44,6 +44,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { PlusCircle, Pencil, Trash2, GraduationCap, Search, X, Loader2 } from "lucide-react";
 
 export default function AdminWorkshopPage() {
@@ -55,6 +56,8 @@ export default function AdminWorkshopPage() {
   const [selectedWorkshop, setSelectedWorkshop] = useState<Workshop | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   useEffect(() => {
     async function loadData() {
@@ -89,9 +92,12 @@ export default function AdminWorkshopPage() {
     return matchesSearch && matchesCategory;
   });
 
+  const paginatedWorkshops = filteredWorkshops.slice((page - 1) * pageSize, page * pageSize);
+
   const clearFilters = () => {
     setSearchQuery("");
     setCategoryFilter("all");
+    setPage(1);
   };
 
   const handleEdit = (workshop: Workshop) => {
@@ -268,11 +274,11 @@ export default function AdminWorkshopPage() {
               <Input
                 placeholder="Search workshops..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
                 className="pl-9"
               />
             </div>
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <Select value={categoryFilter} onValueChange={(v) => { setCategoryFilter(v); setPage(1); }}>
               <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
@@ -320,7 +326,7 @@ export default function AdminWorkshopPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredWorkshops.map((workshop) => (
+                    {paginatedWorkshops.map((workshop) => (
                       <TableRow key={workshop.id}>
                         <TableCell>
                           <div className="max-w-[280px]">
@@ -379,9 +385,13 @@ export default function AdminWorkshopPage() {
                   </TableBody>
                 </Table>
               </div>
-              <p className="text-xs text-muted-foreground">
-                {filteredWorkshops.length} of {workshops.length} workshop{workshops.length !== 1 ? "s" : ""}
-              </p>
+              <TablePagination
+                page={page}
+                pageSize={pageSize}
+                total={filteredWorkshops.length}
+                onPageChange={setPage}
+                onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
+              />
             </>
           )}
         </>

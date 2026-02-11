@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { TablePagination } from "@/components/ui/table-pagination";
 import {
   Table,
   TableBody,
@@ -21,6 +22,8 @@ interface CohortTableProps {
 
 export function CohortTable({ cohorts }: CohortTableProps) {
   const [cohortSponsors, setCohortSponsors] = useState<CohortSponsor[]>([]);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   useEffect(() => {
     async function loadSponsors() {
@@ -34,7 +37,10 @@ export function CohortTable({ cohorts }: CohortTableProps) {
     return cohortSponsors.filter((cs) => cs.cohortId === cohortId).length;
   };
 
+  const paginatedCohorts = cohorts.slice((page - 1) * pageSize, page * pageSize);
+
   return (
+    <>
     <Table>
       <TableHeader>
         <TableRow>
@@ -47,7 +53,7 @@ export function CohortTable({ cohorts }: CohortTableProps) {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {cohorts.map((cohort) => (
+        {paginatedCohorts.map((cohort) => (
           <TableRow key={cohort.id}>
             <TableCell>
               <div>
@@ -102,5 +108,15 @@ export function CohortTable({ cohorts }: CohortTableProps) {
         ))}
       </TableBody>
     </Table>
+    {cohorts.length > pageSize && (
+      <TablePagination
+        page={page}
+        pageSize={pageSize}
+        total={cohorts.length}
+        onPageChange={setPage}
+        onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
+      />
+    )}
+    </>
   );
 }

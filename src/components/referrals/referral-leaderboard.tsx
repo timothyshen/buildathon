@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { cn } from "@/lib/utils";
 import type { ReferralLeaderboardEntry } from "@/types";
 
@@ -11,6 +13,9 @@ interface ReferralLeaderboardProps {
 }
 
 export function ReferralLeaderboard({ entries, currentUserId, showPending = false }: ReferralLeaderboardProps) {
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
   if (entries.length === 0) {
     return (
       <div className="text-center py-8">
@@ -20,6 +25,7 @@ export function ReferralLeaderboard({ entries, currentUserId, showPending = fals
   }
 
   return (
+    <>
     <Table>
       <TableHeader>
         <TableRow>
@@ -30,7 +36,7 @@ export function ReferralLeaderboard({ entries, currentUserId, showPending = fals
         </TableRow>
       </TableHeader>
       <TableBody>
-        {entries.map((entry) => {
+        {entries.slice((page - 1) * pageSize, page * pageSize).map((entry) => {
           const isCurrentUser = entry.userId === currentUserId;
           return (
             <TableRow
@@ -75,5 +81,15 @@ export function ReferralLeaderboard({ entries, currentUserId, showPending = fals
         })}
       </TableBody>
     </Table>
+    {entries.length > pageSize && (
+      <TablePagination
+        page={page}
+        pageSize={pageSize}
+        total={entries.length}
+        onPageChange={setPage}
+        onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
+      />
+    )}
+    </>
   );
 }

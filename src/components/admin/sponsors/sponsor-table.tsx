@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { TablePagination } from "@/components/ui/table-pagination";
 import {
   Table,
   TableBody,
@@ -29,6 +31,9 @@ interface SponsorTableProps {
 }
 
 export function SponsorTable({ sponsors, onEdit, onDelete, onInvite, onGenerateInviteLink }: SponsorTableProps) {
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
   const sortedSponsors = [...sponsors].sort((a, b) => {
     const tierOrder = ["platinum", "gold", "silver", "bronze", "community", null];
     const aIndex = a.highestTier ? tierOrder.indexOf(a.highestTier) : tierOrder.length - 1;
@@ -37,6 +42,7 @@ export function SponsorTable({ sponsors, onEdit, onDelete, onInvite, onGenerateI
   });
 
   return (
+    <>
     <Table>
       <TableHeader>
         <TableRow>
@@ -49,7 +55,7 @@ export function SponsorTable({ sponsors, onEdit, onDelete, onInvite, onGenerateI
         </TableRow>
       </TableHeader>
       <TableBody>
-        {sortedSponsors.map((sponsor) => (
+        {sortedSponsors.slice((page - 1) * pageSize, page * pageSize).map((sponsor) => (
           <TableRow key={sponsor.id}>
             <TableCell>
               <div className="flex items-center gap-3">
@@ -151,5 +157,15 @@ export function SponsorTable({ sponsors, onEdit, onDelete, onInvite, onGenerateI
         )}
       </TableBody>
     </Table>
+    {sortedSponsors.length > pageSize && (
+      <TablePagination
+        page={page}
+        pageSize={pageSize}
+        total={sortedSponsors.length}
+        onPageChange={setPage}
+        onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
+      />
+    )}
+    </>
   );
 }

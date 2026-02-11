@@ -7,6 +7,7 @@ import { AdminNav } from "@/components/admin/admin-nav";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { Loader2 } from "lucide-react";
 import type { Cohort, Referral, ReferralLeaderboardEntry } from "@/types";
 
@@ -16,6 +17,8 @@ export default function AdminReferralsPage() {
   const [leaderboard, setLeaderboard] = useState<ReferralLeaderboardEntry[]>([]);
   const [referrals, setReferrals] = useState<Referral[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   // Load cohorts
   useEffect(() => {
@@ -73,7 +76,7 @@ export default function AdminReferralsPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Referrals</h1>
         {cohorts.length > 1 && (
-          <Select value={selectedCohortId} onValueChange={setSelectedCohortId}>
+          <Select value={selectedCohortId} onValueChange={(v) => { setSelectedCohortId(v); setPage(1); }}>
             <SelectTrigger className="w-[220px]">
               <SelectValue placeholder="Select cohort" />
             </SelectTrigger>
@@ -143,7 +146,7 @@ export default function AdminReferralsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {referrals.map((referral) => (
+                {referrals.slice((page - 1) * pageSize, page * pageSize).map((referral) => (
                   <TableRow key={referral.id}>
                     <TableCell>
                       <div className="flex items-center gap-2">
@@ -199,6 +202,15 @@ export default function AdminReferralsPage() {
             </Table>
           )}
         </div>
+        {referrals.length > 0 && (
+          <TablePagination
+            page={page}
+            pageSize={pageSize}
+            total={referrals.length}
+            onPageChange={setPage}
+            onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
+          />
+        )}
       </section>
     </div>
   );

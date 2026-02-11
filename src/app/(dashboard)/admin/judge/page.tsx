@@ -29,6 +29,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { TablePagination } from "@/components/ui/table-pagination";
 import {
   Search,
   Star,
@@ -51,6 +52,8 @@ export default function AdminJudgePage() {
   const [search, setSearch] = useState("");
   const [selectedCohort, setSelectedCohort] = useState<string>("all");
   const [creatingReviewFor, setCreatingReviewFor] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   useEffect(() => {
     async function loadData() {
@@ -143,6 +146,8 @@ export default function AdminJudgePage() {
     return matchesSearch && matchesCohort;
   });
 
+  const paginatedItems = filteredItems.slice((page - 1) * pageSize, page * pageSize);
+
   const reviewedCount = items.filter(
     (i) => i.review?.status === "completed"
   ).length;
@@ -195,11 +200,11 @@ export default function AdminJudgePage() {
           <Input
             placeholder="Search by title or team..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             className="pl-9"
           />
         </div>
-        <Select value={selectedCohort} onValueChange={setSelectedCohort}>
+        <Select value={selectedCohort} onValueChange={(v) => { setSelectedCohort(v); setPage(1); }}>
           <SelectTrigger className="w-full sm:w-[180px]">
             <SelectValue placeholder="All Cohorts" />
           </SelectTrigger>
@@ -228,14 +233,14 @@ export default function AdminJudgePage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredItems.length === 0 ? (
+            {paginatedItems.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-8">
                   <p className="text-muted-foreground">No submissions found</p>
                 </TableCell>
               </TableRow>
             ) : (
-              filteredItems.map((item) => (
+              paginatedItems.map((item) => (
                 <TableRow key={item.submission.id}>
                   <TableCell>
                     <div>
@@ -323,6 +328,14 @@ export default function AdminJudgePage() {
           </TableBody>
         </Table>
       </div>
+
+      <TablePagination
+        page={page}
+        pageSize={pageSize}
+        total={filteredItems.length}
+        onPageChange={setPage}
+        onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
+      />
     </div>
   );
 }

@@ -33,6 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { Search, UserPlus, Loader2, Users } from "lucide-react";
 import { toast } from "sonner";
 
@@ -57,6 +58,8 @@ export default function AdminJudgesPage() {
   const [cohortAssignments, setCohortAssignments] = useState<Map<string, CohortJudgeWithCohort[]>>(new Map());
   const [cohorts, setCohorts] = useState<Cohort[]>([]);
   const [assignCohortFilter, setAssignCohortFilter] = useState<string>("all");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   useEffect(() => {
     async function loadData() {
@@ -226,6 +229,8 @@ export default function AdminJudgesPage() {
       judge.email.toLowerCase().includes(search.toLowerCase())
   );
 
+  const paginatedJudges = filteredJudges.slice((page - 1) * pageSize, page * pageSize);
+
   return (
     <div className="space-y-10">
       <Breadcrumb
@@ -316,7 +321,7 @@ export default function AdminJudgesPage() {
         <Input
           placeholder="Search judges..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
           className="pl-10"
         />
       </div>
@@ -331,7 +336,7 @@ export default function AdminJudgesPage() {
           </p>
         </div>
       ) : (
-        <div className="rounded-xl border overflow-x-auto">
+        <div className="rounded-xl border overflow-hidden">
           <Table className="min-w-[700px]">
             <TableHeader>
               <TableRow>
@@ -346,7 +351,7 @@ export default function AdminJudgesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredJudges.map((judge) => {
+              {paginatedJudges.map((judge) => {
                 const judgeReviews = reviews.filter(
                   (r) => r.judgeId === judge.id
                 );
@@ -423,6 +428,16 @@ export default function AdminJudgesPage() {
             </TableBody>
           </Table>
         </div>
+      )}
+
+      {filteredJudges.length > 0 && (
+        <TablePagination
+          page={page}
+          pageSize={pageSize}
+          total={filteredJudges.length}
+          onPageChange={setPage}
+          onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
+        />
       )}
 
       {/* Assign Reviews Dialog */}

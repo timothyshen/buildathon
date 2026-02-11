@@ -18,6 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { Star, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -34,6 +35,8 @@ export default function SponsorReviewsPage() {
   const [trackSubmissions, setTrackSubmissions] = useState<TrackSubmission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [creatingReviewFor, setCreatingReviewFor] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   useEffect(() => {
     async function loadData() {
@@ -191,7 +194,7 @@ export default function SponsorReviewsPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              trackSubmissions.map((item) => (
+              trackSubmissions.slice((page - 1) * pageSize, page * pageSize).map((item) => (
                 <TableRow key={item.submission.id}>
                   <TableCell>
                     <div className="max-w-[200px] md:max-w-none">
@@ -256,6 +259,16 @@ export default function SponsorReviewsPage() {
           </TableBody>
         </Table>
       </div>
+
+      {trackSubmissions.length > 0 && (
+        <TablePagination
+          page={page}
+          pageSize={pageSize}
+          total={trackSubmissions.length}
+          onPageChange={setPage}
+          onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
+        />
+      )}
     </div>
   );
 }

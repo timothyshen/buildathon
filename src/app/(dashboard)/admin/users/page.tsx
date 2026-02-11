@@ -30,6 +30,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { TablePagination } from "@/components/ui/table-pagination";
 import {
   Search,
   Users,
@@ -50,6 +51,8 @@ export default function AdminUsersPage() {
   const [editRole, setEditRole] = useState<UserRole>("participant");
   const [editSponsorOrgId, setEditSponsorOrgId] = useState<string>("");
   const [isSaving, setIsSaving] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   useEffect(() => {
     async function loadData() {
@@ -127,6 +130,8 @@ export default function AdminUsersPage() {
     const matchesRole = roleFilter === "all" || user.role === roleFilter;
     return matchesSearch && matchesRole;
   });
+
+  const paginatedUsers = filteredUsers.slice((page - 1) * pageSize, page * pageSize);
 
   // Stats
   const adminCount = users.filter((u) => u.role === "admin").length;
@@ -237,11 +242,11 @@ export default function AdminUsersPage() {
           <Input
             placeholder="Search users..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             className="pl-10"
           />
         </div>
-        <Select value={roleFilter} onValueChange={setRoleFilter}>
+        <Select value={roleFilter} onValueChange={(v) => { setRoleFilter(v); setPage(1); }}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Filter by role" />
           </SelectTrigger>
@@ -280,7 +285,7 @@ export default function AdminUsersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredUsers.map((user) => (
+              {paginatedUsers.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell>
                     <div className="flex items-center gap-3">
@@ -333,6 +338,16 @@ export default function AdminUsersPage() {
             </TableBody>
           </Table>
         </div>
+      )}
+
+      {filteredUsers.length > 0 && (
+        <TablePagination
+          page={page}
+          pageSize={pageSize}
+          total={filteredUsers.length}
+          onPageChange={setPage}
+          onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
+        />
       )}
 
       {/* Edit Role Dialog */}

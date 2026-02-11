@@ -24,6 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { Search, Eye, Star, Loader2 } from "lucide-react";
 
 function getInitials(name: string): string {
@@ -44,6 +45,8 @@ export default function AdminReviewsPage() {
   const [selectedCohort, setSelectedCohort] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [selectedJudge, setSelectedJudge] = useState<string>("all");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   // Load cohorts and judges once
   useEffect(() => {
@@ -63,7 +66,7 @@ export default function AdminReviewsPage() {
 
     reviewsService
       .list({
-        pageSize: 100,
+        pageSize: 500,
         status: selectedStatus !== "all" ? (selectedStatus as Review["status"]) : undefined,
         cohortId: selectedCohort !== "all" ? selectedCohort : undefined,
       })
@@ -88,6 +91,8 @@ export default function AdminReviewsPage() {
 
     return matchesSearch && matchesJudge;
   });
+
+  const paginatedReviews = filteredReviews.slice((page - 1) * pageSize, page * pageSize);
 
   const completedReviews = reviews.filter((r) => r.status === "completed").length;
   const pendingReviews = reviews.filter((r) => r.status === "pending").length;
@@ -137,11 +142,11 @@ export default function AdminReviewsPage() {
           <Input
             placeholder="Search by judge or submission..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             className="pl-9"
           />
         </div>
-        <Select value={selectedCohort} onValueChange={setSelectedCohort}>
+        <Select value={selectedCohort} onValueChange={(v) => { setSelectedCohort(v); setPage(1); }}>
           <SelectTrigger className="w-full sm:w-[180px]">
             <SelectValue placeholder="All Cohorts" />
           </SelectTrigger>
@@ -154,7 +159,7 @@ export default function AdminReviewsPage() {
             ))}
           </SelectContent>
         </Select>
-        <Select value={selectedJudge} onValueChange={setSelectedJudge}>
+        <Select value={selectedJudge} onValueChange={(v) => { setSelectedJudge(v); setPage(1); }}>
           <SelectTrigger className="w-full sm:w-[180px]">
             <SelectValue placeholder="All Judges" />
           </SelectTrigger>
@@ -167,7 +172,7 @@ export default function AdminReviewsPage() {
             ))}
           </SelectContent>
         </Select>
-        <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+        <Select value={selectedStatus} onValueChange={(v) => { setSelectedStatus(v); setPage(1); }}>
           <SelectTrigger className="w-full sm:w-[150px]">
             <SelectValue placeholder="All Status" />
           </SelectTrigger>
@@ -200,14 +205,14 @@ export default function AdminReviewsPage() {
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground mx-auto" />
                 </TableCell>
               </TableRow>
-            ) : filteredReviews.length === 0 ? (
+            ) : paginatedReviews.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-8">
                   <p className="text-muted-foreground">No reviews found</p>
                 </TableCell>
               </TableRow>
             ) : (
-              filteredReviews.map((review) => (
+              paginatedReviews.map((review) => (
                 <TableRow key={review.id}>
                   <TableCell>
                     <div className="flex items-center gap-3">
@@ -279,6 +284,14 @@ export default function AdminReviewsPage() {
           </TableBody>
         </Table>
       </div>
+
+      <TablePagination
+        page={page}
+        pageSize={pageSize}
+        total={filteredReviews.length}
+        onPageChange={setPage}
+        onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
+      />
     </div>
   );
 }
