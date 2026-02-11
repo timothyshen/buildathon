@@ -39,6 +39,7 @@ export interface Cohort {
   status: "draft" | "upcoming" | "active" | "judging" | "completed";
   isPublic: boolean;
   maxTeamSize: number;
+  minReviewsPerSubmission: number;
   prizes?: Prize[];
 }
 
@@ -224,6 +225,13 @@ export interface CohortSponsor {
   prizePoolContribution: number;
   hasDedicatedTrack: boolean;
   description?: string; // Rich text description for this sponsor in this cohort
+}
+
+export interface CohortJudge {
+  id: string;
+  cohortId: string;
+  judgeId: string;
+  createdAt: Date;
 }
 
 // Legacy alias for backwards compatibility during migration

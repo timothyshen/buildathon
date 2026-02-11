@@ -88,6 +88,7 @@ export type Database = {
           status: "draft" | "upcoming" | "active" | "judging" | "completed";
           is_public: boolean;
           max_team_size: number;
+          min_reviews_per_submission: number;
           prizes: Json;
           created_at: string;
           updated_at: string;
@@ -107,6 +108,7 @@ export type Database = {
           status?: "draft" | "upcoming" | "active" | "judging" | "completed";
           is_public?: boolean;
           max_team_size?: number;
+          min_reviews_per_submission?: number;
           prizes?: Json;
           created_at?: string;
           updated_at?: string;
@@ -126,6 +128,7 @@ export type Database = {
           status?: "draft" | "upcoming" | "active" | "judging" | "completed";
           is_public?: boolean;
           max_team_size?: number;
+          min_reviews_per_submission?: number;
           prizes?: Json;
           created_at?: string;
           updated_at?: string;
@@ -212,6 +215,42 @@ export type Database = {
             columns: ["sponsor_org_id"];
             isOneToOne: false;
             referencedRelation: "sponsor_orgs";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      cohort_judges: {
+        Row: {
+          id: string;
+          cohort_id: string;
+          judge_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          cohort_id: string;
+          judge_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          cohort_id?: string;
+          judge_id?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cohort_judges_cohort_id_fkey";
+            columns: ["cohort_id"];
+            isOneToOne: false;
+            referencedRelation: "cohorts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "cohort_judges_judge_id_fkey";
+            columns: ["judge_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
             referencedColumns: ["id"];
           }
         ];
