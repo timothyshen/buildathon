@@ -109,6 +109,9 @@
 - [ ] Track filter works
 - [ ] Winner badges display correctly
 - [ ] Click project → navigates to detail
+- [ ] Winner cards show sponsor logo(s) on the right when track has sponsor logo
+- [ ] Multiple bounty wins show stacked sponsor logos (max 3 visible, +N overflow)
+- [ ] Winners without sponsor logos fall back to PrizeBadges (trophy/award icons)
 
 ### 2.5 Project Detail (`/projects/[id]`)
 - [ ] Shows project info (title, description, screenshots)
@@ -117,6 +120,21 @@
 - [ ] Demo/Repo links work
 - [ ] Tech stack badges display
 - [ ] Prize badges show for winners
+- [ ] Page title and meta tags are dynamic (project title, OG image, Twitter card)
+- [ ] Winner projects show gold gradient banner below hero with trophy icon and track name
+- [ ] Traction stats strip shows below hero when snapshot data exists (DAU, MAU, Visits, TX Count, TVL, Followers)
+- [ ] Traction stats strip hidden when no snapshot data
+- [ ] Traction line chart shows in main content when 2+ snapshots exist
+- [ ] Traction chart metric filter tabs switch between available metrics
+- [ ] Milestones timeline shows in sidebar with verified dots and type icons
+- [ ] Milestones sorted by date descending
+- [ ] Verified milestones show emerald checkmark, unverified show type icon
+- [ ] YouTube video embeds work in gallery
+- [ ] Loom video URLs embed correctly in gallery (loom.com/share/ID → loom.com/embed/ID)
+- [ ] Non-YouTube/Loom video URLs still show external link button
+- [ ] Bento design: sections use `rounded-xl border` (no Card wrappers)
+- [ ] Hero uses status dots instead of badges (trophy icon for winners)
+- [ ] Mobile responsive: stats strip, chart, and sidebar stack properly
 
 ### 2.6 Workshops Page (`/workshops`)
 - [ ] Lists upcoming workshops
@@ -618,7 +636,7 @@
 ### 13.2 Admin Table Filters
 - [ ] Search filters table rows
 - [ ] Dropdown filters work
-- [ ] Pagination works (if implemented)
+- [ ] Pagination works with 25/50/100 page size options on all tables
 
 ---
 
