@@ -153,6 +153,10 @@ CREATE POLICY "Authors can update own ideas"
   ON ideas FOR UPDATE
   USING (author_id = auth.uid());
 
+CREATE POLICY "Authors can delete own ideas"
+  ON ideas FOR DELETE
+  USING (author_id = auth.uid());
+
 CREATE POLICY "Admins can manage all ideas"
   ON ideas FOR ALL
   USING (public.is_admin());

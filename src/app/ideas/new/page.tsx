@@ -208,12 +208,12 @@ export default function NewIdeaPage() {
           {cohorts.length > 0 && (
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Link to Cohort (optional)</Label>
-              <Select value={cohortId} onValueChange={setCohortId}>
+              <Select value={cohortId || "none"} onValueChange={(val) => setCohortId(val === "none" ? "" : val)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select a cohort..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                   {cohorts.map((cohort) => (
                     <SelectItem key={cohort.id} value={cohort.id}>
                       {cohort.name}

@@ -3,8 +3,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Loader2, Calendar, User as UserIcon } from "lucide-react";
+import { ArrowLeft, Loader2, Calendar, User as UserIcon, Pencil, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { RichTextDisplay } from "@/components/ui/rich-text-editor";
 import { IdeaVoteButton } from "@/components/ideas/idea-vote-button";
 import { IdeaCommentSection } from "@/components/ideas/idea-comment-section";
@@ -85,6 +87,17 @@ export default function IdeaDetailPage() {
       toast.success("Status updated");
     } else {
       toast.error("Failed to update status");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!idea) return;
+    const res = await ideasService.delete(idea.id);
+    if (res.success) {
+      toast.success("Idea deleted");
+      router.push("/ideas");
+    } else {
+      toast.error("Failed to delete idea");
     }
   };
 
@@ -215,12 +228,36 @@ export default function IdeaDetailPage() {
                   </Select>
                 </div>
                 {isAuthor && (
-                  <Link
-                    href={`/ideas/new?edit=${idea.id}`}
-                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    Edit Idea
-                  </Link>
+                  <div className="flex items-center gap-2 pt-1">
+                    <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-foreground">
+                      <Link href={`/ideas/new?edit=${idea.id}`}>
+                        <Pencil className="mr-1.5 h-3.5 w-3.5" />
+                        Edit
+                      </Link>
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive">
+                          <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                          Delete
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete this idea?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will permanently delete the idea along with all its votes, comments, and interests. This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 )}
               </section>
             )}
