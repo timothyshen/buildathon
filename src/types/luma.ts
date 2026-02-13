@@ -9,13 +9,14 @@ export interface LumaHost {
 }
 
 export interface LumaGeoAddress {
+  address?: string;
   city?: string;
   region?: string;
   country?: string;
-  latitude?: string;
-  longitude?: string;
+  city_state?: string;
   full_address?: string;
-  place_id?: string;
+  google_maps_place_id?: string;
+  apple_maps_place_id?: string;
   description?: string;
 }
 
@@ -26,13 +27,19 @@ export interface LumaEvent {
   description_md?: string;
   start_at: string; // ISO 8601
   end_at: string; // ISO 8601
+  duration_interval?: string;
   timezone: string;
   url: string; // lu.ma event URL
   cover_url?: string;
   meeting_url?: string;
+  zoom_meeting_url?: string;
   geo_address_json?: LumaGeoAddress | null;
+  geo_latitude?: string;
+  geo_longitude?: string;
   visibility: string;
-  hosts: LumaHost[];
+  user_api_id?: string;
+  calendar_api_id?: string;
+  hosts?: LumaHost[]; // Not returned by /v1/calendar/list-events
 }
 
 export interface LumaEventEntry {
