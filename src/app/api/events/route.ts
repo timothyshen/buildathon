@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { fetchLumaEvents } from "@/lib/luma/events";
+import { fetchLumaEvents, fetchAllLumaEvents } from "@/lib/luma/events";
 
 // In-memory cache with TTL
 let cachedResponse: { data: unknown; timestamp: number } | null = null;
@@ -11,8 +11,9 @@ export async function GET(request: Request) {
     const after = searchParams.get("after") || undefined;
     const before = searchParams.get("before") || undefined;
 
-    // Use cache for default (no params) requests
+    // Default request: fetch ALL pages so the calendar has every event
     const isDefaultRequest = !after && !before;
+
     if (
       isDefaultRequest &&
       cachedResponse &&
@@ -21,22 +22,30 @@ export async function GET(request: Request) {
       return NextResponse.json(cachedResponse.data);
     }
 
-    const result = await fetchLumaEvents({ after, before });
-
-    // Serialize dates for JSON transport
-    const serialized = {
-      events: result.events.map((e) => ({
+    // Serialize helper
+    const serialize = (events: Awaited<ReturnType<typeof fetchAllLumaEvents>>) =>
+      events.map((e) => ({
         ...e,
         startAt: e.startAt.toISOString(),
         endAt: e.endAt.toISOString(),
-      })),
+      }));
+
+    if (isDefaultRequest) {
+      // Paginate through all events for the full calendar
+      const allEvents = await fetchAllLumaEvents();
+      const serialized = { events: serialize(allEvents), hasMore: false };
+
+      cachedResponse = { data: serialized, timestamp: Date.now() };
+      return NextResponse.json(serialized);
+    }
+
+    // Targeted request with date filters — single page
+    const result = await fetchLumaEvents({ after, before });
+    const serialized = {
+      events: serialize(result.events),
       hasMore: result.hasMore,
       nextCursor: result.nextCursor,
     };
-
-    if (isDefaultRequest) {
-      cachedResponse = { data: serialized, timestamp: Date.now() };
-    }
 
     return NextResponse.json(serialized);
   } catch (err) {

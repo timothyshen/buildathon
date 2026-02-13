@@ -475,6 +475,58 @@ export interface FeedbackComment {
   replies?: FeedbackComment[];
 }
 
+// ==================== Ideas ====================
+
+export type IdeaStatus = "open" | "seeking_team" | "in_progress" | "built" | "archived";
+export type IdeaInterestRole = "builder" | "designer" | "business" | "other";
+
+export interface Idea {
+  id: string;
+  title: string;
+  description: string;
+  tags: string[];
+  authorId: string;
+  author?: User;
+  status: IdeaStatus;
+  cohortId?: string;
+  submissionId?: string;
+  voteCount: number;
+  commentCount: number;
+  interestCount: number;
+  createdAt: Date;
+  updatedAt: Date;
+  hasVoted?: boolean;
+}
+
+export interface IdeaVote {
+  id: string;
+  ideaId: string;
+  userId: string;
+  createdAt: Date;
+}
+
+export interface IdeaComment {
+  id: string;
+  ideaId: string;
+  authorId: string;
+  author?: User;
+  parentId?: string;
+  body: string;
+  createdAt: Date;
+  updatedAt: Date;
+  replies?: IdeaComment[];
+}
+
+export interface IdeaInterest {
+  id: string;
+  ideaId: string;
+  userId: string;
+  user?: User;
+  role: IdeaInterestRole;
+  message?: string;
+  createdAt: Date;
+}
+
 // Notifications
 export type NotificationType =
   | "submission_status_changed"
@@ -488,7 +540,9 @@ export type NotificationType =
   | "track_review_completed"
   | "new_submission"
   | "new_user"
-  | "new_feedback";
+  | "new_feedback"
+  | "idea_comment"
+  | "idea_interest";
 
 export interface Notification {
   id: string;

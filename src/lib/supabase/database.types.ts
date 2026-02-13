@@ -1475,7 +1475,7 @@ export type Database = {
         Row: {
           id: string;
           user_id: string;
-          type: "submission_status_changed" | "review_received" | "deadline_reminder" | "team_invite" | "winner_announced" | "review_assigned" | "review_deadline" | "new_track_submission" | "track_review_completed" | "new_submission" | "new_user" | "new_feedback";
+          type: "submission_status_changed" | "review_received" | "deadline_reminder" | "team_invite" | "winner_announced" | "review_assigned" | "review_deadline" | "new_track_submission" | "track_review_completed" | "new_submission" | "new_user" | "new_feedback" | "idea_comment" | "idea_interest";
           title: string;
           body: string;
           href: string | null;
@@ -1486,7 +1486,7 @@ export type Database = {
         Insert: {
           id?: string;
           user_id: string;
-          type: "submission_status_changed" | "review_received" | "deadline_reminder" | "team_invite" | "winner_announced" | "review_assigned" | "review_deadline" | "new_track_submission" | "track_review_completed" | "new_submission" | "new_user" | "new_feedback";
+          type: "submission_status_changed" | "review_received" | "deadline_reminder" | "team_invite" | "winner_announced" | "review_assigned" | "review_deadline" | "new_track_submission" | "track_review_completed" | "new_submission" | "new_user" | "new_feedback" | "idea_comment" | "idea_interest";
           title: string;
           body: string;
           href?: string | null;
@@ -1497,7 +1497,7 @@ export type Database = {
         Update: {
           id?: string;
           user_id?: string;
-          type?: "submission_status_changed" | "review_received" | "deadline_reminder" | "team_invite" | "winner_announced" | "review_assigned" | "review_deadline" | "new_track_submission" | "track_review_completed" | "new_submission" | "new_user" | "new_feedback";
+          type?: "submission_status_changed" | "review_received" | "deadline_reminder" | "team_invite" | "winner_announced" | "review_assigned" | "review_deadline" | "new_track_submission" | "track_review_completed" | "new_submission" | "new_user" | "new_feedback" | "idea_comment" | "idea_interest";
           title?: string;
           body?: string;
           href?: string | null;
@@ -1543,6 +1543,206 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "push_subscriptions_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      ideas: {
+        Row: {
+          id: string;
+          title: string;
+          description: string;
+          tags: string[];
+          author_id: string;
+          status: "open" | "seeking_team" | "in_progress" | "built" | "archived";
+          cohort_id: string | null;
+          submission_id: string | null;
+          vote_count: number;
+          comment_count: number;
+          interest_count: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          description: string;
+          tags?: string[];
+          author_id: string;
+          status?: "open" | "seeking_team" | "in_progress" | "built" | "archived";
+          cohort_id?: string | null;
+          submission_id?: string | null;
+          vote_count?: number;
+          comment_count?: number;
+          interest_count?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          description?: string;
+          tags?: string[];
+          author_id?: string;
+          status?: "open" | "seeking_team" | "in_progress" | "built" | "archived";
+          cohort_id?: string | null;
+          submission_id?: string | null;
+          vote_count?: number;
+          comment_count?: number;
+          interest_count?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ideas_author_id_fkey";
+            columns: ["author_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ideas_cohort_id_fkey";
+            columns: ["cohort_id"];
+            isOneToOne: false;
+            referencedRelation: "cohorts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ideas_submission_id_fkey";
+            columns: ["submission_id"];
+            isOneToOne: false;
+            referencedRelation: "submissions";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      idea_votes: {
+        Row: {
+          id: string;
+          idea_id: string;
+          user_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          idea_id: string;
+          user_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          idea_id?: string;
+          user_id?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "idea_votes_idea_id_fkey";
+            columns: ["idea_id"];
+            isOneToOne: false;
+            referencedRelation: "ideas";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "idea_votes_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      idea_comments: {
+        Row: {
+          id: string;
+          idea_id: string;
+          author_id: string;
+          parent_id: string | null;
+          body: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          idea_id: string;
+          author_id: string;
+          parent_id?: string | null;
+          body: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          idea_id?: string;
+          author_id?: string;
+          parent_id?: string | null;
+          body?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "idea_comments_idea_id_fkey";
+            columns: ["idea_id"];
+            isOneToOne: false;
+            referencedRelation: "ideas";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "idea_comments_author_id_fkey";
+            columns: ["author_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "idea_comments_parent_id_fkey";
+            columns: ["parent_id"];
+            isOneToOne: false;
+            referencedRelation: "idea_comments";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      idea_interests: {
+        Row: {
+          id: string;
+          idea_id: string;
+          user_id: string;
+          role: "builder" | "designer" | "business" | "other";
+          message: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          idea_id: string;
+          user_id: string;
+          role?: "builder" | "designer" | "business" | "other";
+          message?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          idea_id?: string;
+          user_id?: string;
+          role?: "builder" | "designer" | "business" | "other";
+          message?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "idea_interests_idea_id_fkey";
+            columns: ["idea_id"];
+            isOneToOne: false;
+            referencedRelation: "ideas";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "idea_interests_user_id_fkey";
             columns: ["user_id"];
             isOneToOne: false;
             referencedRelation: "users";
@@ -1597,7 +1797,9 @@ export type Database = {
       referral_status: "pending" | "credited";
       feedback_status: "open" | "planned" | "in_progress" | "completed" | "declined";
       feedback_category: "feature_request" | "bug_report" | "improvement";
-      notification_type: "submission_status_changed" | "review_received" | "deadline_reminder" | "team_invite" | "winner_announced" | "review_assigned" | "review_deadline" | "new_track_submission" | "track_review_completed" | "new_submission" | "new_user" | "new_feedback";
+      idea_status: "open" | "seeking_team" | "in_progress" | "built" | "archived";
+      idea_interest_role: "builder" | "designer" | "business" | "other";
+      notification_type: "submission_status_changed" | "review_received" | "deadline_reminder" | "team_invite" | "winner_announced" | "review_assigned" | "review_deadline" | "new_track_submission" | "track_review_completed" | "new_submission" | "new_user" | "new_feedback" | "idea_comment" | "idea_interest";
     };
     CompositeTypes: Record<string, never>;
   };

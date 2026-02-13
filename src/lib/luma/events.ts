@@ -11,6 +11,14 @@ export function mapLumaEventToCalendarEvent(
   const geo = event.geo_address_json;
   const host = event.hosts?.[0];
 
+  // Location: prefer address name, fall back to full_address, then city
+  const location =
+    geo?.address || geo?.full_address || geo?.city_state || geo?.city || undefined;
+
+  // Tags from API are often empty; derive category from event name as fallback
+  const tagName = entry.tags?.[0];
+  const category = tagName || "Event";
+
   return {
     id: event.api_id,
     title: event.name,
@@ -21,12 +29,11 @@ export function mapLumaEventToCalendarEvent(
     timezone: event.timezone,
     eventUrl: event.url,
     coverUrl: event.cover_url,
-    meetingUrl: event.meeting_url,
-    location:
-      geo?.description || geo?.full_address || geo?.city || undefined,
+    meetingUrl: event.meeting_url || event.zoom_meeting_url,
+    location,
     hostName: host?.name,
     hostAvatar: host?.avatar_url,
-    category: entry.tags?.[0] || "Event",
+    category,
     tags: entry.tags,
     lumaApiId: event.api_id,
   };
@@ -210,6 +217,40 @@ export async function fetchLumaEvents(options?: {
     hasMore: data.has_more,
     nextCursor: data.next_cursor,
   };
+}
+
+/**
+ * Fetch ALL events from Luma by paginating through every page.
+ * Used by the default API route to populate the full calendar.
+ */
+export async function fetchAllLumaEvents(options?: {
+  after?: string;
+  before?: string;
+}): Promise<CalendarEvent[]> {
+  if (USE_MOCK) {
+    console.log("[Luma] Using mock events (LUMA_API_KEY not set)");
+    return generateMockEvents();
+  }
+
+  const allEvents: CalendarEvent[] = [];
+  let cursor: string | undefined;
+  const MAX_PAGES = 20; // safety limit
+
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const result = await fetchLumaEvents({
+      after: options?.after,
+      before: options?.before,
+      cursor,
+      limit: 50,
+    });
+
+    allEvents.push(...result.events);
+
+    if (!result.hasMore || !result.nextCursor) break;
+    cursor = result.nextCursor;
+  }
+
+  return allEvents;
 }
 
 export async function addGuestToEvent(

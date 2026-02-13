@@ -21,6 +21,7 @@ import {
   Share2,
   MessageSquare,
   Calendar,
+  Lightbulb,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
@@ -158,6 +159,7 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
         { href: "/workshops", label: "Events", icon: Calendar },
         { href: "/resources", label: "Resources", icon: BookOpen },
         { href: "/explore", label: "Projects", icon: Compass },
+        { href: "/ideas", label: "Ideas", icon: Lightbulb },
         { href: "/feedback", label: "Feedback", icon: MessageSquare },
       ],
     },
