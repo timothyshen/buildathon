@@ -24,6 +24,7 @@ export { ideasService } from "./ideas.service";
 export { eventsService } from "./events.service";
 export { notificationsService } from "./notifications.service";
 export { cohortJudgesService } from "./cohort-judges.service";
+export { ipAssetsService } from "./ip-assets.service";
 
 // Export types
 export type { ServiceResponse, PaginatedResponse, QueryOptions } from "./types";
@@ -45,3 +46,4 @@ export type { FeedbackService, FeedbackListOptions, CreateFeedbackData } from ".
 export type { IdeasService, IdeasListOptions, CreateIdeaData } from "./ideas.service";
 export type { NotificationsService } from "./notifications.service";
 export type { CohortJudgesService, CohortJudgeWithUser, CohortJudgeWithCohort } from "./cohort-judges.service";
+export type { IpAssetsService } from "./ip-assets.service";
