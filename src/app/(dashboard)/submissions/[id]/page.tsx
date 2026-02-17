@@ -1,20 +1,32 @@
 "use client";
 
-import { use, useState, useEffect } from "react";
+import { use, useState, useEffect, useCallback } from "react";
 import { notFound, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
-import { submissionsService, reviewsService, tracksService } from "@/services";
-import type { Submission, Review, Track } from "@/types";
+import { submissionsService, reviewsService, tracksService, ipAssetsService } from "@/services";
+import type { Submission, Review, Track, IpAsset, IpLicenseTerms, PilTermsFormValues, PilPreset } from "@/types";
 import { getSubmissionPrizes, type PrizeInfo } from "@/lib/prize-utils";
 import { getSubmissionStatusLabel } from "@/lib/utils/status";
+import { useIpRegistration } from "@/hooks/use-ip-registration";
+import { STORY_EXPLORER_URL } from "@/services/story-protocol/constants";
+import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
+import { isEthereumWallet } from "@dynamic-labs/ethereum";
 import { ProjectGallery } from "@/components/projects/project-gallery";
 import { ProjectTeam } from "@/components/projects/project-team";
+import { StepIP } from "@/app/(dashboard)/submit/components/step-ip";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { PrizeBadges } from "@/components/ui/prize-badges";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   Shield,
   FileCheck,
@@ -28,7 +40,9 @@ import {
   Loader2,
   BarChart3,
   ChevronRight,
+  GitFork,
 } from "lucide-react";
+import { toast } from "sonner";
 
 interface SubmissionDetailPageProps {
   params: Promise<{ id: string }>;
@@ -106,6 +120,49 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
   const [prizes, setPrizes] = useState<PrizeInfo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // IP registration state
+  const [ipAsset, setIpAsset] = useState<IpAsset | null>(null);
+  const [ipLicenseTerms, setIpLicenseTerms] = useState<IpLicenseTerms[]>([]);
+  const [showIpModal, setShowIpModal] = useState(false);
+  const [pilTerms, setPilTerms] = useState<PilTermsFormValues | null>(null);
+  const [pilPreset, setPilPreset] = useState<PilPreset | null>(null);
+  const { register: registerIp, status: ipStatus, error: ipError, reset: resetIp } = useIpRegistration();
+  const { primaryWallet } = useDynamicContext();
+
+  const handleStepIpChange = useCallback((field: string, value: unknown) => {
+    if (field === "pilTerms") setPilTerms(value as PilTermsFormValues | null);
+    if (field === "pilPreset") setPilPreset(value as PilPreset | null);
+  }, []);
+
+  const handleRegisterIp = useCallback(async () => {
+    if (!submission || !pilTerms || !primaryWallet) return;
+
+    if (!isEthereumWallet(primaryWallet)) {
+      toast.error("Please connect an Ethereum wallet first");
+      return;
+    }
+
+    try {
+      // Type assertion needed to bridge viem version mismatch between
+      // @dynamic-labs/ethereum (viem 2.44.4) and project viem (2.45.0)
+      const walletClient = await primaryWallet.getWalletClient() as unknown as import("viem").WalletClient;
+      await registerIp(walletClient, submission, pilTerms);
+
+      // Refresh IP asset data
+      const res = await ipAssetsService.getBySubmissionId(submission.id);
+      if (res.success && res.data) {
+        setIpAsset(res.data);
+        const termsRes = await ipAssetsService.getLicenseTerms(res.data.id);
+        if (termsRes.success) setIpLicenseTerms(termsRes.data);
+      }
+
+      toast.success("IP asset registered successfully");
+      setShowIpModal(false);
+    } catch {
+      // Error is already set in the hook
+    }
+  }, [submission, pilTerms, primaryWallet, registerIp]);
+
   useEffect(() => {
     async function loadData() {
       if (!user || authLoading) return;
@@ -149,6 +206,19 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
     loadData();
   }, [id, user, authLoading, router]);
 
+  // Fetch IP asset data when submission has an ipAssetId
+  useEffect(() => {
+    if (!submission?.ipAssetId) return;
+
+    ipAssetsService.getBySubmissionId(submission.id).then(async (res) => {
+      if (res.success && res.data) {
+        setIpAsset(res.data);
+        const termsRes = await ipAssetsService.getLicenseTerms(res.data.id);
+        if (termsRes.success) setIpLicenseTerms(termsRes.data);
+      }
+    });
+  }, [submission?.id, submission?.ipAssetId]);
+
   const submissionTrack = tracks.find((t) => t.id === submission?.trackId);
 
   if (isLoading || authLoading) {
@@ -171,6 +241,31 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
     ? new Date() > submission.cohort.submissionDeadline
     : false;
   const canEdit = canEditByStatus && !deadlinePassed;
+
+  const isTeamMember = submission.team?.members.some((m) => m.userId === user?.id);
+  const isSoloOwner = !submission.teamId && submission.createdBy === user?.id;
+  const isOwner = isTeamMember || isSoloOwner;
+
+  // Build a license summary from fetched terms
+  const licenseSummary = ipLicenseTerms.length > 0
+    ? ipLicenseTerms[0].commercialUse
+      ? ipLicenseTerms[0].derivativesAllowed
+        ? "Commercial Remix"
+        : "Commercial Use"
+      : ipLicenseTerms[0].derivativesAllowed
+        ? "Non-Commercial Remix"
+        : "Non-Commercial"
+    : submission.ipLicenseType || "Custom";
+
+  const ipStatusMessages: Record<string, string> = {
+    idle: "",
+    uploading: "Uploading metadata to IPFS...",
+    signing: "Please sign the transaction in your wallet...",
+    confirming: "Confirming transaction on-chain...",
+    recording: "Recording registration...",
+    done: "Registration complete!",
+    error: ipError || "Registration failed",
+  };
 
   return (
     <div className="space-y-8">
@@ -365,37 +460,66 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
           )}
 
           {/* IP Registration */}
-          {submission.ipAssetId && (
-            <section>
-              <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
-                IP Registration
-              </h2>
-              <div className="rounded-xl border p-4 space-y-3">
-                <div className="flex items-center gap-2 text-xs text-emerald-600">
-                  <Shield className="h-3.5 w-3.5" />
-                  <span>Registered on Story Protocol</span>
-                </div>
-                <div>
-                  <p className="text-[10px] text-muted-foreground">Asset ID</p>
-                  <p className="text-xs font-mono break-all mt-0.5">{submission.ipAssetId}</p>
-                </div>
-                {submission.ipRegisteredAt && (
-                  <div>
-                    <p className="text-[10px] text-muted-foreground">Registered</p>
-                    <p className="text-xs mt-0.5">{submission.ipRegisteredAt.toLocaleDateString()}</p>
-                  </div>
-                )}
-                {submission.ipLicenseType && (
-                  <div>
-                    <p className="text-[10px] text-muted-foreground">License</p>
-                    <span className="inline-block mt-0.5 px-2 py-0.5 text-[10px] rounded border text-muted-foreground">
-                      {submission.ipLicenseType}
-                    </span>
-                  </div>
-                )}
+          {ipAsset ? (
+            <section className="rounded-xl border p-5 space-y-4">
+              <div>
+                <h3 className="text-sm font-medium">Intellectual Property</h3>
+                <p className="text-xs text-muted-foreground mt-1">Registered on Story Protocol</p>
               </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">IP Asset ID</span>
+                  <a
+                    href={`${STORY_EXPLORER_URL}/ip/${ipAsset.ipId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs font-mono text-blue-500 hover:underline"
+                  >
+                    {ipAsset.ipId.slice(0, 10)}...{ipAsset.ipId.slice(-8)}
+                  </a>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">License</span>
+                  <span className="text-xs">{licenseSummary}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Registered</span>
+                  <span className="text-xs">{ipAsset.registeredAt.toLocaleDateString()}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Transaction</span>
+                  <a
+                    href={`${STORY_EXPLORER_URL}/tx/${ipAsset.txHash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs font-mono text-blue-500 hover:underline"
+                  >
+                    {ipAsset.txHash.slice(0, 10)}...
+                  </a>
+                </div>
+              </div>
+              {!isOwner && (
+                <Link href={`/submissions/${submission.id}/fork`}>
+                  <Button variant="outline" size="sm">
+                    <GitFork className="h-4 w-4 mr-2" />
+                    Fork this Project
+                  </Button>
+                </Link>
+              )}
             </section>
-          )}
+          ) : isOwner ? (
+            <section className="rounded-xl border p-5 space-y-4">
+              <div>
+                <h3 className="text-sm font-medium">Intellectual Property</h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Register this project as an IP Asset on Story Protocol
+                </p>
+              </div>
+              <Button onClick={() => { resetIp(); setShowIpModal(true); }}>
+                Register IP Asset
+              </Button>
+            </section>
+          ) : null}
 
           {/* Cohort */}
           {submission.cohort && (
@@ -474,6 +598,68 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
           )}
         </div>
       </div>
+
+      {/* IP Registration Modal */}
+      <Dialog open={showIpModal} onOpenChange={(open) => {
+        if (!open && ipStatus !== "uploading" && ipStatus !== "signing" && ipStatus !== "confirming" && ipStatus !== "recording") {
+          setShowIpModal(false);
+        }
+      }}>
+        <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Register IP Asset</DialogTitle>
+            <DialogDescription>
+              Choose license terms for your intellectual property on Story Protocol
+            </DialogDescription>
+          </DialogHeader>
+
+          <StepIP
+            data={{ pilTerms, pilPreset }}
+            onChange={handleStepIpChange}
+          />
+
+          {/* Status feedback */}
+          {ipStatus !== "idle" && ipStatus !== "done" && (
+            <div className="flex items-center gap-3 rounded-xl border p-4">
+              {ipStatus === "error" ? (
+                <AlertCircle className="h-4 w-4 text-destructive shrink-0" />
+              ) : (
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground shrink-0" />
+              )}
+              <p className={`text-sm ${ipStatus === "error" ? "text-destructive" : "text-muted-foreground"}`}>
+                {ipStatusMessages[ipStatus]}
+              </p>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowIpModal(false)}
+              disabled={ipStatus === "uploading" || ipStatus === "signing" || ipStatus === "confirming" || ipStatus === "recording"}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleRegisterIp}
+              disabled={!pilTerms || !primaryWallet || ipStatus === "uploading" || ipStatus === "signing" || ipStatus === "confirming" || ipStatus === "recording"}
+              className="bg-foreground text-background hover:bg-foreground/90"
+            >
+              {ipStatus === "uploading" || ipStatus === "signing" || ipStatus === "confirming" || ipStatus === "recording" ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Registering...
+                </>
+              ) : (
+                <>
+                  <Shield className="h-4 w-4 mr-2" />
+                  Register
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
