@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ipAssetsService, submissionsService } from "@/services";
+import { ipAssetsService } from "@/services";
+import type { IpAssetWithSubmission } from "@/services/ip-assets.service";
 import { getIpExplorerUrl } from "@/services/story-protocol/constants";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Shield, RefreshCw, Loader2, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
-import type { IpAsset, Submission } from "@/types";
 import Link from "next/link";
 
 function truncateAddress(address: string) {
@@ -17,7 +17,7 @@ function truncateAddress(address: string) {
 }
 
 export default function AdminIpRegistryPage() {
-  const [ipAssets, setIpAssets] = useState<(IpAsset & { submission?: Submission })[]>([]);
+  const [ipAssets, setIpAssets] = useState<IpAssetWithSubmission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
 
@@ -29,24 +29,13 @@ export default function AdminIpRegistryPage() {
     async function loadData() {
       setIsLoading(true);
       try {
-        const res = await ipAssetsService.getAll();
+        const res = await ipAssetsService.getAllWithSubmissions();
         if (!res.success || res.data.length === 0) {
           setIpAssets([]);
           return;
         }
 
-        // Enrich each IP asset with its submission title
-        const enriched = await Promise.all(
-          res.data.map(async (asset) => {
-            const subRes = await submissionsService.getById(asset.submissionId);
-            return {
-              ...asset,
-              submission: subRes.success ? subRes.data ?? undefined : undefined,
-            };
-          })
-        );
-
-        setIpAssets(enriched);
+        setIpAssets(res.data);
       } catch {
         toast.error("Failed to load IP assets");
       } finally {
@@ -154,7 +143,7 @@ export default function AdminIpRegistryPage() {
                       href={`/admin/submissions/${asset.submissionId}`}
                       className="text-sm font-medium hover:underline"
                     >
-                      {asset.submission?.title || "Untitled Submission"}
+                      {asset.submissionTitle}
                     </Link>
                   </td>
                   <td className="py-3 px-4">

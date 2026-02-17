@@ -8,6 +8,17 @@ import type { IpAsset, IpLicenseTerms, RoyaltySnapshot } from "@/types";
 import type { ServiceResponse } from "./types";
 import { success, error } from "./types";
 
+export interface IpAssetWithSubmission extends IpAsset {
+  submissionTitle: string;
+}
+
+export interface IpAssetWithDetails extends IpAsset {
+  submissionTitle: string;
+  submissionId: string;
+  latestSnapshot: RoyaltySnapshot | null;
+  licenseTerms: IpLicenseTerms[];
+}
+
 export interface IpAssetsService {
   getBySubmissionId(submissionId: string): Promise<ServiceResponse<IpAsset | null>>;
   getByIpId(ipId: string): Promise<ServiceResponse<IpAsset | null>>;
@@ -16,6 +27,8 @@ export interface IpAssetsService {
   getDerivatives(parentIpId: string): Promise<ServiceResponse<IpAsset[]>>;
   getAllForOwner(ownerAddress: string): Promise<ServiceResponse<IpAsset[]>>;
   getAll(): Promise<ServiceResponse<IpAsset[]>>;
+  getAllWithSubmissions(): Promise<ServiceResponse<IpAssetWithSubmission[]>>;
+  getAllForOwnerWithDetails(ownerAddress: string): Promise<ServiceResponse<IpAssetWithDetails[]>>;
 }
 
 // --- Mappers ---
@@ -190,6 +203,58 @@ async function getAll(): Promise<ServiceResponse<IpAsset[]>> {
   return success(assets);
 }
 
+async function getAllWithSubmissions(): Promise<ServiceResponse<IpAssetWithSubmission[]>> {
+  const supabase = createClient();
+
+  const { data, error: dbError } = await supabase
+    .from("ip_assets")
+    .select("*, submissions(title)")
+    .order("registered_at", { ascending: false });
+
+  if (dbError) {
+    return error(dbError.message, []);
+  }
+
+  const assets = (data || []).map((row) => ({
+    ...mapIpAsset(row as Record<string, unknown>),
+    submissionTitle: (row.submissions as Record<string, unknown> | null)?.title as string || "Untitled",
+  }));
+
+  return success(assets);
+}
+
+async function getAllForOwnerWithDetails(ownerAddress: string): Promise<ServiceResponse<IpAssetWithDetails[]>> {
+  const supabase = createClient();
+
+  const { data, error: dbError } = await supabase
+    .from("ip_assets")
+    .select("*, submissions(id, title), royalty_snapshots(*), ip_license_terms(*)")
+    .ilike("owner_address", ownerAddress)
+    .order("registered_at", { ascending: false });
+
+  if (dbError) {
+    return error(dbError.message, []);
+  }
+
+  const assets = (data || []).map((row) => {
+    const snapshots = ((row.royalty_snapshots || []) as Record<string, unknown>[])
+      .map(mapRoyaltySnapshot)
+      .sort((a, b) => b.snapshotAt.getTime() - a.snapshotAt.getTime());
+
+    const submission = row.submissions as Record<string, unknown> | null;
+
+    return {
+      ...mapIpAsset(row as Record<string, unknown>),
+      submissionTitle: (submission?.title as string) || "Untitled",
+      submissionId: (submission?.id as string) || (row.submission_id as string),
+      latestSnapshot: snapshots[0] || null,
+      licenseTerms: ((row.ip_license_terms || []) as Record<string, unknown>[]).map(mapLicenseTerms),
+    };
+  });
+
+  return success(assets);
+}
+
 export const ipAssetsService: IpAssetsService = {
   getBySubmissionId,
   getByIpId,
@@ -198,4 +263,6 @@ export const ipAssetsService: IpAssetsService = {
   getDerivatives,
   getAllForOwner,
   getAll,
+  getAllWithSubmissions,
+  getAllForOwnerWithDetails,
 };

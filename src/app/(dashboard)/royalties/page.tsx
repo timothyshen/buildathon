@@ -4,13 +4,13 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
 import { isEthereumWallet } from "@dynamic-labs/ethereum";
-import { ipAssetsService, submissionsService } from "@/services";
+import { ipAssetsService } from "@/services";
+import type { IpAssetWithDetails } from "@/services/ip-assets.service";
 import { claimAllRevenue } from "@/services/story-protocol/royalties";
 import { getIpExplorerUrl } from "@/services/story-protocol/constants";
 import { Button } from "@/components/ui/button";
 import { Coins, Shield, GitFork, ExternalLink, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import type { IpAsset, RoyaltySnapshot, Submission } from "@/types";
 import Link from "next/link";
 
 function truncateAddress(address: string) {
@@ -26,37 +26,48 @@ function formatWip(value: string): string {
   return num.toFixed(2);
 }
 
-interface IpAssetWithData extends IpAsset {
-  submission?: Submission;
-  royaltySnapshot?: RoyaltySnapshot | null;
-  licenseLabel?: string;
+interface IpAssetDisplay extends IpAssetWithDetails {
+  licenseLabel: string;
+}
+
+function deriveLicenseLabel(asset: IpAssetWithDetails): string {
+  if (asset.licenseTerms.length === 0) return "No license";
+  const terms = asset.licenseTerms[0];
+  if (terms.commercialUse && terms.derivativesAllowed) {
+    return `Commercial Remix (${terms.commercialRevShare}%)`;
+  } else if (terms.commercialUse) {
+    return "Commercial Use";
+  } else if (terms.derivativesAllowed) {
+    return "Non-Commercial Remix";
+  }
+  return "Non-Commercial";
 }
 
 export default function RoyaltiesPage() {
   const { user } = useAuth();
   const { primaryWallet } = useDynamicContext();
 
-  const [ipAssets, setIpAssets] = useState<IpAssetWithData[]>([]);
+  const [ipAssets, setIpAssets] = useState<IpAssetDisplay[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [claimingIpId, setClaimingIpId] = useState<string | null>(null);
 
   // Aggregate stats
   const totalRevenue = ipAssets.reduce(
-    (sum, a) => sum + parseFloat(a.royaltySnapshot?.totalRevenueWip || "0"),
+    (sum, a) => sum + parseFloat(a.latestSnapshot?.totalRevenueWip || "0"),
     0
   );
   const totalClaimable = ipAssets.reduce(
-    (sum, a) => sum + parseFloat(a.royaltySnapshot?.claimableWip || "0"),
+    (sum, a) => sum + parseFloat(a.latestSnapshot?.claimableWip || "0"),
     0
   );
   const totalDerivatives = ipAssets.reduce(
-    (sum, a) => sum + (a.royaltySnapshot?.derivativeCount || 0),
+    (sum, a) => sum + (a.latestSnapshot?.derivativeCount || 0),
     0
   );
 
   const walletAddress = user?.walletAddress;
 
-  // Load IP assets with their snapshots and submission titles
+  // Load IP assets with their snapshots, submissions, and license terms in one query
   useEffect(() => {
     if (!walletAddress) {
       setIsLoading(false);
@@ -66,46 +77,18 @@ export default function RoyaltiesPage() {
     async function loadData() {
       setIsLoading(true);
       try {
-        const res = await ipAssetsService.getAllForOwner(walletAddress!);
+        const res = await ipAssetsService.getAllForOwnerWithDetails(walletAddress!);
         if (!res.success || res.data.length === 0) {
           setIpAssets([]);
           return;
         }
 
-        // Fetch snapshots and submissions in parallel for each IP asset
-        const enriched = await Promise.all(
-          res.data.map(async (asset) => {
-            const [snapshotRes, submissionRes, licenseRes] = await Promise.all([
-              ipAssetsService.getLatestRoyaltySnapshot(asset.id),
-              submissionsService.getById(asset.submissionId),
-              ipAssetsService.getLicenseTerms(asset.id),
-            ]);
-
-            // Derive a short license label from the first license terms
-            let licenseLabel = "No license";
-            if (licenseRes.success && licenseRes.data.length > 0) {
-              const terms = licenseRes.data[0];
-              if (terms.commercialUse && terms.derivativesAllowed) {
-                licenseLabel = `Commercial Remix (${terms.commercialRevShare}%)`;
-              } else if (terms.commercialUse) {
-                licenseLabel = "Commercial Use";
-              } else if (terms.derivativesAllowed) {
-                licenseLabel = "Non-Commercial Remix";
-              } else {
-                licenseLabel = "Non-Commercial";
-              }
-            }
-
-            return {
-              ...asset,
-              submission: submissionRes.success ? submissionRes.data ?? undefined : undefined,
-              royaltySnapshot: snapshotRes.success ? snapshotRes.data : null,
-              licenseLabel,
-            } as IpAssetWithData;
-          })
+        setIpAssets(
+          res.data.map((asset) => ({
+            ...asset,
+            licenseLabel: deriveLicenseLabel(asset),
+          }))
         );
-
-        setIpAssets(enriched);
       } catch {
         toast.error("Failed to load IP assets");
       } finally {
@@ -117,7 +100,7 @@ export default function RoyaltiesPage() {
   }, [walletAddress]);
 
   const handleClaim = useCallback(
-    async (asset: IpAssetWithData) => {
+    async (asset: IpAssetDisplay) => {
       if (!primaryWallet) {
         toast.error("Please connect your wallet first");
         return;
@@ -153,7 +136,7 @@ export default function RoyaltiesPage() {
           setIpAssets((prev) =>
             prev.map((a) =>
               a.id === asset.id
-                ? { ...a, royaltySnapshot: snapshotRes.data }
+                ? { ...a, latestSnapshot: snapshotRes.data }
                 : a
             )
           );
@@ -286,7 +269,7 @@ export default function RoyaltiesPage() {
         ) : (
           <div className="space-y-2">
             {ipAssets.map((asset) => {
-              const snapshot = asset.royaltySnapshot;
+              const snapshot = asset.latestSnapshot;
               const revenue = parseFloat(snapshot?.totalRevenueWip || "0");
               const claimable = parseFloat(snapshot?.claimableWip || "0");
               const derivatives = snapshot?.derivativeCount || 0;
@@ -306,7 +289,7 @@ export default function RoyaltiesPage() {
                           href={`/submissions/${asset.submissionId}`}
                           className="text-sm font-medium hover:underline truncate"
                         >
-                          {asset.submission?.title || "Untitled Submission"}
+                          {asset.submissionTitle}
                         </Link>
                         {asset.parentIpId && (
                           <GitFork className="h-3 w-3 text-muted-foreground shrink-0" />
