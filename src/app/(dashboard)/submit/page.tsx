@@ -21,10 +21,11 @@ import { StepDetails } from "./components/step-details";
 import { StepMedia } from "./components/step-media";
 import { StepLinksTech } from "./components/step-links-tech";
 import { StepTracks } from "./components/step-tracks";
+import { StepIP } from "./components/step-ip";
 import { StepReview } from "./components/step-review";
 import { teamsService, cohortsService, tracksService, sponsorsService, submissionsService } from "@/services";
 import { useAuth } from "@/contexts/auth-context";
-import type { Team, Cohort, Track, SponsorOrg } from "@/types";
+import type { Team, Cohort, Track, SponsorOrg, PilTermsFormValues, PilPreset } from "@/types";
 
 const STORAGE_KEY = "submission-draft";
 
@@ -33,7 +34,8 @@ const STEPS = [
   { id: 2, label: "Media" },
   { id: 3, label: "Links & Tech" },
   { id: 4, label: "Tracks" },
-  { id: 5, label: "Review" },
+  { id: 5, label: "IP" },
+  { id: 6, label: "Review" },
 ];
 
 interface SubmissionDraft {
@@ -54,6 +56,8 @@ interface SubmissionDraft {
   cohortId: string;
   trackIds: string[];
   licenseType: string;
+  pilTerms: PilTermsFormValues | null;
+  pilPreset: PilPreset | null;
   currentStep: number;
 }
 
@@ -75,6 +79,8 @@ const initialData: SubmissionDraft = {
   cohortId: "",
   trackIds: [],
   licenseType: "",
+  pilTerms: null,
+  pilPreset: null,
   currentStep: 1,
 };
 
@@ -178,7 +184,8 @@ export default function SubmitPage() {
     return () => clearTimeout(timeout);
   }, [data, currentStep]);
 
-  const handleChange = useCallback((field: string, value: string | string[] | boolean) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleChange = useCallback((field: string, value: any) => {
     setData((prev) => ({ ...prev, [field]: value }));
     setErrors((prev) => ({ ...prev, [field]: "" }));
   }, []);
@@ -596,6 +603,12 @@ export default function SubmitPage() {
           />
         )}
         {currentStep === 5 && (
+          <StepIP
+            data={{ pilTerms: data.pilTerms, pilPreset: data.pilPreset }}
+            onChange={handleChange}
+          />
+        )}
+        {currentStep === 6 && (
           <StepReview
             data={data}
             onEdit={handleEdit}
