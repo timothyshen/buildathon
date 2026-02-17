@@ -6,7 +6,7 @@ import { registerSubmissionAsIp, recordRegistration } from "@/services/story-pro
 import { SPG_NFT_CONTRACT } from "@/services/story-protocol/constants";
 import type { WalletClient } from "viem";
 
-type RegistrationStatus = "idle" | "uploading" | "signing" | "confirming" | "recording" | "done" | "error";
+type RegistrationStatus = "idle" | "signing" | "confirming" | "recording" | "done" | "error";
 
 export function useIpRegistration() {
   const [status, setStatus] = useState<RegistrationStatus>("idle");
@@ -20,9 +20,7 @@ export function useIpRegistration() {
       licenseTerms: PilTermsFormValues
     ) => {
       try {
-        setStatus("uploading");
         setError(null);
-
         setStatus("signing");
         const regResult = await registerSubmissionAsIp(
           walletClient,
@@ -38,8 +36,8 @@ export function useIpRegistration() {
           txHash: regResult.txHash,
           nftContract: SPG_NFT_CONTRACT,
           ownerAddress: walletClient.account?.address || "",
-          metadataUri: "",
-          metadataHash: "",
+          metadataUri: regResult.metadataUri,
+          metadataHash: regResult.metadataHash,
           licenseTermsId: regResult.licenseTermsIds[0] || "",
           licenseTerms,
         });

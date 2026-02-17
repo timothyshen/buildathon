@@ -8,7 +8,7 @@ import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
 import { isEthereumWallet } from "@dynamic-labs/ethereum";
 import { submissionsService, ipAssetsService } from "@/services";
 import { registerDerivativeIp, recordDerivative } from "@/services/story-protocol/derivatives";
-import { SPG_NFT_CONTRACT, STORY_EXPLORER_URL } from "@/services/story-protocol/constants";
+import { SPG_NFT_CONTRACT, getIpExplorerUrl } from "@/services/story-protocol/constants";
 import { StepIP } from "@/app/(dashboard)/submit/components/step-ip";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
@@ -336,7 +336,7 @@ export default function ForkPage({ params }: ForkPageProps) {
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground">IP Asset ID</span>
             <a
-              href={`${STORY_EXPLORER_URL}/ip/${parentIpAsset.ipId}`}
+              href={getIpExplorerUrl(parentIpAsset.ipId)}
               target="_blank"
               rel="noopener noreferrer"
               className="text-xs font-mono text-blue-500 hover:underline inline-flex items-center gap-1"

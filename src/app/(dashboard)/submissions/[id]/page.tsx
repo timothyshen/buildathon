@@ -9,7 +9,7 @@ import type { Submission, Review, Track, IpAsset, IpLicenseTerms, PilTermsFormVa
 import { getSubmissionPrizes, type PrizeInfo } from "@/lib/prize-utils";
 import { getSubmissionStatusLabel } from "@/lib/utils/status";
 import { useIpRegistration } from "@/hooks/use-ip-registration";
-import { STORY_EXPLORER_URL } from "@/services/story-protocol/constants";
+import { getIpExplorerUrl, getTxExplorerUrl } from "@/services/story-protocol/constants";
 import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
 import { isEthereumWallet } from "@dynamic-labs/ethereum";
 import { ProjectGallery } from "@/components/projects/project-gallery";
@@ -259,7 +259,6 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
 
   const ipStatusMessages: Record<string, string> = {
     idle: "",
-    uploading: "Uploading metadata to IPFS...",
     signing: "Please sign the transaction in your wallet...",
     confirming: "Confirming transaction on-chain...",
     recording: "Recording registration...",
@@ -470,7 +469,7 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-muted-foreground">IP Asset ID</span>
                   <a
-                    href={`${STORY_EXPLORER_URL}/ip/${ipAsset.ipId}`}
+                    href={getIpExplorerUrl(ipAsset.ipId)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-xs font-mono text-blue-500 hover:underline"
@@ -489,7 +488,7 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-muted-foreground">Transaction</span>
                   <a
-                    href={`${STORY_EXPLORER_URL}/tx/${ipAsset.txHash}`}
+                    href={getTxExplorerUrl(ipAsset.txHash)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-xs font-mono text-blue-500 hover:underline"
@@ -601,7 +600,7 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
 
       {/* IP Registration Modal */}
       <Dialog open={showIpModal} onOpenChange={(open) => {
-        if (!open && ipStatus !== "uploading" && ipStatus !== "signing" && ipStatus !== "confirming" && ipStatus !== "recording") {
+        if (!open && ipStatus !== "signing" && ipStatus !== "confirming" && ipStatus !== "recording") {
           setShowIpModal(false);
         }
       }}>
@@ -636,16 +635,16 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
             <Button
               variant="outline"
               onClick={() => setShowIpModal(false)}
-              disabled={ipStatus === "uploading" || ipStatus === "signing" || ipStatus === "confirming" || ipStatus === "recording"}
+              disabled={ipStatus === "signing" || ipStatus === "confirming" || ipStatus === "recording"}
             >
               Cancel
             </Button>
             <Button
               onClick={handleRegisterIp}
-              disabled={!pilTerms || !primaryWallet || ipStatus === "uploading" || ipStatus === "signing" || ipStatus === "confirming" || ipStatus === "recording"}
+              disabled={!pilTerms || !primaryWallet || ipStatus === "signing" || ipStatus === "confirming" || ipStatus === "recording"}
               className="bg-foreground text-background hover:bg-foreground/90"
             >
-              {ipStatus === "uploading" || ipStatus === "signing" || ipStatus === "confirming" || ipStatus === "recording" ? (
+              {ipStatus === "signing" || ipStatus === "confirming" || ipStatus === "recording" ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Registering...

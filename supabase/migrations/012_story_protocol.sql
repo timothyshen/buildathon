@@ -60,7 +60,8 @@ CREATE TABLE royalty_snapshots (
   claimable_wip TEXT NOT NULL DEFAULT '0',
   royalty_token_balance INTEGER NOT NULL DEFAULT 100,
   derivative_count INTEGER NOT NULL DEFAULT 0,
-  snapshot_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  snapshot_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX idx_royalty_snapshots_ip_asset ON royalty_snapshots(ip_asset_id);
@@ -70,7 +71,7 @@ CREATE INDEX idx_royalty_snapshots_snapshot_at ON royalty_snapshots(snapshot_at 
 -- 4. Alter submissions: add fork tracking column
 -- ============================================================
 ALTER TABLE submissions
-  ADD COLUMN forked_from_submission_id UUID REFERENCES submissions(id);
+  ADD COLUMN IF NOT EXISTS forked_from_submission_id UUID REFERENCES submissions(id);
 
 CREATE INDEX idx_submissions_forked_from ON submissions(forked_from_submission_id);
 

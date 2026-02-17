@@ -8,6 +8,8 @@ export {
   SPG_NFT_CONTRACT,
   WIP_TOKEN_ADDRESS,
   STORY_EXPLORER_URL,
+  getIpExplorerUrl,
+  getTxExplorerUrl,
 } from "./constants";
 
 export {

@@ -6,7 +6,7 @@ import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
 import { isEthereumWallet } from "@dynamic-labs/ethereum";
 import { ipAssetsService, submissionsService } from "@/services";
 import { claimAllRevenue } from "@/services/story-protocol/royalties";
-import { STORY_EXPLORER_URL } from "@/services/story-protocol/constants";
+import { getIpExplorerUrl } from "@/services/story-protocol/constants";
 import { Button } from "@/components/ui/button";
 import { Coins, Shield, GitFork, ExternalLink, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -314,7 +314,7 @@ export default function RoyaltiesPage() {
                       </div>
                       <div className="flex items-center gap-3">
                         <a
-                          href={`${STORY_EXPLORER_URL}/address/${asset.ipId}`}
+                          href={getIpExplorerUrl(asset.ipId)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-xs font-mono text-muted-foreground hover:text-foreground inline-flex items-center gap-1"

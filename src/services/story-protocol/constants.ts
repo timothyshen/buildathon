@@ -5,3 +5,11 @@ export const SPG_NFT_CONTRACT =
   process.env.NEXT_PUBLIC_SPG_NFT_CONTRACT || "";
 export const WIP_TOKEN_ADDRESS = "0x1514000000000000000000000000000000000000";
 export const STORY_EXPLORER_URL = "https://aeneid.storyscan.io";
+
+export function getIpExplorerUrl(ipId: string) {
+  return `${STORY_EXPLORER_URL}/ip/${ipId}`;
+}
+
+export function getTxExplorerUrl(txHash: string) {
+  return `${STORY_EXPLORER_URL}/tx/${txHash}`;
+}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { ipAssetsService, submissionsService } from "@/services";
-import { STORY_EXPLORER_URL } from "@/services/story-protocol/constants";
+import { getIpExplorerUrl } from "@/services/story-protocol/constants";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
@@ -159,7 +159,7 @@ export default function AdminIpRegistryPage() {
                   </td>
                   <td className="py-3 px-4">
                     <a
-                      href={`${STORY_EXPLORER_URL}/address/${asset.ipId}`}
+                      href={getIpExplorerUrl(asset.ipId)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="font-mono text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"

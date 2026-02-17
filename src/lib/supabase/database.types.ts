@@ -1759,7 +1759,7 @@ export type Database = {
           submission_id: string;
           ip_id: string;
           nft_contract: string;
-          token_id: string | null;
+          token_id: string;
           tx_hash: string;
           owner_address: string;
           metadata_uri: string | null;
@@ -1773,7 +1773,7 @@ export type Database = {
           submission_id: string;
           ip_id: string;
           nft_contract: string;
-          token_id?: string | null;
+          token_id: string;
           tx_hash: string;
           owner_address: string;
           metadata_uri?: string | null;
@@ -1787,7 +1787,7 @@ export type Database = {
           submission_id?: string;
           ip_id?: string;
           nft_contract?: string;
-          token_id?: string | null;
+          token_id?: string;
           tx_hash?: string;
           owner_address?: string;
           metadata_uri?: string | null;

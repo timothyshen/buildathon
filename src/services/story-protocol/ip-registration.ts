@@ -11,6 +11,8 @@ interface RegistrationResult {
   tokenId: string;
   txHash: string;
   licenseTermsIds: string[];
+  metadataUri: string;
+  metadataHash: string;
 }
 
 async function uploadMetadata(submission: Submission) {
@@ -73,6 +75,8 @@ export async function registerSubmissionAsIp(
     tokenId: response.tokenId?.toString() || "",
     txHash: response.txHash || "",
     licenseTermsIds: response.licenseTermsIds?.map(String) || [],
+    metadataUri: metadata.ipMetadataURI,
+    metadataHash: metadata.ipMetadataHash,
   };
 }
 
