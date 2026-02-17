@@ -61,7 +61,7 @@ export async function POST(request: Request) {
 
     const { data: childSub, error: childError } = await admin
       .from("submissions")
-      .select("id")
+      .select("id, created_by, team_id")
       .eq("id", childSubmissionId)
       .single();
 
@@ -69,6 +69,29 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: "Child submission not found" },
         { status: 404 }
+      );
+    }
+
+    // Verify the authenticated user owns the child submission
+    let isOwner = false;
+    if (childSub.team_id) {
+      // Team submission: check if user is a team member
+      const { data: membership } = await admin
+        .from("team_members")
+        .select("user_id")
+        .eq("team_id", childSub.team_id)
+        .eq("user_id", user.id)
+        .maybeSingle();
+      isOwner = !!membership;
+    } else {
+      // Solo submission: user must be the creator
+      isOwner = childSub.created_by === user.id;
+    }
+
+    if (!isOwner) {
+      return NextResponse.json(
+        { error: "Forbidden" },
+        { status: 403 }
       );
     }
 

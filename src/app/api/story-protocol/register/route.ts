@@ -51,6 +51,29 @@ export async function POST(request: Request) {
       );
     }
 
+    // Verify the authenticated user owns this submission
+    let isOwner = false;
+    if (submission.team_id) {
+      // Team submission: check if user is a team member
+      const { data: membership } = await admin
+        .from("team_members")
+        .select("user_id")
+        .eq("team_id", submission.team_id)
+        .eq("user_id", user.id)
+        .maybeSingle();
+      isOwner = !!membership;
+    } else {
+      // Solo submission: user must be the creator
+      isOwner = submission.created_by === user.id;
+    }
+
+    if (!isOwner) {
+      return NextResponse.json(
+        { error: "Forbidden" },
+        { status: 403 }
+      );
+    }
+
     // Insert ip_asset record
     const { data: ipAsset, error: ipError } = await admin
       .from("ip_assets")

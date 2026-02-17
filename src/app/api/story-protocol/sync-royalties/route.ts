@@ -1,12 +1,33 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function POST(request: Request) {
   try {
-    // Verify cron secret or admin auth
+    // Verify cron secret or authenticated admin user
     const authHeader = request.headers.get("authorization");
     const cronSecret = process.env.CRON_SECRET;
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+
+    // Path 1: Vercel cron with secret
+    const isCronAuth = cronSecret && authHeader === `Bearer ${cronSecret}`;
+
+    // Path 2: Authenticated admin user
+    let isAdmin = false;
+    if (!isCronAuth) {
+      const supabase = await createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const adminClient = createAdminClient();
+        const { data: profile } = await adminClient
+          .from("users")
+          .select("role")
+          .eq("id", user.id)
+          .single();
+        isAdmin = profile?.role === "admin";
+      }
+    }
+
+    if (!isCronAuth && !isAdmin) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
