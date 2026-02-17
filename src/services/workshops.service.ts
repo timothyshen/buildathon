@@ -33,6 +33,9 @@ export interface WorkshopsService {
   getBySponsor(sponsorOrgId: string): Promise<ServiceResponse<Workshop[]>>;
   getByDateRange(start: Date, end: Date): Promise<ServiceResponse<Workshop[]>>;
 
+  // Conflict detection
+  checkConflicts(start: Date, end: Date, excludeId?: string): Promise<ServiceResponse<Workshop[]>>;
+
   // RSVPs
   getRSVPs(workshopId: string): Promise<ServiceResponse<WorkshopRSVP[]>>;
   getUserRSVPs(userId: string): Promise<ServiceResponse<WorkshopRSVP[]>>;
@@ -419,6 +422,43 @@ async function getByDateRange(start: Date, end: Date): Promise<ServiceResponse<W
   return success(workshops);
 }
 
+// Conflict detection
+
+async function checkConflicts(
+  start: Date,
+  end: Date,
+  excludeId?: string
+): Promise<ServiceResponse<Workshop[]>> {
+  const supabase = createClient();
+
+  // Find workshops where: existing.start < newEnd AND existing.end > newStart
+  let query = supabase
+    .from("workshops")
+    .select("*, workshop_cohorts(cohort_id)")
+    .lt("scheduled_at", end.toISOString())
+    .gt("end_time", start.toISOString())
+    .neq("status", "draft")
+    .order("scheduled_at", { ascending: true });
+
+  if (excludeId) {
+    query = query.neq("id", excludeId);
+  }
+
+  const { data, error: dbError } = await query;
+
+  if (dbError) {
+    return error(dbError.message, []);
+  }
+
+  const workshops = (data || []).map((row) => {
+    const cohortLinks = (row.workshop_cohorts as Array<{ cohort_id: string }>) || [];
+    const cohortIds = cohortLinks.map((c) => c.cohort_id);
+    return toWorkshop(row as Record<string, unknown>, cohortIds);
+  });
+
+  return success(workshops);
+}
+
 // RSVPs
 
 async function getRSVPs(workshopId: string): Promise<ServiceResponse<WorkshopRSVP[]>> {
@@ -527,6 +567,7 @@ export const workshopsService: WorkshopsService = {
   getByCohort,
   getBySponsor,
   getByDateRange,
+  checkConflicts,
   getRSVPs,
   getUserRSVPs,
   createRSVP,

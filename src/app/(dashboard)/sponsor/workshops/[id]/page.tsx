@@ -48,6 +48,8 @@ export default function WorkshopEditPage({ params }: WorkshopEditPageProps) {
 
   const [isLoading, setIsLoading] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showConflictDialog, setShowConflictDialog] = useState(false);
+  const [conflicts, setConflicts] = useState<Workshop[]>([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
@@ -55,6 +57,12 @@ export default function WorkshopEditPage({ params }: WorkshopEditPageProps) {
   const [videoUrl, setVideoUrl] = useState("");
   const [articleUrl, setArticleUrl] = useState("");
   const [status, setStatus] = useState<"draft" | "published" | "archived">("draft");
+  const [schedDate, setSchedDate] = useState("");
+  const [schedStartTime, setSchedStartTime] = useState("");
+  const [schedEndTime, setSchedEndTime] = useState("");
+  const [timezone, setTimezone] = useState("");
+  const [location, setLocation] = useState("");
+  const [meetingUrl, setMeetingUrl] = useState("");
 
   useEffect(() => {
     async function loadData() {
@@ -80,6 +88,18 @@ export default function WorkshopEditPage({ params }: WorkshopEditPageProps) {
         setVideoUrl(ws.videoUrl || "");
         setArticleUrl(ws.articleUrl || "");
         setStatus(ws.status);
+        setTimezone(ws.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone);
+        setLocation(ws.location || "");
+        setMeetingUrl(ws.meetingUrl || "");
+        if (ws.scheduledAt) {
+          const d = ws.scheduledAt;
+          setSchedDate(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`);
+          setSchedStartTime(`${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`);
+        }
+        if (ws.endTime) {
+          const d = ws.endTime;
+          setSchedEndTime(`${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`);
+        }
       }
 
       setIsLoadingData(false);
@@ -134,11 +154,33 @@ export default function WorkshopEditPage({ params }: WorkshopEditPageProps) {
     );
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const buildScheduleDates = () => {
+    if (!schedDate || !schedStartTime) return { scheduledAt: undefined, endTime: undefined };
+    const scheduledAt = new Date(`${schedDate}T${schedStartTime}:00`);
+    const endTime = schedEndTime ? new Date(`${schedDate}T${schedEndTime}:00`) : undefined;
+    return { scheduledAt, endTime };
+  };
+
+  const handleSubmit = async (e: React.FormEvent, skipConflictCheck = false) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
+      const { scheduledAt, endTime: endTimeDt } = buildScheduleDates();
+
+      // Check for conflicts
+      if (!skipConflictCheck && scheduledAt && endTimeDt) {
+        const { data: conflicting } = await workshopsService.checkConflicts(
+          scheduledAt, endTimeDt, workshop.id
+        );
+        if (conflicting && conflicting.length > 0) {
+          setConflicts(conflicting);
+          setShowConflictDialog(true);
+          setIsLoading(false);
+          return;
+        }
+      }
+
       const result = await workshopsService.update(workshop.id, {
         title,
         description,
@@ -147,6 +189,11 @@ export default function WorkshopEditPage({ params }: WorkshopEditPageProps) {
         videoUrl: videoUrl || undefined,
         articleUrl: articleUrl || undefined,
         status,
+        scheduledAt,
+        endTime: endTimeDt,
+        timezone: timezone || undefined,
+        location: location || undefined,
+        meetingUrl: meetingUrl || undefined,
       });
 
       if (!result.success) {
@@ -158,6 +205,16 @@ export default function WorkshopEditPage({ params }: WorkshopEditPageProps) {
       router.push("/sponsor/workshops");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleConflictProceed = () => {
+    setShowConflictDialog(false);
+    // Create a synthetic form event and resubmit with skip flag
+    const form = document.querySelector("form");
+    if (form) {
+      const syntheticEvent = { preventDefault: () => {} } as React.FormEvent;
+      handleSubmit(syntheticEvent, true);
     }
   };
 
@@ -247,6 +304,75 @@ export default function WorkshopEditPage({ params }: WorkshopEditPageProps) {
                     value={description}
                     onChange={setDescription}
                     placeholder="Describe what participants will learn..."
+                  />
+                </div>
+              </div>
+            </section>
+
+            <section>
+              <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
+                Schedule
+              </h2>
+              <div className="rounded-xl border p-5 space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="schedDate" className="text-xs text-muted-foreground">Date</Label>
+                  <Input
+                    id="schedDate"
+                    type="date"
+                    value={schedDate}
+                    onChange={(e) => setSchedDate(e.target.value)}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="schedStart" className="text-xs text-muted-foreground">Start Time</Label>
+                    <Input
+                      id="schedStart"
+                      type="time"
+                      value={schedStartTime}
+                      onChange={(e) => setSchedStartTime(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="schedEnd" className="text-xs text-muted-foreground">End Time</Label>
+                    <Input
+                      id="schedEnd"
+                      type="time"
+                      value={schedEndTime}
+                      onChange={(e) => setSchedEndTime(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="timezone" className="text-xs text-muted-foreground">Timezone</Label>
+                  <Input
+                    id="timezone"
+                    value={timezone}
+                    onChange={(e) => setTimezone(e.target.value)}
+                    placeholder="America/New_York"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="location" className="text-xs text-muted-foreground">Location</Label>
+                  <Input
+                    id="location"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    placeholder="Physical venue (optional)"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="meetingUrl" className="text-xs text-muted-foreground">Meeting URL</Label>
+                  <Input
+                    id="meetingUrl"
+                    type="url"
+                    value={meetingUrl}
+                    onChange={(e) => setMeetingUrl(e.target.value)}
+                    placeholder="https://zoom.us/j/..."
                   />
                 </div>
               </div>
@@ -371,6 +497,45 @@ export default function WorkshopEditPage({ params }: WorkshopEditPageProps) {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-white hover:bg-destructive/90">
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showConflictDialog} onOpenChange={setShowConflictDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Schedule Conflict</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div>
+                <p className="mb-3">There are other events scheduled during this time slot:</p>
+                <ul className="space-y-1.5">
+                  {conflicts.map((c) => (
+                    <li key={c.id} className="text-sm">
+                      <span className="font-medium text-foreground">{c.title}</span>
+                      {c.scheduledAt && (
+                        <span className="text-muted-foreground">
+                          {" — "}
+                          {c.scheduledAt.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })}
+                          {c.endTime && (
+                            <>
+                              {" – "}
+                              {c.endTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })}
+                            </>
+                          )}
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-3">Are you sure you want to schedule your session in this time slot?</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Go Back</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConflictProceed} className="bg-foreground text-background hover:bg-foreground/90">
+              Schedule Anyway
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
