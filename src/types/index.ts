@@ -122,12 +122,81 @@ export interface Submission {
   ipRegisteredAt?: Date;
   ipLicenseType?: "non-commercial" | "commercial-use" | "commercial-remix";
 
+  // Fork tracking
+  forkedFromSubmissionId?: string;
+  forkedFromSubmission?: Submission;
+
   // Status
   status: "draft" | "submitted" | "under_review" | "accepted" | "winner";
   submittedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
+
+// ==================== Story Protocol IP Assets ====================
+
+export interface IpAsset {
+  id: string;
+  submissionId: string;
+  submission?: Submission;
+  ipId: string;
+  nftContract: string;
+  tokenId: string;
+  txHash: string;
+  ownerAddress: string;
+  metadataUri?: string;
+  metadataHash?: string;
+  parentIpId?: string;
+  registeredAt: Date;
+  createdAt: Date;
+}
+
+export interface IpLicenseTerms {
+  id: string;
+  ipAssetId: string;
+  licenseTermsId: string;
+  commercialUse: boolean;
+  commercialAttribution: boolean;
+  commercialRevShare: number;
+  defaultMintingFee: string;
+  derivativesAllowed: boolean;
+  derivativesAttribution: boolean;
+  derivativesReciprocal: boolean;
+  derivativesApproval: boolean;
+  transferable: boolean;
+  currency?: string;
+  expiration: number;
+  uri?: string;
+  createdAt: Date;
+}
+
+export interface RoyaltySnapshot {
+  id: string;
+  ipAssetId: string;
+  vaultAddress?: string;
+  totalRevenueWip: string;
+  claimableWip: string;
+  royaltyTokenBalance: number;
+  derivativeCount: number;
+  snapshotAt: Date;
+}
+
+// PIL terms form values (used by the custom terms builder UI)
+export interface PilTermsFormValues {
+  commercialUse: boolean;
+  commercialAttribution: boolean;
+  commercialRevShare: number; // 0-100 percentage
+  defaultMintingFee: string; // human-readable amount (e.g. "1.5")
+  derivativesAllowed: boolean;
+  derivativesAttribution: boolean;
+  derivativesReciprocal: boolean;
+  derivativesApproval: boolean;
+  transferable: boolean;
+  currency: string; // ERC20 address
+  expiration: number; // seconds, 0 = no expiry
+}
+
+export type PilPreset = "non-commercial-remix" | "commercial-use" | "commercial-remix" | "cc-attribution";
 
 export interface Review {
   id: string;
