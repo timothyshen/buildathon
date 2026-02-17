@@ -1,11 +1,37 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { PinataSDK } from "pinata";
 
-const pinata = new PinataSDK({
-  pinataJwt: process.env.PINATA_JWT!,
-  pinataGateway: "gateway.pinata.cloud",
-});
+const PINATA_API_KEY = process.env.PINATA_API_KEY!;
+const PINATA_SECRET_KEY = process.env.PINATA_SECRET_KEY!;
+const PINATA_JWT = process.env.PINATA_JWT;
+
+async function pinJsonToIPFS(json: Record<string, unknown>): Promise<string> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  // Prefer JWT if available, fall back to API key + secret
+  if (PINATA_JWT) {
+    headers["Authorization"] = `Bearer ${PINATA_JWT}`;
+  } else {
+    headers["pinata_api_key"] = PINATA_API_KEY;
+    headers["pinata_secret_api_key"] = PINATA_SECRET_KEY;
+  }
+
+  const res = await fetch("https://api.pinata.cloud/pinning/pinJSONToIPFS", {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ pinataContent: json }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Pinata upload failed (${res.status}): ${text}`);
+  }
+
+  const data = await res.json();
+  return data.IpfsHash as string;
+}
 
 export async function POST(request: Request) {
   try {
@@ -43,9 +69,11 @@ export async function POST(request: Request) {
       image: image || "",
     };
 
-    // Pin both to IPFS via Pinata (public uploads)
-    const ipUpload = await pinata.upload.public.json(ipMetadata);
-    const nftUpload = await pinata.upload.public.json(nftMetadata);
+    // Pin both to IPFS via Pinata
+    const [ipCid, nftCid] = await Promise.all([
+      pinJsonToIPFS(ipMetadata),
+      pinJsonToIPFS(nftMetadata),
+    ]);
 
     // Compute SHA-256 hashes of the JSON content
     const encoder = new TextEncoder();
@@ -58,9 +86,9 @@ export async function POST(request: Request) {
     const nftHash = Buffer.from(nftHashBuffer).toString("hex");
 
     return NextResponse.json({
-      ipMetadataURI: `https://gateway.pinata.cloud/ipfs/${ipUpload.cid}`,
+      ipMetadataURI: `https://gateway.pinata.cloud/ipfs/${ipCid}`,
       ipMetadataHash: `0x${ipHash}`,
-      nftMetadataURI: `https://gateway.pinata.cloud/ipfs/${nftUpload.cid}`,
+      nftMetadataURI: `https://gateway.pinata.cloud/ipfs/${nftCid}`,
       nftMetadataHash: `0x${nftHash}`,
     });
   } catch (error) {

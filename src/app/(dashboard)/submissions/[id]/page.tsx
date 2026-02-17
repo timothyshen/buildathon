@@ -10,6 +10,7 @@ import { getSubmissionPrizes, type PrizeInfo } from "@/lib/prize-utils";
 import { getSubmissionStatusLabel } from "@/lib/utils/status";
 import { useIpRegistration } from "@/hooks/use-ip-registration";
 import { getIpExplorerUrl, getTxExplorerUrl } from "@/services/story-protocol/constants";
+import { getPresetTerms } from "@/services/story-protocol/licensing";
 import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
 import { isEthereumWallet } from "@dynamic-labs/ethereum";
 import { ProjectGallery } from "@/components/projects/project-gallery";
@@ -19,6 +20,12 @@ import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { PrizeBadges } from "@/components/ui/prize-badges";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Dialog,
   DialogContent,
@@ -40,7 +47,10 @@ import {
   Loader2,
   BarChart3,
   ChevronRight,
+  ChevronDown,
   GitFork,
+  Info,
+  FileCode,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -124,6 +134,7 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
   const [ipAsset, setIpAsset] = useState<IpAsset | null>(null);
   const [ipLicenseTerms, setIpLicenseTerms] = useState<IpLicenseTerms[]>([]);
   const [showIpModal, setShowIpModal] = useState(false);
+  const [showMetadata, setShowMetadata] = useState(false);
   const [pilTerms, setPilTerms] = useState<PilTermsFormValues | null>(null);
   const [pilPreset, setPilPreset] = useState<PilPreset | null>(null);
   const { register: registerIp, status: ipStatus, error: ipError, reset: resetIp } = useIpRegistration();
@@ -257,6 +268,32 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
         : "Non-Commercial"
     : submission.ipLicenseType || "Custom";
 
+  // License tooltip descriptions
+  const licenseDescriptions: Record<string, { summary: string; permissions: string[]; restrictions: string[] }> = {
+    "Non-Commercial Remix": {
+      summary: "Free to remix, no commercial use.",
+      permissions: ["Remix and create derivatives", "Attribution required", "Derivatives must use same terms"],
+      restrictions: ["No commercial use", "No minting fee"],
+    },
+    "Commercial Use": {
+      summary: "Licensed for commercial use, no derivatives.",
+      permissions: ["Commercial use allowed", "Transferable license"],
+      restrictions: ["No derivatives or remixes", "Minting fee required (1 WIP)"],
+    },
+    "Commercial Remix": {
+      summary: "Commercial use with remix rights and revenue sharing.",
+      permissions: ["Commercial use allowed", "Remix and create derivatives", "Transferable license"],
+      restrictions: ["50% revenue share to original creator", "Minting fee required (1 WIP)", "Attribution required"],
+    },
+    "CC Attribution": {
+      summary: "Free to use commercially and remix with attribution.",
+      permissions: ["Commercial use allowed", "Free to remix", "No minting fee", "Transferable license"],
+      restrictions: ["Attribution required", "Derivatives must use same terms"],
+    },
+  };
+
+  const licenseInfo = licenseDescriptions[licenseSummary];
+
   const ipStatusMessages: Record<string, string> = {
     idle: "",
     signing: "Please sign the transaction in your wallet...",
@@ -319,6 +356,32 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
         <StatusIcon className="h-4 w-4 shrink-0" />
         <p>{statusBanner.message}</p>
       </div>
+
+      {/* IP Registration Prompt — shown when license was selected but IP not yet registered */}
+      {isOwner && !ipAsset && submission.ipLicenseType && (
+        <div className="flex items-center justify-between gap-4 px-4 py-3 rounded-xl border border-violet-200 bg-violet-50/50 text-violet-800 dark:border-violet-800 dark:bg-violet-950/20 dark:text-violet-200">
+          <div className="flex items-center gap-3">
+            <Shield className="h-4 w-4 shrink-0" />
+            <p className="text-sm">
+              Complete IP registration to protect your project on Story Protocol.
+            </p>
+          </div>
+          <Button
+            size="sm"
+            className="shrink-0 bg-foreground text-background hover:bg-foreground/90"
+            onClick={() => {
+              resetIp();
+              if (submission.ipLicenseType && !pilTerms) {
+                setPilPreset(submission.ipLicenseType);
+                setPilTerms(getPresetTerms(submission.ipLicenseType));
+              }
+              setShowIpModal(true);
+            }}
+          >
+            Register IP
+          </Button>
+        </div>
+      )}
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -479,7 +542,41 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-muted-foreground">License</span>
-                  <span className="text-xs">{licenseSummary}</span>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="text-xs inline-flex items-center gap-1 cursor-help">
+                          {licenseSummary}
+                          <Info className="h-3 w-3 text-muted-foreground" />
+                        </span>
+                      </TooltipTrigger>
+                      {licenseInfo ? (
+                        <TooltipContent side="left" className="max-w-[260px] p-3 space-y-2">
+                          <p className="font-medium text-xs">{licenseInfo.summary}</p>
+                          <div>
+                            <p className="text-[10px] text-emerald-300 font-medium mb-0.5">Allowed</p>
+                            <ul className="text-[10px] space-y-0.5">
+                              {licenseInfo.permissions.map((p) => (
+                                <li key={p}>+ {p}</li>
+                              ))}
+                            </ul>
+                          </div>
+                          <div>
+                            <p className="text-[10px] text-amber-300 font-medium mb-0.5">Conditions</p>
+                            <ul className="text-[10px] space-y-0.5">
+                              {licenseInfo.restrictions.map((r) => (
+                                <li key={r}>- {r}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        </TooltipContent>
+                      ) : (
+                        <TooltipContent side="left">
+                          <p className="text-xs">Custom license terms</p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-muted-foreground">Registered</span>
@@ -497,6 +594,69 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
                   </a>
                 </div>
               </div>
+
+              {/* Metadata Collapsible */}
+              {ipAsset.metadataUri && (
+                <div>
+                  <button
+                    onClick={() => setShowMetadata(!showMetadata)}
+                    className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <FileCode className="h-3.5 w-3.5" />
+                    View Metadata
+                    <ChevronDown className={`h-3 w-3 transition-transform ${showMetadata ? "rotate-180" : ""}`} />
+                  </button>
+                  {showMetadata && (
+                    <div className="mt-2 space-y-2">
+                      <div className="rounded-lg bg-muted/50 p-3 space-y-1.5">
+                        <div>
+                          <span className="text-[10px] text-muted-foreground block">Metadata URI</span>
+                          <a
+                            href={ipAsset.metadataUri}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[11px] font-mono text-blue-500 hover:underline break-all"
+                          >
+                            {ipAsset.metadataUri}
+                          </a>
+                        </div>
+                        {ipAsset.metadataHash && (
+                          <div>
+                            <span className="text-[10px] text-muted-foreground block">Metadata Hash</span>
+                            <span className="text-[11px] font-mono text-muted-foreground break-all">
+                              {ipAsset.metadataHash}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* License Terms Details */}
+                      {ipLicenseTerms.length > 0 && (
+                        <div className="rounded-lg bg-muted/50 p-3">
+                          <span className="text-[10px] text-muted-foreground block mb-1.5">License Terms</span>
+                          <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+                            <span className="text-[10px] text-muted-foreground">Commercial Use</span>
+                            <span className="text-[10px]">{ipLicenseTerms[0].commercialUse ? "Yes" : "No"}</span>
+                            <span className="text-[10px] text-muted-foreground">Derivatives</span>
+                            <span className="text-[10px]">{ipLicenseTerms[0].derivativesAllowed ? "Yes" : "No"}</span>
+                            <span className="text-[10px] text-muted-foreground">Attribution</span>
+                            <span className="text-[10px]">{ipLicenseTerms[0].derivativesAttribution ? "Required" : "Not required"}</span>
+                            <span className="text-[10px] text-muted-foreground">Reciprocal</span>
+                            <span className="text-[10px]">{ipLicenseTerms[0].derivativesReciprocal ? "Yes" : "No"}</span>
+                            <span className="text-[10px] text-muted-foreground">Rev Share</span>
+                            <span className="text-[10px]">{ipLicenseTerms[0].commercialRevShare}%</span>
+                            <span className="text-[10px] text-muted-foreground">Minting Fee</span>
+                            <span className="text-[10px] font-mono">{ipLicenseTerms[0].defaultMintingFee} WIP</span>
+                            <span className="text-[10px] text-muted-foreground">Transferable</span>
+                            <span className="text-[10px]">{ipLicenseTerms[0].transferable ? "Yes" : "No"}</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {!isOwner && (
                 <Link href={`/submissions/${submission.id}/fork`}>
                   <Button variant="outline" size="sm">
@@ -514,7 +674,15 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
                   Register this project as an IP Asset on Story Protocol
                 </p>
               </div>
-              <Button onClick={() => { resetIp(); setShowIpModal(true); }}>
+              <Button onClick={() => {
+                resetIp();
+                // Pre-populate with saved preset from submission if available
+                if (submission.ipLicenseType && !pilTerms) {
+                  setPilPreset(submission.ipLicenseType);
+                  setPilTerms(getPresetTerms(submission.ipLicenseType));
+                }
+                setShowIpModal(true);
+              }}>
                 Register IP Asset
               </Button>
             </section>

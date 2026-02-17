@@ -120,7 +120,7 @@ export interface Submission {
   // IP (mocked for now)
   ipAssetId?: string;
   ipRegisteredAt?: Date;
-  ipLicenseType?: "non-commercial" | "commercial-use" | "commercial-remix";
+  ipLicenseType?: PilPreset;
 
   // Fork tracking
   forkedFromSubmissionId?: string;

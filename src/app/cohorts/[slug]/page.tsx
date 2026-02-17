@@ -8,11 +8,11 @@ import { stripHtml } from "@/lib/utils";
 import { CohortHero } from "@/components/cohorts/cohort-hero";
 import { CohortTimeline } from "@/components/cohorts/cohort-timeline";
 import { CohortTracks } from "@/components/cohorts/cohort-tracks";
+import { CohortSubmitButton } from "@/components/cohorts/cohort-submit-button";
 import { ReferralCapture } from "@/components/referrals/referral-capture";
 import { ReferralShareButton } from "@/components/referrals/referral-share-button";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Trophy, ExternalLink } from "lucide-react";
@@ -131,9 +131,7 @@ export default async function CohortDetailPage({
         {cohort.status === "active" && (
           <div className="flex justify-end gap-3 mb-6">
             <ReferralShareButton cohortId={cohort.id} cohortSlug={cohort.slug} />
-            <Link href="/submit">
-              <Button size="lg">Submit Your Project</Button>
-            </Link>
+            <CohortSubmitButton />
           </div>
         )}
 

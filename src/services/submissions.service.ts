@@ -362,6 +362,7 @@ async function create(
     tech_stack: data.techStack,
     built_with_story: data.builtWithStory,
     forked_from_submission_id: data.forkedFromSubmissionId || null,
+    ip_license_type: data.ipLicenseType || null,
     status,
     // Set submitted_at when creating with "submitted" status
     ...(status === "submitted" ? { submitted_at: new Date().toISOString() } : {}),

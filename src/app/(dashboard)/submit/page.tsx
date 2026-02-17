@@ -349,6 +349,7 @@ export default function SubmitPage() {
         techStack: data.techStack,
         builtWithStory: data.builtWithStory,
         trackIds: data.trackIds,
+        ipLicenseType: data.pilPreset || undefined,
         status: "submitted" as const,
       };
 

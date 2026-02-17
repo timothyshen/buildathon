@@ -21,9 +21,16 @@ function LoginForm() {
   const [error, setError] = useState("");
   const [accountDeletedError, setAccountDeletedError] = useState(false);
 
+  // Where to go after successful login (validate it's a safe relative path)
+  const rawRedirect = searchParams.get("redirect");
+  const redirectTo =
+    rawRedirect && rawRedirect.startsWith("/") && !rawRedirect.startsWith("//")
+      ? rawRedirect
+      : "/dashboard";
+
   const onWalletSuccess = useCallback(() => {
-    router.push("/dashboard");
-  }, [router]);
+    router.push(redirectTo);
+  }, [router, redirectTo]);
 
   const {
     connectWallet,
@@ -51,7 +58,7 @@ function LoginForm() {
     const result = await login(normalizedEmail, password);
 
     if (result.success) {
-      router.push("/dashboard");
+      router.push(redirectTo);
     } else {
       setError(result.error || "Login failed");
     }

@@ -449,7 +449,7 @@ export type Database = {
           built_with_story: boolean;
           ip_asset_id: string | null;
           ip_registered_at: string | null;
-          ip_license_type: "non-commercial" | "commercial-use" | "commercial-remix" | null;
+          ip_license_type: "non-commercial" | "commercial-use" | "commercial-remix" | "non-commercial-remix" | "cc-attribution" | null;
           forked_from_submission_id: string | null;
           status: "draft" | "submitted" | "under_review" | "accepted" | "winner";
           submitted_at: string | null;
@@ -473,7 +473,7 @@ export type Database = {
           built_with_story?: boolean;
           ip_asset_id?: string | null;
           ip_registered_at?: string | null;
-          ip_license_type?: "non-commercial" | "commercial-use" | "commercial-remix" | null;
+          ip_license_type?: "non-commercial" | "commercial-use" | "commercial-remix" | "non-commercial-remix" | "cc-attribution" | null;
           forked_from_submission_id?: string | null;
           status?: "draft" | "submitted" | "under_review" | "accepted" | "winner";
           submitted_at?: string | null;
@@ -497,7 +497,7 @@ export type Database = {
           built_with_story?: boolean;
           ip_asset_id?: string | null;
           ip_registered_at?: string | null;
-          ip_license_type?: "non-commercial" | "commercial-use" | "commercial-remix" | null;
+          ip_license_type?: "non-commercial" | "commercial-use" | "commercial-remix" | "non-commercial-remix" | "cc-attribution" | null;
           forked_from_submission_id?: string | null;
           status?: "draft" | "submitted" | "under_review" | "accepted" | "winner";
           submitted_at?: string | null;
@@ -1957,7 +1957,7 @@ export type Database = {
       invite_status: "pending" | "accepted" | "declined";
       sponsor_tier: "platinum" | "gold" | "silver" | "bronze" | "community";
       rsvp_status: "registered" | "attended" | "cancelled";
-      ip_license_type: "non-commercial" | "commercial-use" | "commercial-remix";
+      ip_license_type: "non-commercial" | "commercial-use" | "commercial-remix" | "non-commercial-remix" | "cc-attribution";
       milestone_type: "testnet_launch" | "mainnet_launch" | "first_100_users" | "first_1000_users" | "first_10000_users" | "funding_raised" | "partnership" | "media_feature" | "award" | "other";
       referral_status: "pending" | "credited";
       feedback_status: "open" | "planned" | "in_progress" | "completed" | "declined";
