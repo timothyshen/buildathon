@@ -15,6 +15,7 @@ import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
 import { isEthereumWallet } from "@dynamic-labs/ethereum";
 import { ProjectGallery } from "@/components/projects/project-gallery";
 import { ProjectTeam } from "@/components/projects/project-team";
+import { RichTextDisplay } from "@/components/ui/rich-text-editor";
 import { StepIP } from "@/app/(dashboard)/submit/components/step-ip";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
@@ -334,6 +335,14 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
           )}
         </div>
         <div className="flex gap-2 shrink-0">
+          {ipAsset && (
+            <Button variant="ghost" size="sm" asChild>
+              <Link href={`/submissions/${submission.id}/ip`}>
+                <Shield className="h-3.5 w-3.5 mr-1.5" />
+                IP Dashboard
+              </Link>
+            </Button>
+          )}
           <Button variant="ghost" size="sm" asChild>
             <Link href={`/submissions/${submission.id}/traction`}>
               <BarChart3 className="h-3.5 w-3.5 mr-1.5" />
@@ -398,9 +407,10 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
             <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
               About
             </h2>
-            <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
-              {submission.description}
-            </p>
+            <RichTextDisplay
+              content={submission.description}
+              className="text-sm text-muted-foreground leading-relaxed"
+            />
           </section>
 
           {/* Tech Stack */}

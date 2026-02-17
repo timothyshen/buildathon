@@ -46,4 +46,4 @@ export type { FeedbackService, FeedbackListOptions, CreateFeedbackData } from ".
 export type { IdeasService, IdeasListOptions, CreateIdeaData } from "./ideas.service";
 export type { NotificationsService } from "./notifications.service";
 export type { CohortJudgesService, CohortJudgeWithUser, CohortJudgeWithCohort } from "./cohort-judges.service";
-export type { IpAssetsService } from "./ip-assets.service";
+export type { IpAssetsService, IpAssetWithDetails, DerivativeWithSubmission } from "./ip-assets.service";

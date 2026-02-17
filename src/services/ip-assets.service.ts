@@ -19,16 +19,25 @@ export interface IpAssetWithDetails extends IpAsset {
   licenseTerms: IpLicenseTerms[];
 }
 
+export interface DerivativeWithSubmission extends IpAsset {
+  submissionTitle: string;
+  submissionId: string;
+}
+
 export interface IpAssetsService {
   getBySubmissionId(submissionId: string): Promise<ServiceResponse<IpAsset | null>>;
   getByIpId(ipId: string): Promise<ServiceResponse<IpAsset | null>>;
   getLicenseTerms(ipAssetId: string): Promise<ServiceResponse<IpLicenseTerms[]>>;
   getLatestRoyaltySnapshot(ipAssetId: string): Promise<ServiceResponse<RoyaltySnapshot | null>>;
+  getRoyaltySnapshots(ipAssetId: string): Promise<ServiceResponse<RoyaltySnapshot[]>>;
   getDerivatives(parentIpId: string): Promise<ServiceResponse<IpAsset[]>>;
+  getDerivativesWithSubmissions(parentIpId: string): Promise<ServiceResponse<DerivativeWithSubmission[]>>;
   getAllForOwner(ownerAddress: string): Promise<ServiceResponse<IpAsset[]>>;
   getAll(): Promise<ServiceResponse<IpAsset[]>>;
   getAllWithSubmissions(): Promise<ServiceResponse<IpAssetWithSubmission[]>>;
   getAllForOwnerWithDetails(ownerAddress: string): Promise<ServiceResponse<IpAssetWithDetails[]>>;
+  getAllForUserSubmissions(userId: string): Promise<ServiceResponse<IpAssetWithDetails[]>>;
+  getForkedByUser(userId: string): Promise<ServiceResponse<IpAssetWithDetails[]>>;
 }
 
 // --- Mappers ---
@@ -170,6 +179,49 @@ async function getDerivatives(parentIpId: string): Promise<ServiceResponse<IpAss
   return success(assets);
 }
 
+async function getDerivativesWithSubmissions(parentIpId: string): Promise<ServiceResponse<DerivativeWithSubmission[]>> {
+  const supabase = createClient();
+
+  const { data, error: dbError } = await supabase
+    .from("ip_assets")
+    .select("*, submissions(id, title)")
+    .eq("parent_ip_id", parentIpId)
+    .order("created_at", { ascending: false });
+
+  if (dbError) {
+    return error(dbError.message, []);
+  }
+
+  const assets = (data || []).map((row) => {
+    const submission = row.submissions as Record<string, unknown> | null;
+    return {
+      ...mapIpAsset(row as Record<string, unknown>),
+      submissionTitle: (submission?.title as string) || "Untitled",
+      submissionId: (submission?.id as string) || (row.submission_id as string),
+    };
+  });
+
+  return success(assets);
+}
+
+async function getRoyaltySnapshots(ipAssetId: string): Promise<ServiceResponse<RoyaltySnapshot[]>> {
+  const supabase = createClient();
+
+  const { data, error: dbError } = await supabase
+    .from("royalty_snapshots")
+    .select("*")
+    .eq("ip_asset_id", ipAssetId)
+    .order("snapshot_at", { ascending: false })
+    .limit(30);
+
+  if (dbError) {
+    return error(dbError.message, []);
+  }
+
+  const snapshots = (data || []).map((row) => mapRoyaltySnapshot(row as Record<string, unknown>));
+  return success(snapshots);
+}
+
 async function getAllForOwner(ownerAddress: string): Promise<ServiceResponse<IpAsset[]>> {
   const supabase = createClient();
 
@@ -255,14 +307,146 @@ async function getAllForOwnerWithDetails(ownerAddress: string): Promise<ServiceR
   return success(assets);
 }
 
+async function getAllForUserSubmissions(userId: string): Promise<ServiceResponse<IpAssetWithDetails[]>> {
+  const supabase = createClient();
+
+  // Get submission IDs the user owns (solo or via team membership)
+  const { data: memberData } = await supabase
+    .from("team_members")
+    .select("team_id")
+    .eq("user_id", userId);
+
+  const teamIds = (memberData || []).map((m) => m.team_id as string);
+
+  // Build filter: solo submissions by user OR team-based submissions
+  let submissionQuery = supabase
+    .from("submissions")
+    .select("id");
+
+  if (teamIds.length > 0) {
+    submissionQuery = submissionQuery.or(
+      `team_id.in.(${teamIds.join(",")}),and(created_by.eq.${userId},team_id.is.null)`
+    );
+  } else {
+    submissionQuery = submissionQuery.eq("created_by", userId).is("team_id", null);
+  }
+
+  const { data: submissions, error: subError } = await submissionQuery;
+  if (subError) {
+    return error(subError.message, []);
+  }
+
+  const submissionIds = (submissions || []).map((s) => s.id as string);
+  if (submissionIds.length === 0) {
+    return success([]);
+  }
+
+  // Fetch IP assets for those submissions with all details
+  const { data, error: dbError } = await supabase
+    .from("ip_assets")
+    .select("*, submissions(id, title), royalty_snapshots(*), ip_license_terms(*)")
+    .in("submission_id", submissionIds)
+    .order("registered_at", { ascending: false });
+
+  if (dbError) {
+    return error(dbError.message, []);
+  }
+
+  const assets = (data || []).map((row) => {
+    const snapshots = ((row.royalty_snapshots || []) as Record<string, unknown>[])
+      .map(mapRoyaltySnapshot)
+      .sort((a, b) => b.snapshotAt.getTime() - a.snapshotAt.getTime());
+
+    const submission = row.submissions as Record<string, unknown> | null;
+
+    return {
+      ...mapIpAsset(row as Record<string, unknown>),
+      submissionTitle: (submission?.title as string) || "Untitled",
+      submissionId: (submission?.id as string) || (row.submission_id as string),
+      latestSnapshot: snapshots[0] || null,
+      licenseTerms: ((row.ip_license_terms || []) as Record<string, unknown>[]).map(mapLicenseTerms),
+    };
+  });
+
+  return success(assets);
+}
+
+async function getForkedByUser(userId: string): Promise<ServiceResponse<IpAssetWithDetails[]>> {
+  const supabase = createClient();
+
+  // Get submission IDs the user owns
+  const { data: memberData } = await supabase
+    .from("team_members")
+    .select("team_id")
+    .eq("user_id", userId);
+
+  const teamIds = (memberData || []).map((m) => m.team_id as string);
+
+  let submissionQuery = supabase
+    .from("submissions")
+    .select("id")
+    .not("forked_from_submission_id", "is", null);
+
+  if (teamIds.length > 0) {
+    submissionQuery = submissionQuery.or(
+      `team_id.in.(${teamIds.join(",")}),and(created_by.eq.${userId},team_id.is.null)`
+    );
+  } else {
+    submissionQuery = submissionQuery.eq("created_by", userId).is("team_id", null);
+  }
+
+  const { data: submissions, error: subError } = await submissionQuery;
+  if (subError) {
+    return error(subError.message, []);
+  }
+
+  const submissionIds = (submissions || []).map((s) => s.id as string);
+  if (submissionIds.length === 0) {
+    return success([]);
+  }
+
+  // Fetch IP assets for those forked submissions with details
+  const { data, error: dbError } = await supabase
+    .from("ip_assets")
+    .select("*, submissions(id, title), royalty_snapshots(*), ip_license_terms(*)")
+    .in("submission_id", submissionIds)
+    .order("registered_at", { ascending: false });
+
+  if (dbError) {
+    return error(dbError.message, []);
+  }
+
+  const assets = (data || []).map((row) => {
+    const snapshots = ((row.royalty_snapshots || []) as Record<string, unknown>[])
+      .map(mapRoyaltySnapshot)
+      .sort((a, b) => b.snapshotAt.getTime() - a.snapshotAt.getTime());
+
+    const submission = row.submissions as Record<string, unknown> | null;
+
+    return {
+      ...mapIpAsset(row as Record<string, unknown>),
+      submissionTitle: (submission?.title as string) || "Untitled",
+      submissionId: (submission?.id as string) || (row.submission_id as string),
+      latestSnapshot: snapshots[0] || null,
+      licenseTerms: ((row.ip_license_terms || []) as Record<string, unknown>[]).map(mapLicenseTerms),
+    };
+  });
+
+  return success(assets);
+}
+
 export const ipAssetsService: IpAssetsService = {
   getBySubmissionId,
   getByIpId,
   getLicenseTerms,
   getLatestRoyaltySnapshot,
+  getRoyaltySnapshots,
   getDerivatives,
+  getDerivativesWithSubmissions,
   getAllForOwner,
   getAll,
   getAllWithSubmissions,
   getAllForOwnerWithDetails,
+  getAllForUserSubmissions,
+  getForkedByUser,
 };
