@@ -18,7 +18,18 @@ import { StepDetails } from "@/app/(dashboard)/submit/components/step-details";
 import { StepMedia } from "@/app/(dashboard)/submit/components/step-media";
 import { StepLinksTech } from "@/app/(dashboard)/submit/components/step-links-tech";
 import { StepTracks } from "@/app/(dashboard)/submit/components/step-tracks";
-import { Loader2, Save, ArrowLeft } from "lucide-react";
+import { Loader2, Save, ArrowLeft, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface EditSubmissionPageProps {
   params: Promise<{ id: string }>;
@@ -204,6 +215,16 @@ export default function EditSubmissionPage({ params }: EditSubmissionPageProps) 
     }
   };
 
+  const handleDelete = async () => {
+    const { success } = await submissionsService.delete(id);
+    if (success) {
+      toast.success("Submission deleted");
+      router.push("/submissions");
+    } else {
+      toast.error("Failed to delete submission");
+    }
+  };
+
   if (isLoadingData || authLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -311,9 +332,39 @@ export default function EditSubmissionPage({ params }: EditSubmissionPageProps) 
       </div>
 
       <div className="flex items-center justify-between border-t pt-6">
-        <Button variant="outline" asChild>
-          <Link href={`/submissions/${id}`}>Cancel</Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" asChild>
+            <Link href={`/submissions/${id}`}>Cancel</Link>
+          </Button>
+          {submission.status === "draft" && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" className="text-muted-foreground hover:text-destructive">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Submission?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete this submission and all associated data
+                    (reviews, IP registrations, traction metrics). This cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDelete}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+        </div>
         <Button onClick={handleSave} disabled={isSaving}>
           {isSaving ? (
             <>
