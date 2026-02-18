@@ -36,6 +36,9 @@ export function useClaimableRevenue(
       return;
     }
 
+    // Capture the narrowed Ethereum wallet so TypeScript carries the type into the async closure
+    const ethWallet = primaryWallet;
+
     const ownedAssets = ipAssets.filter(
       (a) => a.ownerAddress.toLowerCase() === walletAddress.toLowerCase()
     );
@@ -51,7 +54,7 @@ export function useClaimableRevenue(
       setIsLoading(true);
       try {
         const walletClient =
-          (await primaryWallet!.getWalletClient()) as unknown as import("viem").WalletClient;
+          (await ethWallet.getWalletClient()) as unknown as import("viem").WalletClient;
 
         const results = await Promise.allSettled(
           ownedAssets.map(async (asset) => {
