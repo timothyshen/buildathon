@@ -1,8 +1,25 @@
 "use client";
 
-import type { WalletClient } from "viem";
+import { type WalletClient, parseEther, encodeFunctionData } from "viem";
 import { getStoryClient } from "./client";
-import { SPG_NFT_CONTRACT } from "./constants";
+import { SPG_NFT_CONTRACT, WIP_TOKEN_ADDRESS } from "./constants";
+
+// DerivativeWorkflows contract — needs WIP approval to pay minting fees
+const DERIVATIVE_WORKFLOWS_ADDRESS = "0x9e2d496f72C547C2C535B167e06ED8729B374a4f" as const;
+
+// Minimal ERC20 approve ABI
+const erc20ApproveAbi = [
+  {
+    name: "approve",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "spender", type: "address" },
+      { name: "amount", type: "uint256" },
+    ],
+    outputs: [{ name: "", type: "bool" }],
+  },
+] as const;
 
 interface DerivativeResult {
   childIpId: string;
@@ -11,10 +28,41 @@ interface DerivativeResult {
 }
 
 /**
+ * Approves the DerivativeWorkflows contract to spend WIP tokens on behalf
+ * of the caller. Required when the parent IP has a minting fee, because the
+ * workflow contract needs to pull WIP from the user's balance to pay it.
+ */
+async function approveWipForDerivativeWorkflows(
+  walletClient: WalletClient,
+  amount: bigint
+) {
+  if (!walletClient.account) {
+    throw new Error("Wallet must have an account connected");
+  }
+
+  const hash = await walletClient.sendTransaction({
+    to: WIP_TOKEN_ADDRESS as `0x${string}`,
+    data: encodeFunctionData({
+      abi: erc20ApproveAbi,
+      functionName: "approve",
+      args: [DERIVATIVE_WORKFLOWS_ADDRESS, amount],
+    }),
+    account: walletClient.account,
+    chain: walletClient.chain,
+  });
+
+  return hash;
+}
+
+/**
  * Mints a new NFT and registers it as a derivative IP asset linked to
  * a parent IP via the specified license terms. Uses the SDK's unified
  * `registerDerivativeIpAsset` entry point which automatically selects
  * the optimal workflow (mintAndRegisterIpAndMakeDerivative).
+ *
+ * If the parent license has a minting fee, this first approves the
+ * DerivativeWorkflows contract to spend WIP tokens (the minting fee
+ * currency) on behalf of the caller.
  */
 export async function registerDerivativeIp(
   walletClient: WalletClient,
@@ -25,8 +73,15 @@ export async function registerDerivativeIp(
     ipMetadataHash: string;
     nftMetadataURI: string;
     nftMetadataHash: string;
-  }
+  },
+  mintingFee?: string
 ): Promise<DerivativeResult> {
+  // Approve WIP spending if there's a minting fee
+  const fee = parseEther(mintingFee || "0");
+  if (fee > BigInt(0)) {
+    await approveWipForDerivativeWorkflows(walletClient, fee);
+  }
+
   const client = getStoryClient(walletClient);
 
   const response = await client.ipAsset.registerDerivativeIpAsset({

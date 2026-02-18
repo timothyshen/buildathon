@@ -186,7 +186,8 @@ export default function ForkPage({ params }: ForkPageProps) {
         walletClient,
         parentIpAsset.ipId,
         parentTermsId,
-        metadata
+        metadata,
+        parentLicenseTerms[0].defaultMintingFee
       );
 
       // Step 4: Record in DB
