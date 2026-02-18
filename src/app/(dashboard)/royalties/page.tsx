@@ -7,6 +7,7 @@ import { isEthereumWallet } from "@dynamic-labs/ethereum";
 import { ipAssetsService } from "@/services";
 import type { IpAssetWithDetails } from "@/services/ip-assets.service";
 import { claimAllRevenue } from "@/services/story-protocol/royalties";
+import { useClaimableRevenue } from "@/hooks/use-claimable-revenue";
 import { getIpExplorerUrl, getTxExplorerUrl } from "@/services/story-protocol/constants";
 import {
   Tooltip,
@@ -115,17 +116,23 @@ export default function RoyaltiesPage() {
 
   const walletAddress = user?.walletAddress;
 
+  const { claimableAmounts, isLoading: claimableLoading } = useClaimableRevenue(
+    ipAssets,
+    walletAddress
+  );
+
   // Aggregate stats
   const totalRevenue = ipAssets.reduce(
     (sum, a) => sum + parseFloat(a.latestSnapshot?.totalRevenueWip || "0"),
     0
   );
   const totalClaimable = ipAssets.reduce(
-    (sum, a) =>
-      sum +
-      (a.isWalletOwner
-        ? parseFloat(a.latestSnapshot?.claimableWip || "0")
-        : 0),
+    (sum, a) => {
+      if (!a.isWalletOwner) return sum;
+      const liveAmount = claimableAmounts[a.ipId];
+      const snapshotAmount = a.latestSnapshot?.claimableWip || "0";
+      return sum + parseFloat(liveAmount ?? snapshotAmount);
+    },
     0
   );
   const totalDerivatives = ipAssets.reduce(
@@ -360,8 +367,9 @@ export default function RoyaltiesPage() {
                 const revenue = parseFloat(
                   snapshot?.totalRevenueWip || "0"
                 );
+                const liveClaimable = claimableAmounts[asset.ipId];
                 const claimable = asset.isWalletOwner
-                  ? parseFloat(snapshot?.claimableWip || "0")
+                  ? parseFloat(liveClaimable ?? snapshot?.claimableWip ?? "0")
                   : 0;
                 const derivatives = snapshot?.derivativeCount || 0;
                 const isClaiming = claimingIpId === asset.ipId;
