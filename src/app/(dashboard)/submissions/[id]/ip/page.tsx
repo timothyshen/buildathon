@@ -15,6 +15,7 @@ import type {
   RoyaltySnapshot,
 } from "@/types";
 import { claimAllRevenue } from "@/services/story-protocol/royalties";
+import { useClaimableRevenue } from "@/hooks/use-claimable-revenue";
 import {
   getIpExplorerUrl,
   getTxExplorerUrl,
@@ -138,6 +139,12 @@ export default function IpDetailPage({ params }: IpDetailPageProps) {
     walletAddress && ipAsset
       ? ipAsset.ownerAddress.toLowerCase() === walletAddress.toLowerCase()
       : false;
+
+  const { claimableAmounts } = useClaimableRevenue(
+    ipAsset ? [{ ipId: ipAsset.ipId, ownerAddress: ipAsset.ownerAddress }] : [],
+    walletAddress
+  );
+
   const isTeamSubmission = !!submission?.team;
 
   // Resolve the registrant name from team members by matching wallet address
@@ -298,7 +305,8 @@ export default function IpDetailPage({ params }: IpDetailPageProps) {
   const licenseLabel = terms ? deriveLicenseLabel(terms) : "No license";
   const licenseInfo =
     licenseDescriptions[licenseLabel.replace(/ \(\d+%\)$/, "")];
-  const claimable = parseFloat(snapshot?.claimableWip || "0");
+  const liveClaimable = ipAsset ? claimableAmounts[ipAsset.ipId] : undefined;
+  const claimable = parseFloat(liveClaimable ?? snapshot?.claimableWip ?? "0");
   const revenue = parseFloat(snapshot?.totalRevenueWip || "0");
   const derivativeCount = snapshot?.derivativeCount || derivatives.length;
 
