@@ -136,13 +136,13 @@ export function ProjectCardExplore({
             </a>
           )}
           {submission.ipAssetId && (
-            <a
-              href="#"
+            <Link
+              href={`/submissions/${submission.id}/fork`}
               title="Fork on Story Protocol"
               className="p-1.5 text-muted-foreground hover:text-foreground transition-colors"
             >
               <GitFork className="h-3.5 w-3.5" />
-            </a>
+            </Link>
           )}
         </div>
       </div>
