@@ -12,6 +12,7 @@ import { ProjectTractionStats, ProjectTractionChart } from "@/components/project
 import { ProjectMilestones } from "@/components/projects/project-milestones";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { RichTextDisplay } from "@/components/ui/rich-text-editor";
+import { ForkProjectButton } from "@/components/projects/project-fork-button";
 import { Shield, FileCheck } from "lucide-react";
 
 interface ProjectPageProps {
@@ -306,6 +307,12 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                     </div>
                   )}
                 </div>
+
+                <ForkProjectButton
+                  submissionId={submission.id}
+                  createdBy={submission.createdBy}
+                  teamMemberIds={submission.team?.members.map((m) => m.userId)}
+                />
               </section>
             )}
 
