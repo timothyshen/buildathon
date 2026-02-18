@@ -30,6 +30,9 @@ export function useClaimableRevenue(
     setRefreshKey((k) => k + 1);
   }, []);
 
+  // Stable key to re-query when the asset list changes without causing infinite re-renders
+  const ipAssetKey = ipAssets.map((a) => a.ipId).join(",");
+
   useEffect(() => {
     if (!walletAddress || !primaryWallet || !isEthereumWallet(primaryWallet)) {
       setClaimableAmounts({});
@@ -90,7 +93,8 @@ export function useClaimableRevenue(
     return () => {
       cancelled = true;
     };
-  }, [walletAddress, primaryWallet, ipAssets.length, refreshKey]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- ipAssetKey is a stable serialization of ipAssets
+  }, [walletAddress, primaryWallet, ipAssetKey, refreshKey]);
 
   return { claimableAmounts, isLoading, refresh };
 }
