@@ -52,8 +52,20 @@ import {
   GitFork,
   Info,
   FileCode,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface SubmissionDetailPageProps {
   params: Promise<{ id: string }>;
@@ -174,6 +186,17 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
       // Error is already set in the hook
     }
   }, [submission, pilTerms, primaryWallet, registerIp]);
+
+  const handleDeleteSubmission = useCallback(async () => {
+    if (!submission) return;
+    const { success } = await submissionsService.delete(submission.id);
+    if (success) {
+      toast.success("Submission deleted");
+      router.push("/submissions");
+    } else {
+      toast.error("Failed to delete submission");
+    }
+  }, [submission, router]);
 
   useEffect(() => {
     async function loadData() {
@@ -356,6 +379,33 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
                 Edit
               </Link>
             </Button>
+          )}
+          {isOwner && submission.status === "draft" && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive">
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Submission?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete this submission and all associated data
+                    (reviews, IP registrations, traction metrics). This cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDeleteSubmission}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           )}
         </div>
       </div>
