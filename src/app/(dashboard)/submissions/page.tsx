@@ -19,6 +19,7 @@ import {
   ChevronRight,
   BarChart3,
   Trophy,
+  Shield,
 } from "lucide-react";
 
 interface EnrichedSubmission extends Submission {
@@ -254,6 +255,13 @@ export default function SubmissionsPage() {
                         <a href={submission.repoUrl} target="_blank" rel="noopener noreferrer">
                           <Github className="h-3.5 w-3.5" />
                         </a>
+                      </Button>
+                    )}
+                    {submission.ipAssetId && (
+                      <Button variant="ghost" size="icon" className="h-8 w-8" asChild title="IP Dashboard">
+                        <Link href={`/submissions/${submission.id}/ip`}>
+                          <Shield className="h-3.5 w-3.5" />
+                        </Link>
                       </Button>
                     )}
                     {submission.status !== "draft" && (

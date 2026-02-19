@@ -1,36 +1,71 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { workshopsService } from "@/services";
 import type { Workshop } from "@/types";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Search, Play, FileText, Clock, Users, Loader2, BookOpen, Lightbulb } from "lucide-react";
+  Search,
+  Play,
+  FileText,
+  Clock,
+  Users,
+  Loader2,
+  BookOpen,
+  ExternalLink,
+} from "lucide-react";
+
+type ResourceFilter = "all" | "videos" | "articles";
 
 export default function ResourcesPage() {
   const [workshops, setWorkshops] = useState<Workshop[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [activeFilter, setActiveFilter] = useState<ResourceFilter>("all");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
   useEffect(() => {
     async function loadData() {
       const { data } = await workshopsService.list();
-      // Filter to published resources (not scheduled events)
       setWorkshops(data.filter((w) => w.status === "published"));
       setIsLoading(false);
     }
     loadData();
   }, []);
+
+  const categories = useMemo(
+    () => Array.from(new Set(workshops.map((w) => w.category))).sort(),
+    [workshops]
+  );
+
+  const counts = useMemo(
+    () => ({
+      all: workshops.length,
+      videos: workshops.filter((w) => w.videoUrl).length,
+      articles: workshops.filter((w) => w.articleUrl).length,
+    }),
+    [workshops]
+  );
+
+  const filteredWorkshops = useMemo(() => {
+    return workshops.filter((workshop) => {
+      const matchesSearch =
+        search === "" ||
+        workshop.title.toLowerCase().includes(search.toLowerCase()) ||
+        workshop.description.toLowerCase().includes(search.toLowerCase());
+
+      const matchesFilter =
+        activeFilter === "all" ||
+        (activeFilter === "videos" && workshop.videoUrl) ||
+        (activeFilter === "articles" && workshop.articleUrl);
+
+      const matchesCategory =
+        selectedCategory === "all" || workshop.category === selectedCategory;
+
+      return matchesSearch && matchesFilter && matchesCategory;
+    });
+  }, [workshops, search, activeFilter, selectedCategory]);
 
   if (isLoading) {
     return (
@@ -40,96 +75,86 @@ export default function ResourcesPage() {
     );
   }
 
-  const categories = Array.from(new Set(workshops.map((w) => w.category)));
-
-  const filteredWorkshops = workshops.filter((workshop) => {
-    const matchesSearch =
-      search === "" ||
-      workshop.title.toLowerCase().includes(search.toLowerCase()) ||
-      workshop.description.toLowerCase().includes(search.toLowerCase());
-
-    const matchesCategory =
-      selectedCategory === "all" || workshop.category === selectedCategory;
-
-    return matchesSearch && matchesCategory;
-  });
+  const filterTiles: {
+    key: ResourceFilter;
+    label: string;
+    count: number;
+    icon: React.ReactNode;
+    color: string;
+  }[] = [
+    {
+      key: "all",
+      label: "All Resources",
+      count: counts.all,
+      icon: <BookOpen className="h-5 w-5" />,
+      color: "text-foreground",
+    },
+    {
+      key: "videos",
+      label: "Videos",
+      count: counts.videos,
+      icon: <Play className="h-5 w-5" />,
+      color: "text-red-500",
+    },
+    {
+      key: "articles",
+      label: "Articles",
+      count: counts.articles,
+      icon: <FileText className="h-5 w-5" />,
+      color: "text-blue-500",
+    },
+  ];
 
   return (
-    <div className="min-h-screen bg-muted">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-slate-900 mx-4 mt-4 rounded-3xl">
-        <div
-          className="absolute inset-0 opacity-5"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          }}
-        />
-        <div className="relative max-w-6xl mx-auto px-8 py-16 text-center">
-          <Badge className="bg-category-business/20 text-category-business border-category-business/30 mb-4">
-            <BookOpen className="h-3 w-3 mr-1.5" />
+    <div className="min-h-screen bg-background">
+      {/* Hero */}
+      <section className="relative overflow-hidden bg-foreground mx-4 mt-4 rounded-2xl">
+        <div className="relative max-w-5xl mx-auto px-8 py-14 text-center">
+          <p className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
             Learning Hub
-          </Badge>
-          <h1 className="text-4xl lg:text-5xl font-bold text-white">
+          </p>
+          <h1 className="text-3xl lg:text-4xl font-semibold tracking-tight text-background">
             Resources
           </h1>
-          <p className="mt-4 text-xl text-slate-400 max-w-2xl mx-auto">
-            Tutorials, guides, prompt libraries, and educational content from our partners to help you build on Story Protocol.
+          <p className="mt-3 text-sm text-muted-foreground max-w-xl mx-auto">
+            Tutorials, guides, prompt libraries, and educational content from
+            our partners to help you build on Story Protocol.
           </p>
         </div>
       </section>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Resource Type Quick Filters */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setSelectedCategory("all")}>
-            <CardContent className="flex items-center gap-3 p-4">
-              <div className="rounded-lg bg-primary/10 p-2">
-                <BookOpen className="h-5 w-5 text-primary" />
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+        {/* Filter Tiles */}
+        <div className="grid grid-cols-3 gap-3">
+          {filterTiles.map((tile) => (
+            <button
+              key={tile.key}
+              onClick={() => {
+                setActiveFilter(tile.key);
+                if (tile.key !== "all") setSelectedCategory("all");
+              }}
+              className={`rounded-xl border p-4 text-left transition-colors ${
+                activeFilter === tile.key
+                  ? "border-foreground bg-muted/80"
+                  : "hover:bg-muted/50"
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <span className={tile.color}>{tile.icon}</span>
+                <div>
+                  <p className="text-sm font-medium">{tile.label}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {tile.count} items
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="font-medium text-sm">All Resources</p>
-                <p className="text-xs text-muted-foreground">{workshops.length} items</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setSelectedCategory("all")}>
-            <CardContent className="flex items-center gap-3 p-4">
-              <div className="rounded-lg bg-red-100 p-2">
-                <Play className="h-5 w-5 text-red-600" />
-              </div>
-              <div>
-                <p className="font-medium text-sm">Videos</p>
-                <p className="text-xs text-muted-foreground">{workshops.filter(w => w.videoUrl).length} items</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setSelectedCategory("all")}>
-            <CardContent className="flex items-center gap-3 p-4">
-              <div className="rounded-lg bg-blue-100 p-2">
-                <FileText className="h-5 w-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="font-medium text-sm">Articles</p>
-                <p className="text-xs text-muted-foreground">{workshops.filter(w => w.articleUrl).length} items</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setSelectedCategory("all")}>
-            <CardContent className="flex items-center gap-3 p-4">
-              <div className="rounded-lg bg-amber-100 p-2">
-                <Lightbulb className="h-5 w-5 text-amber-600" />
-              </div>
-              <div>
-                <p className="font-medium text-sm">Guides</p>
-                <p className="text-xs text-muted-foreground">{categories.length} categories</p>
-              </div>
-            </CardContent>
-          </Card>
+            </button>
+          ))}
         </div>
 
-        {/* Filters */}
-        <div className="flex flex-col gap-4 sm:flex-row">
-          <div className="relative flex-1">
+        {/* Search + Category Pills */}
+        <div className="space-y-4">
+          <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Search resources..."
@@ -138,123 +163,143 @@ export default function ResourcesPage() {
               className="pl-10"
             />
           </div>
-          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-full sm:w-[200px]">
-              <SelectValue placeholder="All Categories" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              {categories.map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
 
-        {/* Category Pills */}
-        <div className="mt-6 flex flex-wrap gap-2">
-          <Button
-            variant={selectedCategory === "all" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setSelectedCategory("all")}
-          >
-            All
-          </Button>
-          {categories.map((category) => (
-            <Button
-              key={category}
-              variant={selectedCategory === category ? "default" : "outline"}
-              size="sm"
-              onClick={() => setSelectedCategory(category)}
+          <div className="flex flex-wrap gap-1.5">
+            <button
+              onClick={() => setSelectedCategory("all")}
+              className={`px-2.5 py-1 text-xs rounded-md transition-colors ${
+                selectedCategory === "all"
+                  ? "bg-foreground text-background font-medium"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
             >
-              {category}
-            </Button>
-          ))}
+              All
+            </button>
+            {categories.map((category) => (
+              <button
+                key={category}
+                onClick={() => setSelectedCategory(category)}
+                className={`px-2.5 py-1 text-xs rounded-md transition-colors ${
+                  selectedCategory === category
+                    ? "bg-foreground text-background font-medium"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Resources Grid */}
-        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filteredWorkshops.map((workshop) => (
-            <Card key={workshop.id} className="flex flex-col">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <Badge variant="outline">{workshop.category}</Badge>
-                  {workshop.duration && (
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Clock className="h-3 w-3" />
-                      {workshop.duration}
-                    </div>
-                  )}
-                </div>
-                <CardTitle className="mt-2 line-clamp-2">{workshop.title}</CardTitle>
-                <CardDescription className="line-clamp-2">
-                  {workshop.description}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-1 flex-col justify-end">
-                {workshop.partnerName && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-                    <Users className="h-4 w-4" />
-                    <span>{workshop.partnerName}</span>
-                  </div>
-                )}
-
-                <div className="flex gap-2">
-                  {workshop.videoUrl && (
-                    <Button asChild className="flex-1">
-                      <a
-                        href={workshop.videoUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <Play className="mr-2 h-4 w-4" />
-                        Watch Video
-                      </a>
-                    </Button>
-                  )}
-                  {workshop.articleUrl && (
-                    <Button
-                      variant={workshop.videoUrl ? "outline" : "default"}
-                      asChild
-                      className="flex-1"
-                    >
-                      <a
-                        href={workshop.articleUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <FileText className="mr-2 h-4 w-4" />
-                        Read Guide
-                      </a>
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+            <ResourceCard key={workshop.id} workshop={workshop} />
           ))}
         </div>
 
         {filteredWorkshops.length === 0 && (
-          <div className="mt-12 text-center">
-            <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-semibold">No resources found</h3>
-            <p className="mt-2 text-sm text-muted-foreground">
+          <div className="py-12 text-center">
+            <FileText className="mx-auto h-8 w-8 opacity-50" />
+            <p className="mt-3 text-sm">No resources found</p>
+            <p className="mt-1 text-xs text-muted-foreground">
               Try adjusting your search or filters
             </p>
           </div>
         )}
 
-        {/* CTA Section */}
-        <div className="mt-16 rounded-2xl bg-muted p-8 text-center">
-          <h2 className="text-2xl font-bold">Want to contribute?</h2>
-          <p className="mt-2 text-muted-foreground">
-            Are you a partner or expert? Share your knowledge with the community.
+        {/* CTA */}
+        <section className="rounded-2xl border p-8 text-center">
+          <h2 className="text-2xl font-semibold tracking-tight">
+            Want to contribute?
+          </h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Are you a partner or expert? Share your knowledge with the
+            community.
           </p>
-          <Button className="mt-4">Submit Content</Button>
-        </div>
+          <Button className="mt-4 bg-foreground text-background hover:bg-foreground/90">
+            Submit Content
+          </Button>
+        </section>
       </div>
     </div>
+  );
+}
+
+/* ── Resource Card ───────────────────────────── */
+
+function ResourceCard({ workshop }: { workshop: Workshop }) {
+  const hasVideo = !!workshop.videoUrl;
+  const hasArticle = !!workshop.articleUrl;
+
+  return (
+    <section className="group flex flex-col rounded-xl border p-5 hover:bg-muted/50 transition-colors">
+      {/* Header row */}
+      <div className="flex items-start justify-between">
+        <span className="px-2 py-0.5 text-[11px] rounded-md border text-muted-foreground">
+          {workshop.category}
+        </span>
+        {workshop.duration && (
+          <span className="flex items-center gap-1 text-xs text-muted-foreground">
+            <Clock className="h-3 w-3" />
+            {workshop.duration}
+          </span>
+        )}
+      </div>
+
+      {/* Content */}
+      <h3 className="mt-3 text-sm font-medium leading-snug line-clamp-2">
+        {workshop.title}
+      </h3>
+      <p className="mt-1.5 text-xs text-muted-foreground line-clamp-2 flex-1">
+        {workshop.description}
+      </p>
+
+      {/* Partner */}
+      {workshop.partnerName && (
+        <div className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Users className="h-3.5 w-3.5" />
+          <span>{workshop.partnerName}</span>
+        </div>
+      )}
+
+      {/* Actions */}
+      <div className="mt-4 flex gap-2">
+        {hasVideo && (
+          <Button size="sm" asChild className="flex-1 bg-foreground text-background hover:bg-foreground/90">
+            <a
+              href={workshop.videoUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Play className="mr-1.5 h-3.5 w-3.5" />
+              Watch
+            </a>
+          </Button>
+        )}
+        {hasArticle && (
+          <Button
+            size="sm"
+            variant={hasVideo ? "ghost" : "default"}
+            asChild
+            className={
+              hasVideo
+                ? "flex-1 text-muted-foreground hover:text-foreground"
+                : "flex-1 bg-foreground text-background hover:bg-foreground/90"
+            }
+          >
+            <a
+              href={workshop.articleUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <FileText className="mr-1.5 h-3.5 w-3.5" />
+              Read
+              <ExternalLink className="ml-1 h-3 w-3" />
+            </a>
+          </Button>
+        )}
+      </div>
+    </section>
   );
 }

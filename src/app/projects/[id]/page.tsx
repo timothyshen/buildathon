@@ -11,6 +11,8 @@ import { ProjectWinnerBanner } from "@/components/projects/project-winner-banner
 import { ProjectTractionStats, ProjectTractionChart } from "@/components/projects/project-traction";
 import { ProjectMilestones } from "@/components/projects/project-milestones";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
+import { RichTextDisplay } from "@/components/ui/rich-text-editor";
+import { ForkProjectButton } from "@/components/projects/project-fork-button";
 import { Shield, FileCheck } from "lucide-react";
 
 interface ProjectPageProps {
@@ -176,9 +178,10 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
               <h3 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">
                 About
               </h3>
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                {submission.description}
-              </p>
+              <RichTextDisplay
+                content={submission.description}
+                className="text-sm text-muted-foreground"
+              />
               {submission.builtWithStory && (
                 <div className="flex items-center gap-1.5 text-xs text-primary">
                   <Shield className="h-3.5 w-3.5" />
@@ -304,6 +307,12 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                     </div>
                   )}
                 </div>
+
+                <ForkProjectButton
+                  submissionId={submission.id}
+                  createdBy={submission.createdBy}
+                  teamMemberIds={submission.team?.members.map((m) => m.userId)}
+                />
               </section>
             )}
 

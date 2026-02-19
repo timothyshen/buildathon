@@ -22,6 +22,7 @@ import {
   MessageSquare,
   Calendar,
   Lightbulb,
+  Coins,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
@@ -105,6 +106,7 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
           badge: draftCount > 0 ? `${draftCount}` : undefined,
         },
         { href: "/submit", label: "New Submission", icon: PlusCircle },
+        { href: "/royalties", label: "IP & Royalties", icon: Coins },
         { href: "/teams", label: "My Teams", icon: Users2 },
         { href: "/referrals", label: "Referrals", icon: Share2 },
       ],

@@ -52,6 +52,41 @@ SponsorOrg (persistent) ←→ CohortSponsor (junction) ←→ Cohort
 
 Sponsors participate in multiple cohorts via `CohortSponsor` junction with tier and contribution info.
 
+### Story Protocol Integration
+
+On-chain IP registration for hackathon submissions using Story Protocol SDK on Aeneid testnet.
+
+**Services** (`src/services/story-protocol/`):
+- `client.ts` — `getStoryClient(walletClient)` factory, bridges Dynamic Labs viem wallet to Story SDK
+- `constants.ts` — chain config (`aeneid`), `WIP_TOKEN_ADDRESS`, `SPG_NFT_CONTRACT`, explorer URL helpers
+- `licensing.ts` — PIL terms: `getPresetTerms()` (4 presets), `buildLicenseTermsData()` (routes to `PILFlavor` methods), `registerAndAttachLicenseTerms()`, `mintLicenseToken()`
+- `ip-registration.ts` — `registerSubmissionAsIp()` (metadata upload + on-chain register), `recordRegistration()` (POST to API)
+- `derivatives.ts` — `registerDerivativeIp()`, `recordDerivative()`
+- `royalties.ts` — `claimAllRevenue()`, `getClaimableRevenue()`, `payRoyaltyOnBehalf()`
+
+**Data Service** (`src/services/ip-assets.service.ts`):
+- CRUD for `ip_assets`, `ip_license_terms`, `royalty_snapshots` tables
+- Joined queries: `getAllWithSubmissions()`, `getAllForOwnerWithDetails()`
+
+**API Routes** (`src/app/api/story-protocol/`):
+- `POST /metadata` — IPFS upload via Pinata, returns CID + hash
+- `POST /register` — Record IP registration in DB (ownership-verified)
+- `POST /derivative` — Record derivative IP (ownership-verified)
+- `POST /sync-royalties` — Cron or admin-triggered royalty sync
+
+**UI**:
+- `step-ip.tsx` — PIL preset picker + advanced settings (in submission wizard, step 5)
+- `submissions/[id]/page.tsx` — IP status section + registration modal
+- `submissions/[id]/fork/page.tsx` — Derivative IP flow (create submission + register derivative)
+- `royalties/page.tsx` — Bento dashboard with claim functionality
+- `admin/ip-registry/page.tsx` — Admin table of all IP assets + sync button
+
+**Hook**: `useIpRegistration()` — Status machine: idle → signing → recording → done/error
+
+**Database**: `supabase/migrations/012_story_protocol.sql` — `ip_assets`, `ip_license_terms`, `royalty_snapshots` tables + `forked_from_submission_id` on submissions
+
+**Types**: `IpAsset`, `IpLicenseTerms`, `RoyaltySnapshot`, `PilTermsFormValues`, `PilPreset`
+
 ### Layout Structure
 
 - Root: `Providers` (AuthProvider + Toaster) → `LayoutWrapper` (conditional header/footer)
@@ -142,3 +177,18 @@ connected:    h-1.5 w-1.5 rounded-full bg-emerald-500
 - Form validation with `zod` + `react-hook-form`
 - Responsive: mobile-first, use `md:` breakpoint for desktop sidebar visibility
 - Tables hide non-essential columns on mobile with `hidden md:table-cell`
+
+## Testing
+
+**Unit tests**: Vitest (`pnpm test`), files in `src/lib/__tests__/*.test.ts`. Test pure functions only — no mocking Supabase or SDK calls.
+
+**Test suites**:
+- `wallet.test.ts` — Wallet address formatting and validation
+- `upload-validation.test.ts` — File upload constraints
+- `notifications.test.ts` — Notification helpers
+- `referrals.test.ts` — Referral code logic
+- `calendar-utils.test.ts` — Calendar URL/ICS generation (uses `CalendarEvent` type, not `Workshop`)
+- `search-utils.test.ts` — Search/filter utilities
+- `story-protocol.test.ts` — PIL presets, explorer URLs, license term routing
+
+**E2E tests**: Playwright (`@playwright/test`), planned in `docs/plans/2026-02-17-e2e-test-plan.md`. No tests written yet.

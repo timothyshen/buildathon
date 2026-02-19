@@ -8,6 +8,7 @@ import { submissionsService, reviewsService, tracksService } from "@/services";
 import type { Submission, Review, Track } from "@/types";
 import { ProjectGallery } from "@/components/projects/project-gallery";
 import { ProjectTeam } from "@/components/projects/project-team";
+import { RichTextDisplay } from "@/components/ui/rich-text-editor";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
@@ -243,9 +244,10 @@ export default function AdminSubmissionDetailPage({ params }: AdminSubmissionDet
               About
             </h3>
             <div className="rounded-xl border p-5">
-              <p className="text-muted-foreground whitespace-pre-wrap">
-                {submission.description}
-              </p>
+              <RichTextDisplay
+                content={submission.description}
+                className="text-muted-foreground"
+              />
             </div>
           </div>
 

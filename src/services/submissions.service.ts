@@ -69,6 +69,7 @@ function toSubmission(
     ipAssetId: row.ip_asset_id as string | undefined,
     ipRegisteredAt: row.ip_registered_at ? new Date(row.ip_registered_at as string) : undefined,
     ipLicenseType: row.ip_license_type as Submission["ipLicenseType"],
+    forkedFromSubmissionId: row.forked_from_submission_id as string | undefined,
     status: row.status as Submission["status"],
     submittedAt: row.submitted_at ? new Date(row.submitted_at as string) : undefined,
     createdAt: new Date(row.created_at as string),
@@ -360,6 +361,8 @@ async function create(
     screenshots: data.screenshots,
     tech_stack: data.techStack,
     built_with_story: data.builtWithStory,
+    forked_from_submission_id: data.forkedFromSubmissionId || null,
+    ip_license_type: data.ipLicenseType || null,
     status,
     // Set submitted_at when creating with "submitted" status
     ...(status === "submitted" ? { submitted_at: new Date().toISOString() } : {}),

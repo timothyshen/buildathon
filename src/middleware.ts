@@ -51,6 +51,16 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith(path)
   );
 
+  // Helper: create a redirect that preserves any refreshed auth cookies
+  function redirectWithCookies(url: URL) {
+    const response = NextResponse.redirect(url);
+    // Forward any cookies set during getUser() (e.g., refreshed tokens)
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      response.cookies.set(cookie.name, cookie.value);
+    });
+    return response;
+  }
+
   // Redirect to login if accessing protected route without auth
   if (isProtectedPath && !user) {
     const redirectUrl = new URL("/login", request.url);
@@ -58,12 +68,12 @@ export async function middleware(request: NextRequest) {
     if (redirectPath.startsWith('/') && !redirectPath.startsWith('//')) {
       redirectUrl.searchParams.set("redirect", redirectPath);
     }
-    return NextResponse.redirect(redirectUrl);
+    return redirectWithCookies(redirectUrl);
   }
 
   // Redirect logged-in users away from login page
   if (request.nextUrl.pathname === "/login" && user) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    return redirectWithCookies(new URL("/dashboard", request.url));
   }
 
   // Role-based route protection — only query DB when the route needs it
@@ -89,30 +99,30 @@ export async function middleware(request: NextRequest) {
         await supabase.auth.signOut();
         const redirectUrl = new URL("/login", request.url);
         redirectUrl.searchParams.set("error", "account_deleted");
-        return NextResponse.redirect(redirectUrl);
+        return redirectWithCookies(redirectUrl);
       }
     }
 
     // Onboarding redirect for role-protected routes
     if (profile && !profile.has_completed_onboarding) {
-      return NextResponse.redirect(new URL("/onboarding", request.url));
+      return redirectWithCookies(new URL("/onboarding", request.url));
     }
 
     const role = profile?.role;
 
     // Admin routes
     if (request.nextUrl.pathname.startsWith("/admin") && role !== "admin") {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
+      return redirectWithCookies(new URL("/dashboard", request.url));
     }
 
     // Sponsor routes
     if (request.nextUrl.pathname.startsWith("/sponsor") && role !== "sponsor" && role !== "admin") {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
+      return redirectWithCookies(new URL("/dashboard", request.url));
     }
 
     // Judge routes (reviews)
     if (request.nextUrl.pathname.startsWith("/reviews") && role !== "judge" && role !== "admin") {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
+      return redirectWithCookies(new URL("/dashboard", request.url));
     }
   }
 

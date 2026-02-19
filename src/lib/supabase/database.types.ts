@@ -449,7 +449,8 @@ export type Database = {
           built_with_story: boolean;
           ip_asset_id: string | null;
           ip_registered_at: string | null;
-          ip_license_type: "non-commercial" | "commercial-use" | "commercial-remix" | null;
+          ip_license_type: "non-commercial" | "commercial-use" | "commercial-remix" | "non-commercial-remix" | "cc-attribution" | null;
+          forked_from_submission_id: string | null;
           status: "draft" | "submitted" | "under_review" | "accepted" | "winner";
           submitted_at: string | null;
           created_at: string;
@@ -472,7 +473,8 @@ export type Database = {
           built_with_story?: boolean;
           ip_asset_id?: string | null;
           ip_registered_at?: string | null;
-          ip_license_type?: "non-commercial" | "commercial-use" | "commercial-remix" | null;
+          ip_license_type?: "non-commercial" | "commercial-use" | "commercial-remix" | "non-commercial-remix" | "cc-attribution" | null;
+          forked_from_submission_id?: string | null;
           status?: "draft" | "submitted" | "under_review" | "accepted" | "winner";
           submitted_at?: string | null;
           created_at?: string;
@@ -495,7 +497,8 @@ export type Database = {
           built_with_story?: boolean;
           ip_asset_id?: string | null;
           ip_registered_at?: string | null;
-          ip_license_type?: "non-commercial" | "commercial-use" | "commercial-remix" | null;
+          ip_license_type?: "non-commercial" | "commercial-use" | "commercial-remix" | "non-commercial-remix" | "cc-attribution" | null;
+          forked_from_submission_id?: string | null;
           status?: "draft" | "submitted" | "under_review" | "accepted" | "winner";
           submitted_at?: string | null;
           created_at?: string;
@@ -1750,6 +1753,168 @@ export type Database = {
           }
         ];
       };
+      ip_assets: {
+        Row: {
+          id: string;
+          submission_id: string;
+          ip_id: string;
+          nft_contract: string;
+          token_id: string;
+          tx_hash: string;
+          owner_address: string;
+          metadata_uri: string | null;
+          metadata_hash: string | null;
+          parent_ip_id: string | null;
+          registered_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          submission_id: string;
+          ip_id: string;
+          nft_contract: string;
+          token_id: string;
+          tx_hash: string;
+          owner_address: string;
+          metadata_uri?: string | null;
+          metadata_hash?: string | null;
+          parent_ip_id?: string | null;
+          registered_at?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          submission_id?: string;
+          ip_id?: string;
+          nft_contract?: string;
+          token_id?: string;
+          tx_hash?: string;
+          owner_address?: string;
+          metadata_uri?: string | null;
+          metadata_hash?: string | null;
+          parent_ip_id?: string | null;
+          registered_at?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ip_assets_submission_id_fkey";
+            columns: ["submission_id"];
+            isOneToOne: false;
+            referencedRelation: "submissions";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      ip_license_terms: {
+        Row: {
+          id: string;
+          ip_asset_id: string;
+          license_terms_id: string;
+          commercial_use: boolean;
+          commercial_attribution: boolean;
+          commercial_rev_share: number;
+          default_minting_fee: string;
+          derivatives_allowed: boolean;
+          derivatives_attribution: boolean;
+          derivatives_reciprocal: boolean;
+          derivatives_approval: boolean;
+          transferable: boolean;
+          currency: string | null;
+          expiration: number;
+          uri: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          ip_asset_id: string;
+          license_terms_id: string;
+          commercial_use?: boolean;
+          commercial_attribution?: boolean;
+          commercial_rev_share?: number;
+          default_minting_fee?: string;
+          derivatives_allowed?: boolean;
+          derivatives_attribution?: boolean;
+          derivatives_reciprocal?: boolean;
+          derivatives_approval?: boolean;
+          transferable?: boolean;
+          currency?: string | null;
+          expiration?: number;
+          uri?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          ip_asset_id?: string;
+          license_terms_id?: string;
+          commercial_use?: boolean;
+          commercial_attribution?: boolean;
+          commercial_rev_share?: number;
+          default_minting_fee?: string;
+          derivatives_allowed?: boolean;
+          derivatives_attribution?: boolean;
+          derivatives_reciprocal?: boolean;
+          derivatives_approval?: boolean;
+          transferable?: boolean;
+          currency?: string | null;
+          expiration?: number;
+          uri?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ip_license_terms_ip_asset_id_fkey";
+            columns: ["ip_asset_id"];
+            isOneToOne: false;
+            referencedRelation: "ip_assets";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      royalty_snapshots: {
+        Row: {
+          id: string;
+          ip_asset_id: string;
+          vault_address: string | null;
+          total_revenue_wip: string;
+          claimable_wip: string;
+          royalty_token_balance: number;
+          derivative_count: number;
+          snapshot_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          ip_asset_id: string;
+          vault_address?: string | null;
+          total_revenue_wip?: string;
+          claimable_wip?: string;
+          royalty_token_balance?: number;
+          derivative_count?: number;
+          snapshot_at?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          ip_asset_id?: string;
+          vault_address?: string | null;
+          total_revenue_wip?: string;
+          claimable_wip?: string;
+          royalty_token_balance?: number;
+          derivative_count?: number;
+          snapshot_at?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "royalty_snapshots_ip_asset_id_fkey";
+            columns: ["ip_asset_id"];
+            isOneToOne: false;
+            referencedRelation: "ip_assets";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -1792,7 +1957,7 @@ export type Database = {
       invite_status: "pending" | "accepted" | "declined";
       sponsor_tier: "platinum" | "gold" | "silver" | "bronze" | "community";
       rsvp_status: "registered" | "attended" | "cancelled";
-      ip_license_type: "non-commercial" | "commercial-use" | "commercial-remix";
+      ip_license_type: "non-commercial" | "commercial-use" | "commercial-remix" | "non-commercial-remix" | "cc-attribution";
       milestone_type: "testnet_launch" | "mainnet_launch" | "first_100_users" | "first_1000_users" | "first_10000_users" | "funding_raised" | "partnership" | "media_feature" | "award" | "other";
       referral_status: "pending" | "credited";
       feedback_status: "open" | "planned" | "in_progress" | "completed" | "declined";
