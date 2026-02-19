@@ -15,11 +15,30 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, ArrowLeft, GitFork, ExternalLink, AlertCircle, Shield, Wallet } from "lucide-react";
+import { Loader2, ArrowLeft, GitFork, ExternalLink, AlertCircle, Shield, Wallet, Ban } from "lucide-react";
 import { toast } from "sonner";
 import type { Submission, IpAsset, IpLicenseTerms, PilTermsFormValues, PilPreset } from "@/types";
 
 type ForkStatus = "idle" | "creating" | "uploading" | "signing" | "confirming" | "recording" | "done" | "error";
+
+/** Map known Story Protocol contract error signatures to human-readable messages */
+const STORY_PROTOCOL_ERRORS: Record<string, string> = {
+  "0x4f7460bc": "This project's license terms are not compatible for derivative registration. The parent IP may be a derivative that doesn't allow further derivatives.",
+  "0x76904210": "A derivative IP has already been registered for this relationship.",
+  "0x650aa4f5": "This derivative IP already has license terms attached.",
+  "0x20e81ee4": "Cannot register a derivative of itself.",
+  "0x1ae3058f": "Derivative IPs cannot add new license terms.",
+};
+
+function parseStoryProtocolError(message: string): string {
+  for (const [sig, friendly] of Object.entries(STORY_PROTOCOL_ERRORS)) {
+    if (message.includes(sig)) return friendly;
+  }
+  if (message.includes("user rejected") || message.includes("User rejected")) {
+    return "Transaction was rejected in your wallet.";
+  }
+  return message;
+}
 
 interface ForkPageProps {
   params: Promise<{ id: string }>;
@@ -231,7 +250,8 @@ export default function ForkPage({ params }: ForkPageProps) {
       }, 1000);
     } catch (err) {
       setForkStatus("error");
-      const message = err instanceof Error ? err.message : "Fork failed";
+      const rawMessage = err instanceof Error ? err.message : "Fork failed";
+      const message = parseStoryProtocolError(rawMessage);
       setForkError(message);
       toast.error(message);
     }
@@ -266,6 +286,16 @@ export default function ForkPage({ params }: ForkPageProps) {
           ? "Non-Commercial Remix"
           : "Non-Commercial"
       : "Unknown";
+
+  // Check fork compatibility
+  const terms = parentLicenseTerms[0];
+  const forkBlocked = terms
+    ? !terms.derivativesAllowed
+      ? "This project's license does not allow derivatives."
+      : parentIpAsset?.parentIpId && !terms.derivativesReciprocal
+        ? "This project is itself a derivative and its license does not permit further derivatives (reciprocal derivatives not enabled)."
+        : null
+    : null;
 
   if (isLoading || authLoading) {
     return (
@@ -359,8 +389,25 @@ export default function ForkPage({ params }: ForkPageProps) {
         </div>
       </section>
 
+      {/* Fork Blocked Warning */}
+      {forkBlocked && (
+        <section className="rounded-xl border border-destructive/30 bg-destructive/5 p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <Ban className="h-4 w-4 text-destructive shrink-0" />
+            <p className="text-sm font-medium text-destructive">Forking Not Available</p>
+          </div>
+          <p className="text-xs text-muted-foreground">{forkBlocked}</p>
+          <Button variant="ghost" size="sm" asChild>
+            <Link href={`/submissions/${parentId}`}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Project
+            </Link>
+          </Button>
+        </section>
+      )}
+
       {/* Fork Details Form */}
-      <section className="rounded-xl border p-5 space-y-5">
+      <section className={`rounded-xl border p-5 space-y-5 ${forkBlocked ? "opacity-50 pointer-events-none" : ""}`}>
         <p className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">
           Fork Details
         </p>
@@ -394,7 +441,7 @@ export default function ForkPage({ params }: ForkPageProps) {
       </section>
 
       {/* License Terms */}
-      <section className="rounded-xl border p-5">
+      <section className={`rounded-xl border p-5 ${forkBlocked ? "opacity-50 pointer-events-none" : ""}`}>
         <StepIP
           data={{ pilTerms, pilPreset }}
           onChange={handleStepIpChange}
@@ -445,7 +492,7 @@ export default function ForkPage({ params }: ForkPageProps) {
         ) : (
           <Button
             onClick={handleSubmitFork}
-            disabled={isProcessing || forkStatus === "done"}
+            disabled={!!forkBlocked || isProcessing || forkStatus === "done"}
             className="bg-foreground text-background hover:bg-foreground/90"
           >
             {isProcessing ? (
