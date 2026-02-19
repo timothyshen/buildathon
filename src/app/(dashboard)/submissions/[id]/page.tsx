@@ -53,6 +53,7 @@ import {
   Info,
   FileCode,
   Trash2,
+  Wallet,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -151,7 +152,7 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
   const [pilTerms, setPilTerms] = useState<PilTermsFormValues | null>(null);
   const [pilPreset, setPilPreset] = useState<PilPreset | null>(null);
   const { register: registerIp, status: ipStatus, error: ipError, reset: resetIp } = useIpRegistration();
-  const { primaryWallet } = useDynamicContext();
+  const { primaryWallet, setShowAuthFlow } = useDynamicContext();
 
   const handleStepIpChange = useCallback((field: string, value: unknown) => {
     if (field === "pilTerms") setPilTerms(value as PilTermsFormValues | null);
@@ -867,23 +868,33 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
             >
               Cancel
             </Button>
-            <Button
-              onClick={handleRegisterIp}
-              disabled={!pilTerms || !primaryWallet || ipStatus === "signing" || ipStatus === "confirming" || ipStatus === "recording"}
-              className="bg-foreground text-background hover:bg-foreground/90"
-            >
-              {ipStatus === "signing" || ipStatus === "confirming" || ipStatus === "recording" ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Registering...
-                </>
-              ) : (
-                <>
-                  <Shield className="h-4 w-4 mr-2" />
-                  Register
-                </>
-              )}
-            </Button>
+            {!primaryWallet ? (
+              <Button
+                onClick={() => setShowAuthFlow(true)}
+                className="bg-foreground text-background hover:bg-foreground/90"
+              >
+                <Wallet className="h-4 w-4 mr-2" />
+                Connect Wallet
+              </Button>
+            ) : (
+              <Button
+                onClick={handleRegisterIp}
+                disabled={!pilTerms || ipStatus === "signing" || ipStatus === "confirming" || ipStatus === "recording"}
+                className="bg-foreground text-background hover:bg-foreground/90"
+              >
+                {ipStatus === "signing" || ipStatus === "confirming" || ipStatus === "recording" ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Registering...
+                  </>
+                ) : (
+                  <>
+                    <Shield className="h-4 w-4 mr-2" />
+                    Register
+                  </>
+                )}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

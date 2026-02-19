@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, ArrowLeft, GitFork, ExternalLink, AlertCircle, Shield } from "lucide-react";
+import { Loader2, ArrowLeft, GitFork, ExternalLink, AlertCircle, Shield, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import type { Submission, IpAsset, IpLicenseTerms, PilTermsFormValues, PilPreset } from "@/types";
 
@@ -29,7 +29,7 @@ export default function ForkPage({ params }: ForkPageProps) {
   const { id: parentId } = use(params);
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
-  const { primaryWallet } = useDynamicContext();
+  const { primaryWallet, setShowAuthFlow } = useDynamicContext();
 
   // Parent data
   const [parentSubmission, setParentSubmission] = useState<Submission | null>(null);
@@ -434,28 +434,38 @@ export default function ForkPage({ params }: ForkPageProps) {
           </Link>
         </Button>
 
-        <Button
-          onClick={handleSubmitFork}
-          disabled={!primaryWallet || isProcessing || forkStatus === "done"}
-          className="bg-foreground text-background hover:bg-foreground/90"
-        >
-          {isProcessing ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Forking...
-            </>
-          ) : forkStatus === "done" ? (
-            <>
-              <Shield className="h-4 w-4 mr-2" />
-              Done
-            </>
-          ) : (
-            <>
-              <GitFork className="h-4 w-4 mr-2" />
-              Fork & Register Derivative
-            </>
-          )}
-        </Button>
+        {!primaryWallet ? (
+          <Button
+            onClick={() => setShowAuthFlow(true)}
+            className="bg-foreground text-background hover:bg-foreground/90"
+          >
+            <Wallet className="h-4 w-4 mr-2" />
+            Connect Wallet to Fork
+          </Button>
+        ) : (
+          <Button
+            onClick={handleSubmitFork}
+            disabled={isProcessing || forkStatus === "done"}
+            className="bg-foreground text-background hover:bg-foreground/90"
+          >
+            {isProcessing ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Forking...
+              </>
+            ) : forkStatus === "done" ? (
+              <>
+                <Shield className="h-4 w-4 mr-2" />
+                Done
+              </>
+            ) : (
+              <>
+                <GitFork className="h-4 w-4 mr-2" />
+                Fork & Register Derivative
+              </>
+            )}
+          </Button>
+        )}
       </div>
     </div>
   );
