@@ -111,7 +111,7 @@ export function ProjectHero({ project, trackName, cohortName }: ProjectHeroProps
           )}
 
           {project.repoUrl && (
-            <Button variant="outline" className="border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white" asChild>
+            <Button variant="outline" className="border-slate-500 text-white hover:bg-slate-800" asChild>
               <a
                 href={project.repoUrl}
                 target="_blank"
@@ -124,7 +124,7 @@ export function ProjectHero({ project, trackName, cohortName }: ProjectHeroProps
           )}
 
           {project.videoUrl && (
-            <Button variant="outline" className="border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white" asChild>
+            <Button variant="outline" className="border-slate-500 text-white hover:bg-slate-800" asChild>
               <a
                 href={project.videoUrl}
                 target="_blank"
@@ -137,7 +137,7 @@ export function ProjectHero({ project, trackName, cohortName }: ProjectHeroProps
           )}
 
           {project.presentationUrl && (
-            <Button variant="outline" className="border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white" asChild>
+            <Button variant="outline" className="border-slate-500 text-white hover:bg-slate-800" asChild>
               <a
                 href={project.presentationUrl}
                 target="_blank"
@@ -151,7 +151,7 @@ export function ProjectHero({ project, trackName, cohortName }: ProjectHeroProps
 
           <Button
             variant="outline"
-            className="border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white"
+            className="border-slate-500 text-white hover:bg-slate-800"
             onClick={handleShare}
           >
             {copied ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
