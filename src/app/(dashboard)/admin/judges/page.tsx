@@ -46,7 +46,6 @@ export default function AdminJudgesPage() {
 
   // Invite judge state
   const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteName, setInviteName] = useState("");
 
   // Assign reviews state
   const [assignJudge, setAssignJudge] = useState<User | null>(null);
@@ -90,15 +89,50 @@ export default function AdminJudgesPage() {
     loadData();
   }, []);
 
-  const handleInviteJudge = () => {
+  const [isInviting, setIsInviting] = useState(false);
+
+  const handleInviteJudge = async () => {
     if (!inviteEmail.trim()) {
       toast.error("Email is required");
       return;
     }
-    toast.warning("Judge invitation is not yet implemented");
-    setIsAddDialogOpen(false);
-    setInviteEmail("");
-    setInviteName("");
+
+    setIsInviting(true);
+    try {
+      // Find user by email
+      const userResult = await usersService.getByEmail(inviteEmail.trim());
+      if (!userResult.success || !userResult.data) {
+        toast.error("No registered user found with that email. They must sign up first.");
+        return;
+      }
+
+      if (userResult.data.role === "judge") {
+        toast.info(`${userResult.data.name} is already a judge`);
+        setIsAddDialogOpen(false);
+        setInviteEmail("");
+        return;
+      }
+
+      // Assign judge role
+      const updateResult = await usersService.update(userResult.data.id, {
+        role: "judge",
+      });
+
+      if (!updateResult.success) {
+        toast.error(updateResult.error || "Failed to assign judge role");
+        return;
+      }
+
+      // Add to judges list
+      setJudges((prev) => [...prev, { ...userResult.data!, role: "judge" }]);
+      toast.success(`${userResult.data.name} has been assigned as a judge`);
+      setIsAddDialogOpen(false);
+      setInviteEmail("");
+    } catch {
+      toast.error("Failed to invite judge");
+    } finally {
+      setIsInviting(false);
+    }
   };
 
   const handleOpenAssignDialog = async (judge: User) => {
@@ -257,9 +291,9 @@ export default function AdminJudgesPage() {
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Invite Judge</DialogTitle>
+              <DialogTitle>Add Judge</DialogTitle>
               <DialogDescription>
-                Send an invitation to a new judge
+                Assign the judge role to an existing user by their email address
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 pt-4">
@@ -273,21 +307,19 @@ export default function AdminJudgesPage() {
                   onChange={(e) => setInviteEmail(e.target.value)}
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
-                <Input
-                  id="name"
-                  placeholder="Judge Name"
-                  value={inviteName}
-                  onChange={(e) => setInviteName(e.target.value)}
-                />
-              </div>
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} disabled={isInviting}>
                   Cancel
                 </Button>
-                <Button onClick={handleInviteJudge}>
-                  Send Invitation
+                <Button onClick={handleInviteJudge} disabled={isInviting}>
+                  {isInviting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Adding...
+                    </>
+                  ) : (
+                    "Add Judge"
+                  )}
                 </Button>
               </div>
             </div>

@@ -277,7 +277,7 @@ export default function AdminSponsorsPage() {
     // Find user by email
     const userResult = await usersService.getByEmail(data.email);
     if (!userResult.success || !userResult.data) {
-      toast.error("No user found with that email address");
+      toast.error("No registered user found with that email. They must sign up first, or use the invite link instead.");
       return;
     }
 
@@ -292,7 +292,7 @@ export default function AdminSponsorsPage() {
       return;
     }
 
-    toast.success(`${data.name} has been assigned as a sponsor`);
+    toast.success(`${userResult.data.name} has been assigned as a sponsor`);
     setInvitingSponsor(undefined);
     setIsInviteOpen(false);
   };
