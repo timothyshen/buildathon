@@ -150,7 +150,11 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
     loadData();
   }, [id, user, authLoading, router]);
 
-  const submissionTrack = tracks.find((t) => t.id === submission?.trackId);
+  const submissionTracks = submission?.tracks?.length
+    ? submission.tracks
+    : submission?.trackId
+      ? tracks.filter((t) => submission.trackIds?.includes(t.id) || t.id === submission.trackId)
+      : [];
 
   if (isLoading || authLoading) {
     return (
@@ -343,22 +347,26 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
             </section>
           )}
 
-          {/* Track */}
-          {submissionTrack && (
+          {/* Tracks */}
+          {submissionTracks.length > 0 && (
             <section>
               <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
-                Track
+                {submissionTracks.length === 1 ? "Track" : "Tracks"}
               </h2>
-              <div className="rounded-xl border p-4">
-                <p className="text-sm font-medium">{submissionTrack.name}</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {submissionTrack.description}
-                </p>
-                {submissionTrack.prizePool && (
-                  <p className="text-xs font-mono text-emerald-600 mt-2">
-                    {submissionTrack.prizePool} prize pool
-                  </p>
-                )}
+              <div className="space-y-2">
+                {submissionTracks.map((track) => (
+                  <div key={track.id} className="rounded-xl border p-4">
+                    <p className="text-sm font-medium">{track.name}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {track.description}
+                    </p>
+                    {track.prizePool && (
+                      <p className="text-xs font-mono text-emerald-600 mt-2">
+                        {track.prizePool} prize pool
+                      </p>
+                    )}
+                  </div>
+                ))}
               </div>
             </section>
           )}
