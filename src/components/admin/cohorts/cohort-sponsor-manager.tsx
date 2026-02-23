@@ -31,6 +31,7 @@ export interface CohortSponsorInput {
   sponsorOrg: SponsorOrg;
   tier: SponsorTier;
   prizePoolContribution: number;
+  prizePoolLimit: number;
   hasDedicatedTrack: boolean;
   isNew?: boolean; // Track if this is a new addition (for syncing)
   existingId?: string; // ID of existing CohortSponsor record (for updates)
@@ -66,11 +67,13 @@ export function CohortSponsorManager({
     sponsorOrgId: string;
     tier: SponsorTier;
     prizePoolContribution: number;
+    prizePoolLimit: number;
     hasDedicatedTrack: boolean;
   }>({
     sponsorOrgId: "",
     tier: "gold",
     prizePoolContribution: 0,
+    prizePoolLimit: 0,
     hasDedicatedTrack: false,
   });
 
@@ -101,6 +104,7 @@ export function CohortSponsorManager({
       sponsorOrg: org,
       tier: newSponsor.tier,
       prizePoolContribution: newSponsor.prizePoolContribution,
+      prizePoolLimit: newSponsor.prizePoolLimit,
       hasDedicatedTrack: newSponsor.hasDedicatedTrack,
       isNew: true,
     };
@@ -110,6 +114,7 @@ export function CohortSponsorManager({
       sponsorOrgId: "",
       tier: "gold",
       prizePoolContribution: 0,
+      prizePoolLimit: 0,
       hasDedicatedTrack: false,
     });
     setIsAdding(false);
@@ -219,17 +224,25 @@ export function CohortSponsorManager({
                     </SelectContent>
                   </Select>
 
-                  {/* Show bounty info as read-only - sponsor sets this */}
-                  {sponsor.prizePoolContribution > 0 && (
-                    <span className="font-mono text-xs tabular-nums text-muted-foreground">
-                      ${sponsor.prizePoolContribution.toLocaleString()}
-                    </span>
-                  )}
-                  {sponsor.hasDedicatedTrack && (
-                    <span className="text-xs text-muted-foreground">
-                      Has Track
-                    </span>
-                  )}
+                  <div className="flex items-center gap-1.5">
+                    <Label className="text-xs text-muted-foreground whitespace-nowrap">Prize Limit</Label>
+                    <div className="relative w-28">
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
+                      <Input
+                        type="number"
+                        min={0}
+                        value={sponsor.prizePoolLimit || ""}
+                        onChange={(e) =>
+                          handleUpdateSponsor(sponsor.sponsorOrgId, {
+                            prizePoolLimit: parseInt(e.target.value) || 0,
+                          })
+                        }
+                        disabled={disabled}
+                        className="h-8 pl-6 text-xs font-mono tabular-nums"
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
 
                   <Button
                     type="button"
@@ -319,9 +332,25 @@ export function CohortSponsorManager({
                 </div>
               </div>
 
-              <p className="text-xs text-muted-foreground">
-                Sponsor will configure their bounty and track details from their dashboard.
-              </p>
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">Prize Pool Limit ($)</Label>
+                <div className="relative w-40">
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={newSponsor.prizePoolLimit || ""}
+                    onChange={(e) =>
+                      setNewSponsor({ ...newSponsor, prizePoolLimit: parseInt(e.target.value) || 0 })
+                    }
+                    className="pl-6 font-mono tabular-nums"
+                    placeholder="0"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Maximum prize pool this sponsor can contribute. Leave 0 for no limit.
+                </p>
+              </div>
 
               <div className="flex justify-end gap-2">
                 <Button
@@ -334,6 +363,7 @@ export function CohortSponsorManager({
                       sponsorOrgId: "",
                       tier: "gold",
                       prizePoolContribution: 0,
+                      prizePoolLimit: 0,
                       hasDedicatedTrack: false,
                     });
                   }}

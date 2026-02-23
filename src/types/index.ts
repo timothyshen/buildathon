@@ -226,6 +226,7 @@ export interface CohortSponsor {
   sponsorOrgId: string;
   tier: SponsorTier;
   prizePoolContribution: number;
+  prizePoolLimit: number;
   hasDedicatedTrack: boolean;
   description?: string; // Rich text description for this sponsor in this cohort
 }

@@ -74,6 +74,7 @@ export function CohortPageForm({
         },
         tier: cs.tier,
         prizePoolContribution: cs.prizePoolContribution,
+        prizePoolLimit: cs.prizePoolLimit,
         hasDedicatedTrack: cs.hasDedicatedTrack,
         isNew: false,
       }));

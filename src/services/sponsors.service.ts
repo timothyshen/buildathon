@@ -12,6 +12,7 @@ import { success, error } from "./types";
 export type CohortSponsorWithOrg = SponsorOrg & {
   tier: SponsorTier;
   prizePoolContribution: number;
+  prizePoolLimit: number;
   hasDedicatedTrack: boolean;
   sponsorMessage?: string;
 };
@@ -58,6 +59,7 @@ function toCohortSponsor(row: Record<string, unknown>): CohortSponsor {
     sponsorOrgId: row.sponsor_org_id as string,
     tier: row.tier as SponsorTier,
     prizePoolContribution: row.prize_pool_contribution as number,
+    prizePoolLimit: (row.prize_pool_limit as number) || 0,
     hasDedicatedTrack: row.has_dedicated_track as boolean,
     description: row.description as string | undefined,
   };
@@ -226,10 +228,12 @@ async function getCohortSponsors(cohortId: string): Promise<ServiceResponse<Coho
 
   const sponsors = (data || []).map((row) => {
     const org = row.sponsor_orgs as Record<string, unknown>;
+    const r = row as Record<string, unknown>;
     return {
       ...toSponsorOrg(org),
       tier: row.tier as SponsorTier,
       prizePoolContribution: row.prize_pool_contribution as number,
+      prizePoolLimit: (r.prize_pool_limit as number) || 0,
       hasDedicatedTrack: row.has_dedicated_track as boolean,
       sponsorMessage: row.description as string | undefined,
     };
@@ -282,6 +286,7 @@ async function createCohortSponsor(data: Omit<CohortSponsor, "id">): Promise<Ser
     sponsor_org_id: data.sponsorOrgId,
     tier: data.tier,
     prize_pool_contribution: data.prizePoolContribution,
+    prize_pool_limit: data.prizePoolLimit || 0,
     has_dedicated_track: data.hasDedicatedTrack,
     description: data.description,
   };
@@ -323,6 +328,7 @@ async function updateCohortSponsor(
   const dbData: Record<string, unknown> = {};
   if (data.tier !== undefined) dbData.tier = data.tier;
   if (data.prizePoolContribution !== undefined) dbData.prize_pool_contribution = data.prizePoolContribution;
+  if (data.prizePoolLimit !== undefined) dbData.prize_pool_limit = data.prizePoolLimit;
   if (data.hasDedicatedTrack !== undefined) dbData.has_dedicated_track = data.hasDedicatedTrack;
   if (data.description !== undefined) dbData.description = data.description;
 

@@ -199,6 +199,7 @@ export default function AdminSponsorsPage() {
       const csData = {
         tier: data.tier,
         prizePoolContribution: data.prizePoolContribution,
+        prizePoolLimit: data.prizePoolLimit || 0,
         hasDedicatedTrack: data.hasDedicatedTrack,
       };
 
@@ -253,6 +254,7 @@ export default function AdminSponsorsPage() {
         sponsorOrgId: orgResult.data.id,
         tier: data.tier,
         prizePoolContribution: data.prizePoolContribution,
+        prizePoolLimit: data.prizePoolLimit || 0,
         hasDedicatedTrack: data.hasDedicatedTrack,
       });
 
