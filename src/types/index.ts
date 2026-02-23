@@ -429,6 +429,7 @@ export interface CalendarEvent {
   category: string;
   tags?: string[];
   lumaApiId: string;
+  attendeeCount?: number;
 }
 
 export interface EventRSVP {

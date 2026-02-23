@@ -17,7 +17,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Clock, MapPin, ChevronDown, Calendar, Sparkles, GraduationCap, Briefcase, Check, ExternalLink } from "lucide-react";
+import { Clock, MapPin, ChevronDown, Calendar, Sparkles, GraduationCap, Briefcase, Check, ExternalLink, Users } from "lucide-react";
 
 interface WorkshopCardProps {
   event: CalendarEvent;
@@ -146,6 +146,12 @@ export function WorkshopCard({
             <div className="flex items-center gap-1.5">
               <MapPin className="h-4 w-4" />
               <span>{event.location}</span>
+            </div>
+          )}
+          {typeof event.attendeeCount === "number" && event.attendeeCount > 0 && (
+            <div className="flex items-center gap-1.5">
+              <Users className="h-4 w-4" />
+              <span>{event.attendeeCount}</span>
             </div>
           )}
         </div>

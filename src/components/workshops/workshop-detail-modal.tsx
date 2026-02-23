@@ -151,13 +151,20 @@ export function WorkshopDetailModal({
             )}
           </div>
 
-          {/* RSVP status */}
-          {isRsvped && (
-            <div className="mt-4 flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
-              <Check className="h-4 w-4" />
-              <span className="font-medium">You&apos;re registered for this event</span>
-            </div>
-          )}
+          {/* RSVP status & attendee count */}
+          <div className="mt-4 flex items-center gap-4 text-sm">
+            {isRsvped && (
+              <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+                <Check className="h-4 w-4" />
+                <span className="font-medium">You&apos;re registered</span>
+              </div>
+            )}
+            {typeof event.attendeeCount === "number" && event.attendeeCount > 0 && (
+              <span className="text-muted-foreground">
+                {event.attendeeCount} {event.attendeeCount === 1 ? "attendee" : "attendees"}
+              </span>
+            )}
+          </div>
 
           {/* Description */}
           <div className="mt-6">
