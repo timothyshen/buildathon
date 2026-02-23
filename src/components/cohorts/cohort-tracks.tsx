@@ -111,6 +111,7 @@ export function CohortTracks({ tracks, sponsors }: CohortTracksProps) {
                 {group.sponsor.logo && (
                   <div className="relative h-8 w-8 shrink-0">
                     <Image
+                      unoptimized
                       src={group.sponsor.logo}
                       alt={group.sponsor.name}
                       fill

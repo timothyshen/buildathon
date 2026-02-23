@@ -162,7 +162,7 @@ export default async function CohortDetailPage({
                     <CardTitle>About</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <RichTextDisplay content={cohort.description ?? ""} showHtmlTags />
+                    <RichTextDisplay content={cohort.description ?? ""} />
                   </CardContent>
                 </Card>
 
@@ -252,6 +252,7 @@ export default async function CohortDetailPage({
                               <div className="w-20 h-20 mb-4 relative flex items-center justify-center">
                                 {sponsor.logo ? (
                                   <Image
+                                    unoptimized
                                     src={sponsor.logo}
                                     alt={sponsor.name}
                                     fill
