@@ -18,7 +18,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Users, LogOut, Trash2, Clock, Loader2, Crown } from "lucide-react";
+import { ArrowLeft, Users, LogOut, Trash2, Clock, Loader2, Crown, Copy } from "lucide-react";
 import { TeamMemberList, InviteForm } from "@/components/teams";
 import { toast } from "sonner";
 import type { Team, Cohort, TeamInvite } from "@/types";
@@ -269,7 +269,22 @@ export default function TeamDetailPage({ params }: TeamDetailPageProps) {
                     <Clock className="h-3.5 w-3.5 text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">{invite.email}</span>
                   </div>
-                  <Badge variant="outline" className="text-[10px]">Pending</Badge>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+                      onClick={() => {
+                        const link = `${window.location.origin}/teams`;
+                        navigator.clipboard.writeText(link);
+                        toast.success("Invite link copied to clipboard");
+                      }}
+                    >
+                      <Copy className="h-3 w-3 mr-1" />
+                      Copy Link
+                    </Button>
+                    <Badge variant="outline" className="text-[10px]">Pending</Badge>
+                  </div>
                 </div>
               ))}
             </div>
