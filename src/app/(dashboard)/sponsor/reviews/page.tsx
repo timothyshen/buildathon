@@ -97,17 +97,19 @@ export default function SponsorReviewsPage() {
       return;
     }
 
-    // Create new review
+    // Create new review via server API (bypasses RLS)
     setCreatingReviewFor(item.submission.id);
     try {
-      const result = await reviewsService.create({
-        submissionId: item.submission.id,
-        judgeId: user.id,
+      const res = await fetch("/api/sponsor/reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ submissionId: item.submission.id }),
       });
-      if (result.success) {
-        router.push(`/reviews/${result.data.id}?from=sponsor`);
+      const data = await res.json();
+      if (res.ok && data.success) {
+        router.push(`/reviews/${data.data.id}?from=sponsor`);
       } else {
-        toast.error(result.error || "Failed to create review");
+        toast.error(data.error || "Failed to create review");
       }
     } catch {
       toast.error("Failed to create review");
