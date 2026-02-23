@@ -137,8 +137,16 @@ function RegisterForm() {
             <div className="text-center space-y-3">
               <p className="text-lg font-medium text-destructive">Invalid Invite</p>
               <p className="text-sm text-muted-foreground">{inviteError}</p>
-              <Button asChild variant="outline" className="mt-4">
-                <Link href="/register">Register without invite</Link>
+              <Button
+                variant="outline"
+                className="mt-4"
+                onClick={() => {
+                  setInviteError("");
+                  setInviteInfo(null);
+                  router.replace("/register");
+                }}
+              >
+                Register without invite
               </Button>
             </div>
           </CardContent>
