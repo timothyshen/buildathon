@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { submissionsService, tracksService, cohortsService, tractionService } from "@/services";
+import { RichTextDisplay } from "@/components/ui/rich-text-editor";
 import { ProjectHero } from "@/components/projects/project-hero";
 import { ProjectGallery } from "@/components/projects/project-gallery";
 import { ProjectTeam } from "@/components/projects/project-team";
@@ -176,9 +177,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
               <h3 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">
                 About
               </h3>
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                {submission.description}
-              </p>
+              <RichTextDisplay content={submission.description} className="text-sm text-muted-foreground" />
               {submission.builtWithStory && (
                 <div className="flex items-center gap-1.5 text-xs text-primary">
                   <Shield className="h-3.5 w-3.5" />

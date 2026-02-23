@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { PrizeBadges } from "@/components/ui/prize-badges";
+import { RichTextDisplay } from "@/components/ui/rich-text-editor";
 import {
   Shield,
   FileCheck,
@@ -241,9 +242,7 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
             <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
               About
             </h2>
-            <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
-              {submission.description}
-            </p>
+            <RichTextDisplay content={submission.description} className="text-sm text-muted-foreground leading-relaxed" />
           </section>
 
           {/* Tech Stack */}

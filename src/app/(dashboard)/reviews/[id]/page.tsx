@@ -6,6 +6,7 @@ import Link from "next/link";
 import { reviewsService } from "@/services";
 import type { Review } from "@/types";
 import { toast } from "sonner";
+import { RichTextDisplay } from "@/components/ui/rich-text-editor";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -224,7 +225,7 @@ export default function ReviewDetailPage({ params }: ReviewDetailPageProps) {
               )}
 
               {submission.description && (
-                <p className="text-sm">{submission.description}</p>
+                <RichTextDisplay content={submission.description} className="text-sm" />
               )}
 
               {submission.techStack.length > 0 && (
