@@ -8,6 +8,7 @@ import { stripHtml } from "@/lib/utils";
 import { CohortHero } from "@/components/cohorts/cohort-hero";
 import { CohortTimeline } from "@/components/cohorts/cohort-timeline";
 import { CohortTracks } from "@/components/cohorts/cohort-tracks";
+import { computeCohortStatus } from "@/lib/cohort-utils";
 import { ReferralCapture } from "@/components/referrals/referral-capture";
 import { ReferralShareButton } from "@/components/referrals/referral-share-button";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
@@ -95,6 +96,9 @@ export default async function CohortDetailPage({
   // Filter out draft submissions for public display
   const publishedSubmissions = submissions.filter((s) => s.status !== "draft");
 
+  // Compute effective status from dates
+  const effectiveStatus = computeCohortStatus(cohort);
+
   // Group sponsors by tier
   const sponsorsByTier = groupSponsorsByTier(sponsors);
 
@@ -128,7 +132,7 @@ export default async function CohortDetailPage({
       {/* Main Content */}
       <div className="mx-auto max-w-6xl px-4 py-8">
         {/* Action Buttons for Active Cohorts */}
-        {cohort.status === "active" && (
+        {effectiveStatus === "active" && (
           <div className="flex justify-end gap-3 mb-6">
             <ReferralShareButton cohortId={cohort.id} cohortSlug={cohort.slug} />
             <Link href="/submit">
@@ -246,13 +250,21 @@ export default async function CohortDetailPage({
                           >
                             <CardContent className="p-6 flex flex-col items-center text-center">
                               {/* Sponsor Logo */}
-                              <div className="w-20 h-20 mb-4 relative">
-                                <Image
-                                  src={sponsor.logo}
-                                  alt={sponsor.name}
-                                  fill
-                                  className="object-contain"
-                                />
+                              <div className="w-20 h-20 mb-4 relative flex items-center justify-center">
+                                {sponsor.logo ? (
+                                  <Image
+                                    src={sponsor.logo}
+                                    alt={sponsor.name}
+                                    fill
+                                    className="object-contain"
+                                  />
+                                ) : (
+                                  <div className="h-full w-full rounded-xl bg-muted flex items-center justify-center">
+                                    <span className="text-2xl font-semibold text-muted-foreground">
+                                      {sponsor.name?.charAt(0)?.toUpperCase()}
+                                    </span>
+                                  </div>
+                                )}
                               </div>
 
                               {/* Sponsor Name */}

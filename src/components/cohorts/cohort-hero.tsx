@@ -1,4 +1,5 @@
 import { Cohort, Sponsor, Track, Submission } from "@/types";
+import { computeCohortStatus } from "@/lib/cohort-utils";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Trophy } from "lucide-react";
 
@@ -60,6 +61,7 @@ function getStatusBadge(status: Cohort["status"], countdown: { days: number; hou
 }
 
 export function CohortHero({ cohort, tracks = [], sponsors = [], submissions = [] }: CohortHeroProps) {
+  const status = computeCohortStatus(cohort);
   const countdown = getCountdown(cohort.submissionDeadline);
   const totalPrize = cohort.prizes?.reduce((sum, p) => sum + parseInt(p.amount.replace(/[^0-9]/g, "") || "0"), 0) || 0;
 
@@ -88,7 +90,7 @@ export function CohortHero({ cohort, tracks = [], sponsors = [], submissions = [
       <div className="relative p-8 lg:p-12">
         {/* Status Badge */}
         <div className="mb-4">
-          {getStatusBadge(cohort.status, countdown)}
+          {getStatusBadge(status, countdown)}
         </div>
 
         {/* Name */}
@@ -129,7 +131,13 @@ export function CohortHero({ cohort, tracks = [], sponsors = [], submissions = [
                   key={sponsor.id}
                   className="h-12 w-12 rounded-xl bg-slate-800 p-2 flex items-center justify-center"
                 >
-                  <img src={sponsor.logo} alt={sponsor.name} className="h-full w-full object-contain" />
+                  {sponsor.logo ? (
+                    <img src={sponsor.logo} alt={sponsor.name} className="h-full w-full object-contain" />
+                  ) : (
+                    <span className="text-sm font-semibold text-slate-400">
+                      {sponsor.name?.charAt(0)?.toUpperCase()}
+                    </span>
+                  )}
                 </div>
               ))}
               {sponsors.length > 4 && (
