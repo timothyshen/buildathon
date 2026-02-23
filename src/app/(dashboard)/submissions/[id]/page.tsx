@@ -17,6 +17,18 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { PrizeBadges } from "@/components/ui/prize-badges";
 import { RichTextDisplay } from "@/components/ui/rich-text-editor";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
+import {
   Shield,
   FileCheck,
   Edit,
@@ -29,6 +41,7 @@ import {
   Loader2,
   BarChart3,
   ChevronRight,
+  Trash2,
 } from "lucide-react";
 
 interface SubmissionDetailPageProps {
@@ -106,6 +119,7 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
   const [tracks, setTracks] = useState<Track[]>([]);
   const [prizes, setPrizes] = useState<PrizeInfo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -176,6 +190,19 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
     ? new Date() > submission.cohort.submissionDeadline
     : false;
   const canEdit = canEditByStatus && !deadlinePassed;
+  const canDelete = submission.status === "draft";
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    const result = await submissionsService.delete(submission.id);
+    if (result.success) {
+      toast.success("Submission deleted");
+      router.push("/submissions");
+    } else {
+      toast.error("Failed to delete submission");
+      setIsDeleting(false);
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -214,6 +241,41 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
               Traction
             </Link>
           </Button>
+          {canDelete && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive">
+                  <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                  Delete
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete draft submission?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete &ldquo;{submission.title}&rdquo;. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDelete}
+                    disabled={isDeleting}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {isDeleting ? (
+                      <>
+                        <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                        Deleting…
+                      </>
+                    ) : (
+                      "Delete"
+                    )}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
           {canEdit && (
             <Button size="sm" className="bg-foreground text-background hover:bg-foreground/90" asChild>
               <Link href={`/submissions/${submission.id}/edit`}>

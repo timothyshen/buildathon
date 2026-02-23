@@ -82,6 +82,7 @@ export function WorkshopCard({
 }: WorkshopCardProps) {
   const duration = formatDuration(event);
   const categoryBadge = getCategoryBadge(event.category);
+  const isPast = new Date(event.endAt) < new Date();
 
   return (
     <Card className="overflow-hidden transition-all hover:shadow-lg bg-card">
@@ -112,7 +113,12 @@ export function WorkshopCard({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {isRsvped && (
+            {isPast && (
+              <Badge variant="outline" className="text-muted-foreground border-muted-foreground/30">
+                Ended
+              </Badge>
+            )}
+            {isRsvped && !isPast && (
               <Badge className="bg-status-active/10 text-status-active border-status-active/20">
                 <Check className="h-3 w-3 mr-1" />
                 RSVP&apos;d
@@ -165,13 +171,15 @@ export function WorkshopCard({
           >
             View Details
           </Button>
-          <Button
-            variant={isRsvped ? "outline" : "default"}
-            size="sm"
-            onClick={() => onRsvp(event)}
-          >
-            {isRsvped ? "RSVP'd" : "RSVP"}
-          </Button>
+          {!isPast && (
+            <Button
+              variant={isRsvped ? "outline" : "default"}
+              size="sm"
+              onClick={() => onRsvp(event)}
+            >
+              {isRsvped ? "RSVP'd" : "RSVP"}
+            </Button>
+          )}
           {event.eventUrl && /^https?:\/\//i.test(event.eventUrl) && (
             <Button variant="ghost" size="sm" className="ml-auto" asChild>
               <a href={event.eventUrl} target="_blank" rel="noopener noreferrer">
@@ -179,31 +187,33 @@ export function WorkshopCard({
               </a>
             </Button>
           )}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm">
-                <Calendar className="h-4 w-4" />
-                <ChevronDown className="h-3 w-3 ml-1" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={() => onAddToCalendar(event, "google")}
-              >
-                Google Calendar
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => onAddToCalendar(event, "outlook")}
-              >
-                Outlook
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => onAddToCalendar(event, "ical")}
-              >
-                iCal / Apple Calendar
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {!isPast && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <Calendar className="h-4 w-4" />
+                  <ChevronDown className="h-3 w-3 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={() => onAddToCalendar(event, "google")}
+                >
+                  Google Calendar
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => onAddToCalendar(event, "outlook")}
+                >
+                  Outlook
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => onAddToCalendar(event, "ical")}
+                >
+                  iCal / Apple Calendar
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </CardContent>
     </Card>

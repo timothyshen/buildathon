@@ -175,26 +175,30 @@ export function CalendarMonthView({
                 {/* Event indicators */}
                 {hasEvents && (
                   <div className="mt-1 space-y-1">
-                    {dayEvents.slice(0, 2).map((event) => (
-                      <div
-                        key={event.id}
-                        className={cn(
-                          "text-xs px-1.5 py-0.5 rounded truncate",
-                          event.category.toLowerCase() === "basics" &&
-                            "bg-green-100 text-green-800",
-                          event.category.toLowerCase() === "advanced" &&
-                            "bg-purple-100 text-purple-800",
-                          event.category.toLowerCase() === "business" &&
-                            "bg-blue-100 text-blue-800",
-                          !["basics", "advanced", "business"].includes(
-                            event.category.toLowerCase()
-                          ) && "bg-gray-100 text-gray-800"
-                        )}
-                        title={event.title}
-                      >
-                        {event.title}
-                      </div>
-                    ))}
+                    {dayEvents.slice(0, 2).map((event) => {
+                      const isPast = new Date(event.endAt) < today;
+                      return (
+                        <div
+                          key={event.id}
+                          className={cn(
+                            "text-xs px-1.5 py-0.5 rounded truncate font-medium",
+                            isPast && "opacity-50 line-through",
+                            event.category.toLowerCase() === "basics" &&
+                              "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400",
+                            event.category.toLowerCase() === "advanced" &&
+                              "bg-violet-500/20 text-violet-700 dark:text-violet-400",
+                            event.category.toLowerCase() === "business" &&
+                              "bg-blue-500/20 text-blue-700 dark:text-blue-400",
+                            !["basics", "advanced", "business"].includes(
+                              event.category.toLowerCase()
+                            ) && "bg-muted text-muted-foreground"
+                          )}
+                          title={isPast ? `${event.title} (Ended)` : event.title}
+                        >
+                          {event.title}
+                        </div>
+                      );
+                    })}
                     {dayEvents.length > 2 && (
                       <div className="text-xs text-muted-foreground px-1.5">
                         +{dayEvents.length - 2} more
