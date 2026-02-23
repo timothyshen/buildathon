@@ -17,7 +17,7 @@ export interface UsersService {
 }
 
 // Convert database row to User type
-function toUser(row: Record<string, unknown>): User {
+export function toUser(row: Record<string, unknown>): User {
   return {
     id: row.id as string,
     email: row.email as string,

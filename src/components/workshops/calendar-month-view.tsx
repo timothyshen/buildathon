@@ -4,6 +4,7 @@ import { CalendarEvent } from "@/types";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { isSameDay, isSameMonth, getMonthDays, getEventsForDate } from "@/lib/workshop-utils";
 
 interface CalendarMonthViewProps {
   currentDate: Date;
@@ -14,60 +15,6 @@ interface CalendarMonthViewProps {
 }
 
 const DAYS_OF_WEEK = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-function isSameDay(date1: Date, date2: Date): boolean {
-  return (
-    date1.getFullYear() === date2.getFullYear() &&
-    date1.getMonth() === date2.getMonth() &&
-    date1.getDate() === date2.getDate()
-  );
-}
-
-function isSameMonth(date1: Date, date2: Date): boolean {
-  return (
-    date1.getFullYear() === date2.getFullYear() &&
-    date1.getMonth() === date2.getMonth()
-  );
-}
-
-function getMonthDays(date: Date): Date[] {
-  const year = date.getFullYear();
-  const month = date.getMonth();
-
-  // Get first day of month and how many days in month
-  const firstDayOfMonth = new Date(year, month, 1);
-  const lastDayOfMonth = new Date(year, month + 1, 0);
-  const daysInMonth = lastDayOfMonth.getDate();
-
-  // Get the day of week the month starts on (0 = Sunday)
-  const startDayOfWeek = firstDayOfMonth.getDay();
-
-  // Get days from previous month to fill the first week
-  const days: Date[] = [];
-  const prevMonth = new Date(year, month, 0);
-  const daysInPrevMonth = prevMonth.getDate();
-
-  for (let i = startDayOfWeek - 1; i >= 0; i--) {
-    days.push(new Date(year, month - 1, daysInPrevMonth - i));
-  }
-
-  // Add all days of current month
-  for (let i = 1; i <= daysInMonth; i++) {
-    days.push(new Date(year, month, i));
-  }
-
-  // Add days from next month to complete the grid (6 rows)
-  const remainingDays = 42 - days.length;
-  for (let i = 1; i <= remainingDays; i++) {
-    days.push(new Date(year, month + 1, i));
-  }
-
-  return days;
-}
-
-function getEventsForDate(date: Date, events: CalendarEvent[]): CalendarEvent[] {
-  return events.filter((event) => isSameDay(new Date(event.startAt), date));
-}
 
 export function CalendarMonthView({
   currentDate,

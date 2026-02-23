@@ -5,6 +5,7 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import { cn } from "@/lib/utils";
+import { normalizeEscapedSlashes } from "@/lib/rich-text-utils";
 import { Button } from "./button";
 import {
   Bold,
@@ -237,8 +238,7 @@ interface RichTextDisplayProps {
 }
 
 export function RichTextDisplay({ content, className }: RichTextDisplayProps) {
-  // Normalize escaped forward slashes that may appear from JSON serialization
-  const normalized = content.replace(/\\\//g, "/");
+  const normalized = normalizeEscapedSlashes(content);
 
   // Sanitize HTML to prevent XSS attacks
   const sanitizedContent = typeof window !== "undefined"
