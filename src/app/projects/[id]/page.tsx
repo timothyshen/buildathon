@@ -247,6 +247,14 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                         {track.prizePool} Prize Pool
                       </span>
                     )}
+                    {submission.trackDescriptions?.[track.id] && (
+                      <div className="pt-3 border-t">
+                        <p className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-1">Integration</p>
+                        <p className="text-xs text-muted-foreground">
+                          {submission.trackDescriptions[track.id]}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 ))}
               </section>

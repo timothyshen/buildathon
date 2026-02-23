@@ -365,6 +365,14 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
                         {track.prizePool} prize pool
                       </p>
                     )}
+                    {submission?.trackDescriptions?.[track.id] && (
+                      <div className="mt-2 pt-2 border-t">
+                        <p className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-1">Integration</p>
+                        <p className="text-xs text-muted-foreground">
+                          {submission.trackDescriptions[track.id]}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

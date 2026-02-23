@@ -53,6 +53,7 @@ interface SubmissionDraft {
   builtWithStory: boolean;
   cohortId: string;
   trackIds: string[];
+  trackDescriptions: Record<string, string>;
   licenseType: string;
   currentStep: number;
 }
@@ -74,6 +75,7 @@ const initialData: SubmissionDraft = {
   builtWithStory: false,
   cohortId: "",
   trackIds: [],
+  trackDescriptions: {},
   licenseType: "",
   currentStep: 1,
 };
@@ -178,7 +180,7 @@ export default function SubmitPage() {
     return () => clearTimeout(timeout);
   }, [data, currentStep]);
 
-  const handleChange = useCallback((field: string, value: string | string[] | boolean) => {
+  const handleChange = useCallback((field: string, value: string | string[] | boolean | Record<string, string>) => {
     setData((prev) => ({ ...prev, [field]: value }));
     setErrors((prev) => ({ ...prev, [field]: "" }));
   }, []);
@@ -230,6 +232,13 @@ export default function SubmitPage() {
       const cohortTracks = tracks.filter((t) => t.cohortId === data.cohortId);
       if (cohortTracks.length > 0 && data.trackIds.length === 0) {
         newErrors.trackIds = "Please select at least one track";
+      }
+      // Validate integration descriptions for sponsor tracks
+      for (const trackId of data.trackIds) {
+        const track = tracks.find((t) => t.id === trackId);
+        if (track?.sponsorOrgId && !data.trackDescriptions[trackId]?.trim()) {
+          newErrors[`trackDescription_${trackId}`] = "Please describe your integration";
+        }
       }
     }
 
@@ -283,6 +292,7 @@ export default function SubmitPage() {
         techStack: data.techStack || [],
         builtWithStory: data.builtWithStory,
         trackIds: data.trackIds,
+        trackDescriptions: data.trackDescriptions,
         status: "draft" as const,
       };
 
@@ -342,6 +352,7 @@ export default function SubmitPage() {
         techStack: data.techStack,
         builtWithStory: data.builtWithStory,
         trackIds: data.trackIds,
+        trackDescriptions: data.trackDescriptions,
         status: "submitted" as const,
       };
 
@@ -587,10 +598,9 @@ export default function SubmitPage() {
         )}
         {currentStep === 4 && (
           <StepTracks
-            data={{ cohortId: data.cohortId, trackIds: data.trackIds, submissionMode: data.submissionMode }}
+            data={{ cohortId: data.cohortId, trackIds: data.trackIds, trackDescriptions: data.trackDescriptions, submissionMode: data.submissionMode }}
             onChange={handleChange}
             errors={errors}
-            cohorts={cohorts}
             tracks={tracks}
             sponsorOrgs={sponsorOrgs}
           />
@@ -601,6 +611,7 @@ export default function SubmitPage() {
             onEdit={handleEdit}
             cohorts={cohorts}
             tracks={tracks}
+            sponsorOrgs={sponsorOrgs}
           />
         )}
       </div>

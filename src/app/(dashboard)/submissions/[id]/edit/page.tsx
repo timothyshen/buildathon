@@ -51,6 +51,7 @@ export default function EditSubmissionPage({ params }: EditSubmissionPageProps) 
   const [builtWithStory, setBuiltWithStory] = useState(false);
   const [cohortId, setCohortId] = useState("");
   const [trackIds, setTrackIds] = useState<string[]>([]);
+  const [trackDescriptions, setTrackDescriptions] = useState<Record<string, string>>({});
 
   useEffect(() => {
     async function loadData() {
@@ -95,6 +96,7 @@ export default function EditSubmissionPage({ params }: EditSubmissionPageProps) 
       setBuiltWithStory(s.builtWithStory);
       setCohortId(s.cohortId);
       setTrackIds(s.trackIds || []);
+      setTrackDescriptions(s.trackDescriptions || {});
 
       if (cohortsResult.success) setCohorts(cohortsResult.data);
       if (tracksResult.success) setTracks(tracksResult.data);
@@ -106,7 +108,7 @@ export default function EditSubmissionPage({ params }: EditSubmissionPageProps) 
   }, [id, user, authLoading, router]);
 
   const handleChange = useCallback(
-    (field: string, value: string | string[] | boolean) => {
+    (field: string, value: string | string[] | boolean | Record<string, string>) => {
       setErrors((prev) => ({ ...prev, [field]: "" }));
       switch (field) {
         case "title":
@@ -147,6 +149,9 @@ export default function EditSubmissionPage({ params }: EditSubmissionPageProps) 
           break;
         case "trackIds":
           setTrackIds(value as string[]);
+          break;
+        case "trackDescriptions":
+          setTrackDescriptions(value as Record<string, string>);
           break;
       }
     },
@@ -190,6 +195,7 @@ export default function EditSubmissionPage({ params }: EditSubmissionPageProps) 
         builtWithStory,
         cohortId,
         trackIds,
+        trackDescriptions,
       });
 
       if (!result.success) {
@@ -301,10 +307,9 @@ export default function EditSubmissionPage({ params }: EditSubmissionPageProps) 
         />
 
         <StepTracks
-          data={{ cohortId, trackIds }}
+          data={{ cohortId, trackIds, trackDescriptions }}
           onChange={handleChange}
           errors={errors}
-          cohorts={cohorts}
           tracks={tracks}
           sponsorOrgs={sponsorOrgs}
         />

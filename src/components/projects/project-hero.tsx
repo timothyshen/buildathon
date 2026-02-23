@@ -34,6 +34,9 @@ function getStatusDot(status: Submission["status"]) {
   );
 }
 
+const heroButtonClass =
+  "bg-transparent border-slate-500 text-white hover:bg-slate-800 hover:text-white";
+
 export function ProjectHero({ project, trackName, cohortName }: ProjectHeroProps) {
   const [copied, setCopied] = useState(false);
 
@@ -95,65 +98,41 @@ export function ProjectHero({ project, trackName, cohortName }: ProjectHeroProps
         {/* Team Name */}
         <p className="mt-3 text-slate-500">by {project.team?.name || "Solo submission"}</p>
 
-        {/* Action Buttons */}
+        {/* Action Buttons — all use shadcn Button; links use asChild + <a>, Share uses onClick */}
         <div className="flex flex-wrap gap-3 mt-8">
           {project.demoUrl && (
-            <Button className="bg-white text-slate-900 hover:bg-slate-100" asChild>
-              <a
-                href={project.demoUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+            <Button variant="outline" className={heroButtonClass} asChild>
+              <a href={project.demoUrl} target="_blank" rel="noopener noreferrer">
                 <ExternalLink className="h-4 w-4" />
                 View Demo
               </a>
             </Button>
           )}
-
           {project.repoUrl && (
-            <Button variant="outline" className="border-slate-500 text-white hover:bg-slate-800" asChild>
-              <a
-                href={project.repoUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+            <Button variant="outline" className={heroButtonClass} asChild>
+              <a href={project.repoUrl} target="_blank" rel="noopener noreferrer">
                 <Github className="h-4 w-4" />
                 View Code
               </a>
             </Button>
           )}
-
           {project.videoUrl && (
-            <Button variant="outline" className="border-slate-500 text-white hover:bg-slate-800" asChild>
-              <a
-                href={project.videoUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+            <Button variant="outline" className={heroButtonClass} asChild>
+              <a href={project.videoUrl} target="_blank" rel="noopener noreferrer">
                 <Play className="h-4 w-4" />
                 Watch Video
               </a>
             </Button>
           )}
-
           {project.presentationUrl && (
-            <Button variant="outline" className="border-slate-500 text-white hover:bg-slate-800" asChild>
-              <a
-                href={project.presentationUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+            <Button variant="outline" className={heroButtonClass} asChild>
+              <a href={project.presentationUrl} target="_blank" rel="noopener noreferrer">
                 <FileText className="h-4 w-4" />
                 Presentation
               </a>
             </Button>
           )}
-
-          <Button
-            variant="outline"
-            className="border-slate-500 text-white hover:bg-slate-800"
-            onClick={handleShare}
-          >
+          <Button variant="outline" className={heroButtonClass} onClick={handleShare}>
             {copied ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
             {copied ? "Copied!" : "Share"}
           </Button>

@@ -113,6 +113,9 @@ export interface Submission {
   presentationUrl?: string;
   screenshots: string[];
 
+  // Track integration descriptions (trackId → description)
+  trackDescriptions?: Record<string, string>;
+
   // Tech
   techStack: string[];
   builtWithStory: boolean;

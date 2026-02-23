@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RichTextDisplay } from "@/components/ui/rich-text-editor";
 import { Pencil, ExternalLink } from "lucide-react";
-import type { Cohort, Track } from "@/types";
+import type { Cohort, Track, SponsorOrg } from "@/types";
 
 interface SubmissionData {
   title: string;
@@ -20,6 +20,7 @@ interface SubmissionData {
   builtWithStory: boolean;
   cohortId: string;
   trackIds: string[];
+  trackDescriptions: Record<string, string>;
   licenseType: string;
 }
 
@@ -28,9 +29,10 @@ interface StepReviewProps {
   onEdit: (step: number) => void;
   cohorts: Cohort[];
   tracks: Track[];
+  sponsorOrgs: SponsorOrg[];
 }
 
-export function StepReview({ data, onEdit, cohorts, tracks }: StepReviewProps) {
+export function StepReview({ data, onEdit, cohorts, tracks, sponsorOrgs }: StepReviewProps) {
   const cohort = cohorts.find((c) => c.id === data.cohortId);
   const selectedTracks = tracks.filter((t) => data.trackIds.includes(t.id));
 
@@ -157,17 +159,37 @@ export function StepReview({ data, onEdit, cohorts, tracks }: StepReviewProps) {
         </CardHeader>
         <CardContent>
           {selectedTracks.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {selectedTracks.map((track) => (
-                <Badge key={track.id} variant="outline">
-                  {track.name}
-                  {track.prizePool && (
-                    <span className="ml-1 text-muted-foreground">
-                      ({track.prizePool})
-                    </span>
-                  )}
-                </Badge>
-              ))}
+            <div className="space-y-3">
+              {selectedTracks.map((track) => {
+                const sponsor = track.sponsorOrgId
+                  ? sponsorOrgs.find((s) => s.id === track.sponsorOrgId)
+                  : null;
+                const description = data.trackDescriptions[track.id];
+                return (
+                  <div key={track.id} className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">
+                        {track.name}
+                        {track.prizePool && (
+                          <span className="ml-1 text-muted-foreground">
+                            ({track.prizePool})
+                          </span>
+                        )}
+                      </Badge>
+                      {sponsor && (
+                        <span className="text-xs text-muted-foreground">
+                          by {sponsor.name}
+                        </span>
+                      )}
+                    </div>
+                    {description && (
+                      <p className="text-sm text-muted-foreground ml-1">
+                        {description}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">General pool</p>
