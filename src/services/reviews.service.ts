@@ -39,6 +39,9 @@ export interface ReviewsService {
 
   // Actions
   submitReview(id: string, data: SubmitReviewData): Promise<ServiceResponse<Review>>;
+
+  // Mapping — convert raw DB row (with joined users/submissions) to Review type
+  mapReview(row: Record<string, unknown>): Review;
 }
 
 // Convert user row to User type
@@ -490,6 +493,14 @@ async function submitReview(id: string, data: SubmitReviewData): Promise<Service
   return success(toReview(updated, judge));
 }
 
+function mapReview(row: Record<string, unknown>): Review {
+  const userRow = row.users as Record<string, unknown> | null;
+  const submissionRow = row.submissions as Record<string, unknown> | null;
+  const judge = userRow ? toUser(userRow) : undefined;
+  const submission = submissionRow ? toSubmissionFromJoin(submissionRow) : undefined;
+  return toReview(row, judge, submission);
+}
+
 export const reviewsService: ReviewsService = {
   getById,
   create,
@@ -501,4 +512,5 @@ export const reviewsService: ReviewsService = {
   list,
   getReviewCountsBySubmission,
   submitReview,
+  mapReview,
 };

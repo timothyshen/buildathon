@@ -53,25 +53,46 @@ export default function ReviewDetailPage({ params }: ReviewDetailPageProps) {
   const [internalNotes, setInternalNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const isSponsor = from === "sponsor";
+
   useEffect(() => {
     async function loadData() {
-      const { data, success } = await reviewsService.getById(id);
-      if (success && data) {
-        setReview(data);
+      let reviewData: Review | null = null;
+
+      if (isSponsor) {
+        // Sponsors use server API route to bypass RLS
+        try {
+          const res = await fetch(`/api/sponsor/reviews/${id}`);
+          const json = await res.json();
+          if (res.ok && json.success) {
+            reviewData = reviewsService.mapReview(json.data);
+          }
+        } catch {
+          // fall through
+        }
+      } else {
+        const { data, success } = await reviewsService.getById(id);
+        if (success && data) {
+          reviewData = data;
+        }
+      }
+
+      if (reviewData) {
+        setReview(reviewData);
         setScores({
-          innovation: data.innovationScore || 0,
-          execution: data.executionScore || 0,
-          design: data.designScore || 0,
-          impact: data.impactScore || 0,
-          presentation: data.presentationScore || 0,
+          innovation: reviewData.innovationScore || 0,
+          execution: reviewData.executionScore || 0,
+          design: reviewData.designScore || 0,
+          impact: reviewData.impactScore || 0,
+          presentation: reviewData.presentationScore || 0,
         });
-        setFeedback(data.feedback || "");
-        setInternalNotes(data.internalNotes || "");
+        setFeedback(reviewData.feedback || "");
+        setInternalNotes(reviewData.internalNotes || "");
       }
       setIsLoading(false);
     }
     loadData();
-  }, [id]);
+  }, [id, isSponsor]);
 
   if (isLoading) {
     return (
@@ -105,7 +126,7 @@ export default function ReviewDetailPage({ params }: ReviewDetailPageProps) {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      const result = await reviewsService.submitReview(id, {
+      const payload = {
         innovationScore: scores.innovation,
         executionScore: scores.execution,
         designScore: scores.design,
@@ -113,8 +134,28 @@ export default function ReviewDetailPage({ params }: ReviewDetailPageProps) {
         presentationScore: scores.presentation,
         feedback: feedback || undefined,
         internalNotes: internalNotes || undefined,
-      });
-      if (result.success) {
+      };
+
+      let success = false;
+      let errorMsg = "Failed to submit review";
+
+      if (isSponsor) {
+        // Sponsors use server API route to bypass RLS
+        const res = await fetch(`/api/sponsor/reviews/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const json = await res.json();
+        success = res.ok && json.success;
+        if (!success) errorMsg = json.error || errorMsg;
+      } else {
+        const result = await reviewsService.submitReview(id, payload);
+        success = result.success;
+        if (!success) errorMsg = result.error || errorMsg;
+      }
+
+      if (success) {
         // Fire-and-forget notification trigger
         fetch("/api/notifications/trigger", {
           method: "POST",
@@ -128,7 +169,7 @@ export default function ReviewDetailPage({ params }: ReviewDetailPageProps) {
         toast.success("Review submitted successfully");
         router.push(backHref);
       } else {
-        toast.error(result.error || "Failed to submit review");
+        toast.error(errorMsg);
       }
     } catch {
       toast.error("Failed to submit review");
