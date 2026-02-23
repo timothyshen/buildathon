@@ -76,7 +76,8 @@ export async function GET(request: Request) {
 
     // Check if Google OAuth is configured
     const clientId = process.env.GOOGLE_CLIENT_ID;
-    const redirectUri = process.env.GOOGLE_REDIRECT_URI || `${process.env.NEXT_PUBLIC_APP_URL}/api/traction/ga/callback`;
+    const origin = new URL(request.url).origin;
+    const redirectUri = process.env.GOOGLE_REDIRECT_URI || `${origin}/api/traction/ga/callback`;
 
     if (!clientId) {
       return NextResponse.json(
