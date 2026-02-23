@@ -333,7 +333,7 @@ export default function AdminCohortDetailPage({ params }: AdminCohortDetailPageP
                   About
                 </p>
                 <div className="rounded-xl border p-5">
-                  <RichTextDisplay content={cohort.description} />
+                  <RichTextDisplay content={cohort.description} showHtmlTags />
                 </div>
               </div>
 

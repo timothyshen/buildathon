@@ -16,6 +16,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { RichTextDisplay } from "@/components/ui/rich-text-editor";
 import { Trophy, ExternalLink } from "lucide-react";
 import type { SponsorOrg, SponsorTier } from "@/types";
 
@@ -161,9 +162,7 @@ export default async function CohortDetailPage({
                     <CardTitle>About</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-muted-foreground whitespace-pre-wrap">
-                      {cohort.description}
-                    </p>
+                    <RichTextDisplay content={cohort.description ?? ""} showHtmlTags />
                   </CardContent>
                 </Card>
 
