@@ -100,8 +100,24 @@ export default function AdminWorkshopPage() {
     setPage(1);
   };
 
+  // Edit form state
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editCategory, setEditCategory] = useState("");
+  const [editDuration, setEditDuration] = useState("");
+  const [editVideoUrl, setEditVideoUrl] = useState("");
+  const [editArticleUrl, setEditArticleUrl] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const handleEdit = (workshop: Workshop) => {
     setSelectedWorkshop(workshop);
+    setEditTitle(workshop.title);
+    setEditDescription(workshop.description);
+    setEditCategory(workshop.category);
+    setEditDuration(workshop.duration || "");
+    setEditVideoUrl(workshop.videoUrl || "");
+    setEditArticleUrl(workshop.articleUrl || "");
     setIsEditDialogOpen(true);
   };
 
@@ -112,6 +128,7 @@ export default function AdminWorkshopPage() {
 
   const confirmDelete = async () => {
     if (!selectedWorkshop) return;
+    setIsDeleting(true);
     const result = await workshopsService.delete(selectedWorkshop.id);
     if (result.success) {
       setWorkshops(prev => prev.filter(w => w.id !== selectedWorkshop.id));
@@ -119,19 +136,29 @@ export default function AdminWorkshopPage() {
     } else {
       toast.error(result.error || "Failed to delete workshop");
     }
+    setIsDeleting(false);
     setIsDeleteDialogOpen(false);
     setSelectedWorkshop(null);
   };
 
   const saveEdit = async () => {
     if (!selectedWorkshop) return;
-    const result = await workshopsService.update(selectedWorkshop.id, selectedWorkshop);
+    setIsSaving(true);
+    const result = await workshopsService.update(selectedWorkshop.id, {
+      title: editTitle,
+      description: editDescription,
+      category: editCategory,
+      duration: editDuration || undefined,
+      videoUrl: editVideoUrl || undefined,
+      articleUrl: editArticleUrl || undefined,
+    });
     if (result.success) {
       setWorkshops(prev => prev.map(w => w.id === selectedWorkshop.id ? result.data : w));
-      toast.success(`"${selectedWorkshop.title}" updated successfully`);
+      toast.success(`"${editTitle}" updated successfully`);
     } else {
       toast.error(result.error || "Failed to update workshop");
     }
+    setIsSaving(false);
     setIsEditDialogOpen(false);
     setSelectedWorkshop(null);
   };
@@ -410,14 +437,15 @@ export default function AdminWorkshopPage() {
             <div className="space-y-4 pt-4">
               <div className="space-y-2">
                 <Label htmlFor="edit-title">Title</Label>
-                <Input id="edit-title" defaultValue={selectedWorkshop.title} />
+                <Input id="edit-title" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="edit-description">Description</Label>
                 <Textarea
                   id="edit-description"
-                  defaultValue={selectedWorkshop.description}
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
                   rows={3}
                 />
               </div>
@@ -425,7 +453,7 @@ export default function AdminWorkshopPage() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="edit-category">Category</Label>
-                  <Select defaultValue={selectedWorkshop.category}>
+                  <Select value={editCategory} onValueChange={setEditCategory}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -440,26 +468,33 @@ export default function AdminWorkshopPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="edit-duration">Duration</Label>
-                  <Input id="edit-duration" defaultValue={selectedWorkshop.duration || ""} />
+                  <Input id="edit-duration" value={editDuration} onChange={(e) => setEditDuration(e.target.value)} />
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="edit-videoUrl">Video URL</Label>
-                <Input id="edit-videoUrl" type="url" defaultValue={selectedWorkshop.videoUrl || ""} />
+                <Input id="edit-videoUrl" type="url" value={editVideoUrl} onChange={(e) => setEditVideoUrl(e.target.value)} />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="edit-articleUrl">Article URL</Label>
-                <Input id="edit-articleUrl" type="url" defaultValue={selectedWorkshop.articleUrl || ""} />
+                <Input id="edit-articleUrl" type="url" value={editArticleUrl} onChange={(e) => setEditArticleUrl(e.target.value)} />
               </div>
 
               <DialogFooter>
-                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} disabled={isSaving}>
                   Cancel
                 </Button>
-                <Button onClick={saveEdit}>
-                  Save Changes
+                <Button onClick={saveEdit} disabled={isSaving}>
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Changes"
+                  )}
                 </Button>
               </DialogFooter>
             </div>
@@ -477,12 +512,20 @@ export default function AdminWorkshopPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
-              className="bg-red-600 hover:bg-red-700"
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

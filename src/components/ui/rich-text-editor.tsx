@@ -237,16 +237,20 @@ interface RichTextDisplayProps {
 }
 
 export function RichTextDisplay({ content, className }: RichTextDisplayProps) {
+  // Normalize escaped forward slashes that may appear from JSON serialization
+  const normalized = content.replace(/\\\//g, "/");
+
   // Sanitize HTML to prevent XSS attacks
   const sanitizedContent = typeof window !== "undefined"
-    ? DOMPurify.sanitize(content, {
+    ? DOMPurify.sanitize(normalized, {
         ALLOWED_TAGS: ["p", "br", "strong", "em", "ul", "ol", "li", "h1", "h2", "h3", "h4", "a", "blockquote", "code", "pre"],
         ALLOWED_ATTR: ["href", "target", "rel"],
       })
-    : content.replace(/<[^>]*>/g, ''); // SSR: strip HTML for safety, client will hydrate with sanitized version
+    : "";
 
   return (
     <div
+      suppressHydrationWarning
       className={cn(
         "prose prose-sm dark:prose-invert max-w-none",
         className

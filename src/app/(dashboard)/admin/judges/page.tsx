@@ -63,7 +63,7 @@ export default function AdminJudgesPage() {
   useEffect(() => {
     async function loadData() {
       const [usersResult, reviewsResult, cohortsResult] = await Promise.all([
-        usersService.list({ role: "judge" }),
+        usersService.list({ roles: ["judge", "admin"] }),
         reviewsService.list(),
         cohortsService.list(),
       ]);
