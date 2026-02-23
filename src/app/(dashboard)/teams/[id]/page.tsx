@@ -241,18 +241,43 @@ export default function TeamDetailPage({ params }: TeamDetailPageProps) {
         </div>
       </section>
 
-      {/* Invite form (lead only) */}
+      {/* Invite section (lead only) */}
       {isLead && (
         <section>
           <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-4">
             Invite Members
           </h2>
-          <div className="rounded-xl border p-4">
-            <InviteForm
-              currentMemberCount={team.members.length + pendingInvites.length}
-              existingEmails={existingEmails}
-              onInvite={handleInvite}
-            />
+          <div className="rounded-xl border p-4 space-y-4">
+            <div>
+              <p className="text-sm text-muted-foreground mb-3">
+                Share this link with people you want to invite to your team.
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => {
+                  const link = `${window.location.origin}/teams?join=${teamId}`;
+                  navigator.clipboard.writeText(link);
+                  toast.success("Invite link copied to clipboard");
+                }}
+              >
+                <Copy className="h-3.5 w-3.5 mr-2" />
+                Copy Invite Link
+              </Button>
+            </div>
+
+            {/* Email invite (alternative) */}
+            <div className="pt-4 border-t">
+              <p className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
+                Or invite by email
+              </p>
+              <InviteForm
+                currentMemberCount={team.members.length + pendingInvites.length}
+                existingEmails={existingEmails}
+                onInvite={handleInvite}
+              />
+            </div>
           </div>
 
           {pendingInvites.length > 0 && (
@@ -269,22 +294,7 @@ export default function TeamDetailPage({ params }: TeamDetailPageProps) {
                     <Clock className="h-3.5 w-3.5 text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">{invite.email}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
-                      onClick={() => {
-                        const link = `${window.location.origin}/teams`;
-                        navigator.clipboard.writeText(link);
-                        toast.success("Invite link copied to clipboard");
-                      }}
-                    >
-                      <Copy className="h-3 w-3 mr-1" />
-                      Copy Link
-                    </Button>
-                    <Badge variant="outline" className="text-[10px]">Pending</Badge>
-                  </div>
+                  <Badge variant="outline" className="text-[10px]">Pending</Badge>
                 </div>
               ))}
             </div>
