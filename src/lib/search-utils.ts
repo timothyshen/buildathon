@@ -141,14 +141,25 @@ export function matchesQuery(
   submission: EnrichedSubmission,
   query: ParsedQuery
 ): boolean {
-  // Text search - matches title, description, or tagline
+  // Text search - each word must match at least one field
+  // (title, description, tagline, tech stack, or team name)
   if (query.text) {
-    const searchText = query.text.toLowerCase();
-    const titleMatch = submission.title.toLowerCase().includes(searchText);
-    const descMatch = submission.description.toLowerCase().includes(searchText);
-    const taglineMatch = submission.tagline?.toLowerCase().includes(searchText) || false;
+    const words = query.text.toLowerCase().split(/\s+/).filter(Boolean);
+    const title = submission.title.toLowerCase();
+    const desc = submission.description.toLowerCase();
+    const tagline = submission.tagline?.toLowerCase() || "";
+    const techStack = submission.techStack.map(t => t.toLowerCase());
+    const teamName = submission.team?.name?.toLowerCase() || "";
 
-    if (!titleMatch && !descMatch && !taglineMatch) {
+    const allWordsMatch = words.every(word =>
+      title.includes(word) ||
+      desc.includes(word) ||
+      tagline.includes(word) ||
+      techStack.some(t => t.includes(word)) ||
+      teamName.includes(word)
+    );
+
+    if (!allWordsMatch) {
       return false;
     }
   }

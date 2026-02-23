@@ -145,14 +145,22 @@ export default function SponsorCohortPage({ params }: SponsorCohortPageProps) {
   const handleSaveDescription = async () => {
     setIsLoading(true);
     try {
-      const result = await sponsorsService.updateCohortSponsor(cohortSponsor.id, {
-        description,
+      const res = await fetch("/api/sponsor/description", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          cohortSponsorId: cohortSponsor.id,
+          description,
+        }),
       });
-      if (!result.success) {
-        toast.error(result.error || "Failed to save description");
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Failed to save description");
         return;
       }
       toast.success("Description saved");
+    } catch {
+      toast.error("Failed to save description");
     } finally {
       setIsLoading(false);
     }

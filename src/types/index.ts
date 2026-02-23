@@ -113,6 +113,9 @@ export interface Submission {
   presentationUrl?: string;
   screenshots: string[];
 
+  // Track integration descriptions (trackId → description)
+  trackDescriptions?: Record<string, string>;
+
   // Tech
   techStack: string[];
   builtWithStory: boolean;
@@ -223,6 +226,7 @@ export interface CohortSponsor {
   sponsorOrgId: string;
   tier: SponsorTier;
   prizePoolContribution: number;
+  prizePoolLimit: number;
   hasDedicatedTrack: boolean;
   description?: string; // Rich text description for this sponsor in this cohort
 }
@@ -425,6 +429,7 @@ export interface CalendarEvent {
   category: string;
   tags?: string[];
   lumaApiId: string;
+  attendeeCount?: number;
 }
 
 export interface EventRSVP {

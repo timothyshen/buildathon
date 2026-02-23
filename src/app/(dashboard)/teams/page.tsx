@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { teamsService, cohortsService } from "@/services";
 import { Button } from "@/components/ui/button";
@@ -12,9 +13,15 @@ import type { Team, TeamInvite, Cohort } from "@/types";
 
 export default function TeamsPage() {
   const { user } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const joinTeamId = searchParams.get("join");
+
   const [userTeams, setUserTeams] = useState<Team[]>([]);
   const [pendingInvites, setPendingInvites] = useState<TeamInvite[]>([]);
   const [cohortMap, setCohortMap] = useState<Map<string, Cohort>>(new Map());
+  const [joinTeam, setJoinTeam] = useState<Team | null>(null);
+  const [isJoining, setIsJoining] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -32,6 +39,24 @@ export default function TeamsPage() {
       if (cohortsResult.success) {
         setCohortMap(new Map(cohortsResult.data.map((c: Cohort) => [c.id, c])));
       }
+
+      // Load join team if link param present
+      if (joinTeamId) {
+        const alreadyMember = teamsResult.data?.some((t: Team) => t.id === joinTeamId);
+        if (alreadyMember) {
+          toast.info("You're already a member of this team");
+          router.replace("/teams");
+        } else {
+          const { data: teamData } = await teamsService.getById(joinTeamId);
+          if (teamData) {
+            setJoinTeam(teamData);
+          } else {
+            toast.error("Team not found");
+            router.replace("/teams");
+          }
+        }
+      }
+
       setIsLoading(false);
     }
     loadData();
@@ -61,6 +86,23 @@ export default function TeamsPage() {
     }
   };
 
+  const handleJoinTeam = async () => {
+    if (!joinTeam || isJoining) return;
+    setIsJoining(true);
+    try {
+      const { success, error } = await teamsService.addMember(joinTeam.id, user.id);
+      if (success) {
+        toast.success(`You have joined ${joinTeam.name}!`);
+        setJoinTeam(null);
+        router.replace(`/teams/${joinTeam.id}`);
+      } else {
+        toast.error(error || "Failed to join team");
+      }
+    } finally {
+      setIsJoining(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -81,6 +123,44 @@ export default function TeamsPage() {
           </Link>
         </Button>
       </div>
+
+      {/* Join team prompt */}
+      {joinTeam && (
+        <section className="rounded-xl border border-violet-200 dark:border-violet-800 bg-violet-50/50 dark:bg-violet-950/20 p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-sm font-medium">
+                You&apos;ve been invited to join <span className="font-semibold">{joinTeam.name}</span>
+              </h2>
+              <p className="text-xs text-muted-foreground mt-1">
+                {joinTeam.members.length} member{joinTeam.members.length !== 1 ? "s" : ""}
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setJoinTeam(null);
+                  router.replace("/teams");
+                }}
+              >
+                Decline
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleJoinTeam}
+                disabled={isJoining}
+              >
+                {isJoining ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+                ) : null}
+                Join Team
+              </Button>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Stats strip */}
       <div className="grid grid-cols-2 gap-4 md:flex md:items-center md:divide-x md:gap-0">

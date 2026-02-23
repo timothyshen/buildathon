@@ -18,7 +18,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Users, LogOut, Trash2, Clock, Loader2, Crown } from "lucide-react";
+import { ArrowLeft, Users, LogOut, Trash2, Clock, Loader2, Crown, Copy } from "lucide-react";
 import { TeamMemberList, InviteForm } from "@/components/teams";
 import { toast } from "sonner";
 import type { Team, Cohort, TeamInvite } from "@/types";
@@ -241,18 +241,43 @@ export default function TeamDetailPage({ params }: TeamDetailPageProps) {
         </div>
       </section>
 
-      {/* Invite form (lead only) */}
+      {/* Invite section (lead only) */}
       {isLead && (
         <section>
           <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-4">
             Invite Members
           </h2>
-          <div className="rounded-xl border p-4">
-            <InviteForm
-              currentMemberCount={team.members.length + pendingInvites.length}
-              existingEmails={existingEmails}
-              onInvite={handleInvite}
-            />
+          <div className="rounded-xl border p-4 space-y-4">
+            <div>
+              <p className="text-sm text-muted-foreground mb-3">
+                Share this link with people you want to invite to your team.
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => {
+                  const link = `${window.location.origin}/teams?join=${teamId}`;
+                  navigator.clipboard.writeText(link);
+                  toast.success("Invite link copied to clipboard");
+                }}
+              >
+                <Copy className="h-3.5 w-3.5 mr-2" />
+                Copy Invite Link
+              </Button>
+            </div>
+
+            {/* Email invite (alternative) */}
+            <div className="pt-4 border-t">
+              <p className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-3">
+                Or invite by email
+              </p>
+              <InviteForm
+                currentMemberCount={team.members.length + pendingInvites.length}
+                existingEmails={existingEmails}
+                onInvite={handleInvite}
+              />
+            </div>
           </div>
 
           {pendingInvites.length > 0 && (

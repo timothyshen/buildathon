@@ -61,6 +61,7 @@ export function SponsorForm({
           description: sponsor.description,
           tier: cohortSponsor?.tier || ("silver" as const),
           prizePoolContribution: cohortSponsor?.prizePoolContribution || 0,
+          prizePoolLimit: cohortSponsor?.prizePoolLimit || 0,
           hasDedicatedTrack: cohortSponsor?.hasDedicatedTrack || false,
           contactName: sponsor.contactName,
           contactEmail: sponsor.contactEmail,
@@ -69,6 +70,7 @@ export function SponsorForm({
       : {
           tier: "silver" as const,
           prizePoolContribution: 0,
+          prizePoolLimit: 0,
           hasDedicatedTrack: false,
           cohortId: defaultCohortId || "",
         },
@@ -86,6 +88,7 @@ export function SponsorForm({
               description: sponsor.description,
               tier: cohortSponsor?.tier || ("silver" as const),
               prizePoolContribution: cohortSponsor?.prizePoolContribution || 0,
+              prizePoolLimit: cohortSponsor?.prizePoolLimit || 0,
               hasDedicatedTrack: cohortSponsor?.hasDedicatedTrack || false,
               contactName: sponsor.contactName,
               contactEmail: sponsor.contactEmail,
@@ -98,6 +101,7 @@ export function SponsorForm({
               description: "",
               tier: "silver" as const,
               prizePoolContribution: 0,
+              prizePoolLimit: 0,
               hasDedicatedTrack: false,
               contactName: "",
               contactEmail: "",
@@ -224,6 +228,22 @@ export function SponsorForm({
               {errors.prizePoolContribution && (
                 <p className="text-xs text-destructive">
                   {errors.prizePoolContribution.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="prizePoolLimit" className="text-xs text-muted-foreground">Prize Pool Limit ($)</Label>
+              <Input
+                id="prizePoolLimit"
+                type="number"
+                min={0}
+                {...register("prizePoolLimit", { valueAsNumber: true })}
+              />
+              <p className="text-[11px] text-muted-foreground">Maximum prize pool this sponsor can contribute. 0 = no limit.</p>
+              {errors.prizePoolLimit && (
+                <p className="text-xs text-destructive">
+                  {errors.prizePoolLimit.message}
                 </p>
               )}
             </div>

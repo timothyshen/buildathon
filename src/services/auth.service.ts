@@ -58,7 +58,11 @@ async function login(email: string, password: string): Promise<ServiceResponse<U
   });
 
   if (authError) {
-    return error(authError.message, null as unknown as User);
+    const message =
+      authError.message === "Invalid login credentials"
+        ? "No account found with this email or password is incorrect"
+        : authError.message;
+    return error(message, null as unknown as User);
   }
 
   if (!authData.user) {

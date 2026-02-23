@@ -42,7 +42,8 @@ function toSubmission(
   row: Record<string, unknown>,
   tracks?: Track[],
   team?: Team,
-  cohort?: Cohort
+  cohort?: Cohort,
+  trackDescriptions?: Record<string, string>
 ): Submission {
   return {
     id: row.id as string,
@@ -55,6 +56,7 @@ function toSubmission(
     trackIds: tracks?.map((t) => t.id),
     track: tracks?.[0],
     tracks,
+    trackDescriptions,
     title: row.title as string,
     tagline: row.tagline as string | undefined,
     logoUrl: row.logo_url as string | undefined,
@@ -79,22 +81,27 @@ function toSubmission(
 // Joined select string for batch queries — collapses N+1 into 1 query
 const SUBMISSION_JOINED_SELECT = `
   *,
-  submission_tracks(tracks(*, sponsor_orgs(name, logo))),
+  submission_tracks(*, tracks(*, sponsor_orgs(name, logo))),
   teams(*, team_members(role, joined_at, users(*))),
   cohorts(*)
 `;
 
 // Convert a PostgREST joined row to Submission type
 function toSubmissionFromJoinedRow(row: Record<string, unknown>): Submission {
-  // Extract tracks from submission_tracks junction
-  const submissionTracks = (row.submission_tracks as Array<{ tracks: Record<string, unknown> }>) || [];
+  // Extract tracks and descriptions from submission_tracks junction
+  const submissionTracks = (row.submission_tracks as Array<{ description?: string; tracks: Record<string, unknown> }>) || [];
+  const trackDescriptions: Record<string, string> = {};
   const tracks: Track[] = submissionTracks
     .filter((st) => st.tracks)
     .map((st) => {
       const t = st.tracks;
       const sponsor = t.sponsor_orgs as { name: string; logo: string } | null;
+      const trackId = t.id as string;
+      if (st.description) {
+        trackDescriptions[trackId] = st.description;
+      }
       return {
-        id: t.id as string,
+        id: trackId,
         cohortId: t.cohort_id as string,
         sponsorOrgId: t.sponsor_org_id as string | undefined,
         name: t.name as string,
@@ -166,7 +173,7 @@ function toSubmissionFromJoinedRow(row: Record<string, unknown>): Submission {
     };
   }
 
-  return toSubmission(row, tracks, team, cohort);
+  return toSubmission(row, tracks, team, cohort, trackDescriptions);
 }
 
 // Helper to fetch team with members (for submission relations)
@@ -241,6 +248,7 @@ async function fetchSubmissionWithRelations(
     supabase
       .from("submission_tracks")
       .select(`
+        *,
         tracks (
           *,
           sponsor_orgs (name, logo)
@@ -257,11 +265,17 @@ async function fetchSubmissionWithRelations(
       .single(),
   ]);
 
+  const trackDescriptions: Record<string, string> = {};
   const tracks = (trackResult.data || []).map((t) => {
-    const track = t.tracks as Record<string, unknown>;
+    const row = t as Record<string, unknown>;
+    const track = row.tracks as Record<string, unknown>;
     const sponsor = track.sponsor_orgs as { name: string; logo: string } | null;
+    const trackId = track.id as string;
+    if (row.description) {
+      trackDescriptions[trackId] = row.description as string;
+    }
     return {
-      id: track.id as string,
+      id: trackId,
       cohortId: track.cohort_id as string,
       sponsorOrgId: track.sponsor_org_id as string | undefined,
       name: track.name as string,
@@ -296,7 +310,7 @@ async function fetchSubmissionWithRelations(
     };
   }
 
-  return toSubmission(subData, tracks, team || undefined, cohort);
+  return toSubmission(subData, tracks, team || undefined, cohort, trackDescriptions);
 }
 
 // CRUD
@@ -384,6 +398,7 @@ async function create(
     const trackInserts = data.trackIds.map((trackId) => ({
       submission_id: created.id,
       track_id: trackId,
+      description: data.trackDescriptions?.[trackId] || null,
     }));
     const { error: trackError } = await supabase.from("submission_tracks").insert(trackInserts);
     if (trackError) {
@@ -475,6 +490,7 @@ async function update(id: string, data: Partial<Submission>): Promise<ServiceRes
       const trackInserts = data.trackIds.map((trackId) => ({
         submission_id: id,
         track_id: trackId,
+        description: data.trackDescriptions?.[trackId] || null,
       }));
       const { error: insertError } = await supabase.from("submission_tracks").insert(trackInserts);
       if (insertError) {

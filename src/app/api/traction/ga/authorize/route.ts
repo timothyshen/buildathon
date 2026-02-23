@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { createClient } from "@/lib/supabase/server";
 import { createSignedState } from "@/lib/oauth-state";
 
 /**
@@ -19,19 +18,7 @@ export async function GET(request: Request) {
     }
 
     // Verify user is authenticated
-    const cookieStore = await cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll();
-          },
-          setAll() {},
-        },
-      }
-    );
+    const supabase = await createClient();
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
@@ -76,7 +63,8 @@ export async function GET(request: Request) {
 
     // Check if Google OAuth is configured
     const clientId = process.env.GOOGLE_CLIENT_ID;
-    const redirectUri = process.env.GOOGLE_REDIRECT_URI || `${process.env.NEXT_PUBLIC_APP_URL}/api/traction/ga/callback`;
+    const origin = new URL(request.url).origin;
+    const redirectUri = process.env.GOOGLE_REDIRECT_URI || `${origin}/api/traction/ga/callback`;
 
     if (!clientId) {
       return NextResponse.json(

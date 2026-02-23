@@ -113,6 +113,7 @@ export default function EditCohortPage({ params }: EditCohortPageProps) {
           await sponsorsService.updateCohortSponsor(existingCs.id, {
             tier: sponsor.tier,
             prizePoolContribution: sponsor.prizePoolContribution,
+            prizePoolLimit: sponsor.prizePoolLimit,
             hasDedicatedTrack: sponsor.hasDedicatedTrack,
           });
         } else {
@@ -121,6 +122,7 @@ export default function EditCohortPage({ params }: EditCohortPageProps) {
             sponsorOrgId: sponsor.sponsorOrgId,
             tier: sponsor.tier,
             prizePoolContribution: sponsor.prizePoolContribution,
+            prizePoolLimit: sponsor.prizePoolLimit,
             hasDedicatedTrack: sponsor.hasDedicatedTrack,
           });
         }

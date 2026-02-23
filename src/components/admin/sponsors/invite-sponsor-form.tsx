@@ -77,7 +77,7 @@ export function InviteSponsorForm({
         <DialogHeader>
           <DialogTitle>Invite Sponsor User</DialogTitle>
           <DialogDescription>
-            Send an invitation email to create a sponsor account
+            Assign the sponsor role to an existing user by their email address
           </DialogDescription>
         </DialogHeader>
 
@@ -133,7 +133,7 @@ export function InviteSponsorForm({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" className="bg-foreground text-background hover:bg-foreground/90">Send Invitation</Button>
+            <Button type="submit" className="bg-foreground text-background hover:bg-foreground/90">Assign Sponsor Role</Button>
           </div>
         </form>
       </DialogContent>

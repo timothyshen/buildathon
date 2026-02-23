@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import Link from "next/link";
 import { Search, Play, FileText, Clock, Users, Loader2, BookOpen, Lightbulb } from "lucide-react";
 
 export default function ResourcesPage() {
@@ -216,7 +217,7 @@ export default function ResourcesPage() {
                   )}
                   {workshop.articleUrl && (
                     <Button
-                      variant={workshop.videoUrl ? "outline" : "default"}
+                      variant="outline"
                       asChild
                       className="flex-1"
                     >
@@ -252,7 +253,9 @@ export default function ResourcesPage() {
           <p className="mt-2 text-muted-foreground">
             Are you a partner or expert? Share your knowledge with the community.
           </p>
-          <Button className="mt-4">Submit Content</Button>
+          <Button className="mt-4" asChild>
+            <Link href="/sponsor/workshops/new">Submit Content</Link>
+          </Button>
         </div>
       </div>
     </div>

@@ -56,7 +56,11 @@ export function TractionConfigForm({
       const data = await response.json();
 
       if (!response.ok) {
-        toast.error(data.error || "Failed to start Google Analytics connection");
+        if (response.status === 503) {
+          toast.error("Google Analytics integration is not configured. Contact an admin to set up Google OAuth credentials.");
+        } else {
+          toast.error(data.error || "Failed to start Google Analytics connection");
+        }
         return;
       }
 

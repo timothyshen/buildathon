@@ -1,4 +1,5 @@
 import { Cohort, Sponsor, Track, Submission } from "@/types";
+import { computeCohortStatus } from "@/lib/cohort-utils";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Trophy } from "lucide-react";
 
@@ -23,12 +24,12 @@ function getStatusBadge(status: Cohort["status"], countdown: { days: number; hou
     case "active":
       return (
         <div className="flex items-center gap-3">
-          <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
-            <span className="mr-1.5 h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+          <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/40 font-medium">
+            <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
             Live Now
           </Badge>
           {countdown && (
-            <Badge variant="outline" className="text-slate-300 border-slate-700">
+            <Badge variant="outline" className="text-slate-300 border-slate-600 font-medium">
               <Clock className="h-3 w-3 mr-1" />
               {countdown.days}d {countdown.hours}h left
             </Badge>
@@ -37,19 +38,19 @@ function getStatusBadge(status: Cohort["status"], countdown: { days: number; hou
       );
     case "upcoming":
       return (
-        <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
+        <Badge className="bg-blue-500/15 text-blue-400 border-blue-500/40 font-medium">
           Coming Soon
         </Badge>
       );
     case "judging":
       return (
-        <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">
+        <Badge className="bg-amber-500/15 text-amber-400 border-amber-500/40 font-medium">
           Judging
         </Badge>
       );
     case "completed":
       return (
-        <Badge className="bg-slate-500/20 text-slate-400 border-slate-500/30">
+        <Badge className="bg-violet-500/15 text-violet-400 border-violet-500/40 font-medium">
           <Trophy className="h-3 w-3 mr-1" />
           Completed
         </Badge>
@@ -60,6 +61,7 @@ function getStatusBadge(status: Cohort["status"], countdown: { days: number; hou
 }
 
 export function CohortHero({ cohort, tracks = [], sponsors = [], submissions = [] }: CohortHeroProps) {
+  const status = computeCohortStatus(cohort);
   const countdown = getCountdown(cohort.submissionDeadline);
   const totalPrize = cohort.prizes?.reduce((sum, p) => sum + parseInt(p.amount.replace(/[^0-9]/g, "") || "0"), 0) || 0;
 
@@ -88,7 +90,7 @@ export function CohortHero({ cohort, tracks = [], sponsors = [], submissions = [
       <div className="relative p-8 lg:p-12">
         {/* Status Badge */}
         <div className="mb-4">
-          {getStatusBadge(cohort.status, countdown)}
+          {getStatusBadge(status, countdown)}
         </div>
 
         {/* Name */}
@@ -105,16 +107,16 @@ export function CohortHero({ cohort, tracks = [], sponsors = [], submissions = [
         <div className="mt-8 flex gap-8">
           <div>
             <div className="text-4xl font-bold text-white">{tracks.length}</div>
-            <div className="text-slate-500">Tracks</div>
+            <div className="text-slate-300">Tracks</div>
           </div>
           <div>
             <div className="text-4xl font-bold text-white">{submissions.length}</div>
-            <div className="text-slate-500">Builders</div>
+            <div className="text-slate-300">Builders</div>
           </div>
           {totalPrize > 0 && (
             <div>
               <div className="text-4xl font-bold text-white">${(totalPrize / 1000).toFixed(0)}k</div>
-              <div className="text-slate-500">In Prizes</div>
+              <div className="text-slate-300">In Prizes</div>
             </div>
           )}
         </div>
@@ -122,18 +124,24 @@ export function CohortHero({ cohort, tracks = [], sponsors = [], submissions = [
         {/* Sponsors */}
         {sponsors.length > 0 && (
           <div className="mt-8">
-            <div className="text-sm text-slate-500 mb-3">Presented by</div>
+            <div className="text-sm text-slate-300 mb-3">Presented by</div>
             <div className="flex items-center gap-4">
               {sponsors.slice(0, 4).map((sponsor) => (
                 <div
                   key={sponsor.id}
                   className="h-12 w-12 rounded-xl bg-slate-800 p-2 flex items-center justify-center"
                 >
-                  <img src={sponsor.logo} alt={sponsor.name} className="h-full w-full object-contain" />
+                  {sponsor.logo ? (
+                    <img src={sponsor.logo} alt={sponsor.name} className="h-full w-full object-contain" />
+                  ) : (
+                    <span className="text-sm font-semibold text-slate-300">
+                      {sponsor.name?.charAt(0)?.toUpperCase()}
+                    </span>
+                  )}
                 </div>
               ))}
               {sponsors.length > 4 && (
-                <div className="text-sm text-slate-500">+{sponsors.length - 4} more</div>
+                <div className="text-sm text-slate-300">+{sponsors.length - 4} more</div>
               )}
             </div>
           </div>

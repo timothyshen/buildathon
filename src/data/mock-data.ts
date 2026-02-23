@@ -541,6 +541,7 @@ export const mockCohortSponsors: CohortSponsor[] = [
     sponsorOrgId: "sponsor-org-1",
     tier: "gold",
     prizePoolContribution: 5000,
+    prizePoolLimit: 0,
     hasDedicatedTrack: true,
     description: "<p>GameFi Labs is excited to sponsor the Summer Buildathon 2024! We're looking for innovative projects that push the boundaries of gaming and blockchain technology.</p><h2>What We're Looking For</h2><ul><li>Creative use of NFTs in gaming</li><li>Novel tokenomics for play-to-earn</li><li>Cross-chain gaming experiences</li></ul><p>Top submissions will be considered for our accelerator program!</p>",
   },
@@ -550,6 +551,7 @@ export const mockCohortSponsors: CohortSponsor[] = [
     sponsorOrgId: "sponsor-org-2",
     tier: "platinum",
     prizePoolContribution: 10000,
+    prizePoolLimit: 0,
     hasDedicatedTrack: false,
   },
   {
@@ -558,6 +560,7 @@ export const mockCohortSponsors: CohortSponsor[] = [
     sponsorOrgId: "sponsor-org-1",
     tier: "silver",
     prizePoolContribution: 2500,
+    prizePoolLimit: 0,
     hasDedicatedTrack: false,
   },
   {
@@ -566,6 +569,7 @@ export const mockCohortSponsors: CohortSponsor[] = [
     sponsorOrgId: "sponsor-org-3",
     tier: "platinum",
     prizePoolContribution: 15000,
+    prizePoolLimit: 0,
     hasDedicatedTrack: false,
   },
   {
@@ -574,6 +578,7 @@ export const mockCohortSponsors: CohortSponsor[] = [
     sponsorOrgId: "sponsor-org-3",
     tier: "platinum",
     prizePoolContribution: 20000,
+    prizePoolLimit: 0,
     hasDedicatedTrack: false,
   },
 ];

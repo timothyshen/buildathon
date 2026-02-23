@@ -17,7 +17,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Clock, MapPin, ChevronDown, Calendar, Sparkles, GraduationCap, Briefcase, Check, ExternalLink } from "lucide-react";
+import { Clock, MapPin, ChevronDown, Calendar, Sparkles, GraduationCap, Briefcase, Check, ExternalLink, Users } from "lucide-react";
+import { getCategoryClassName, formatTime, formatDuration } from "@/lib/workshop-utils";
 
 interface WorkshopCardProps {
   event: CalendarEvent;
@@ -27,50 +28,17 @@ interface WorkshopCardProps {
   onAddToCalendar: (event: CalendarEvent, type: "google" | "outlook" | "ical") => void;
 }
 
-function getCategoryBadge(category: string) {
+function getCategoryIcon(category: string) {
   switch (category.toLowerCase()) {
     case "basics":
-      return {
-        className: "bg-category-technical/10 text-category-technical border-category-technical/20",
-        icon: <GraduationCap className="h-3 w-3 mr-1" />,
-      };
+      return <GraduationCap className="h-3 w-3 mr-1" />;
     case "advanced":
-      return {
-        className: "bg-category-design/10 text-category-design border-category-design/20",
-        icon: <Sparkles className="h-3 w-3 mr-1" />,
-      };
+      return <Sparkles className="h-3 w-3 mr-1" />;
     case "business":
-      return {
-        className: "bg-category-business/10 text-category-business border-category-business/20",
-        icon: <Briefcase className="h-3 w-3 mr-1" />,
-      };
+      return <Briefcase className="h-3 w-3 mr-1" />;
     default:
-      return {
-        className: "bg-muted text-muted-foreground border-border",
-        icon: null,
-      };
+      return null;
   }
-}
-
-function formatTime(date: Date): string {
-  return new Date(date).toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  });
-}
-
-function formatDuration(event: CalendarEvent): string {
-  const start = new Date(event.startAt);
-  const end = new Date(event.endAt);
-  const diffMs = end.getTime() - start.getTime();
-  const diffMins = Math.round(diffMs / 60000);
-  if (diffMins >= 60) {
-    const hours = Math.floor(diffMins / 60);
-    const mins = diffMins % 60;
-    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
-  }
-  return `${diffMins} min`;
 }
 
 export function WorkshopCard({
@@ -80,8 +48,10 @@ export function WorkshopCard({
   onRsvp,
   onAddToCalendar,
 }: WorkshopCardProps) {
-  const duration = formatDuration(event);
-  const categoryBadge = getCategoryBadge(event.category);
+  const duration = formatDuration(event.startAt, event.endAt);
+  const categoryClassName = getCategoryClassName(event.category);
+  const categoryIcon = getCategoryIcon(event.category);
+  const isPast = new Date(event.endAt) < new Date();
 
   return (
     <Card className="overflow-hidden transition-all hover:shadow-lg bg-card">
@@ -112,14 +82,19 @@ export function WorkshopCard({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {isRsvped && (
+            {isPast && (
+              <Badge variant="outline" className="text-muted-foreground border-muted-foreground/30">
+                Ended
+              </Badge>
+            )}
+            {isRsvped && !isPast && (
               <Badge className="bg-status-active/10 text-status-active border-status-active/20">
                 <Check className="h-3 w-3 mr-1" />
                 RSVP&apos;d
               </Badge>
             )}
-            <Badge className={categoryBadge.className}>
-              {categoryBadge.icon}
+            <Badge className={categoryClassName}>
+              {categoryIcon}
               {event.category}
             </Badge>
           </div>
@@ -148,6 +123,12 @@ export function WorkshopCard({
               <span>{event.location}</span>
             </div>
           )}
+          {typeof event.attendeeCount === "number" && event.attendeeCount > 0 && (
+            <div className="flex items-center gap-1.5">
+              <Users className="h-4 w-4" />
+              <span>{event.attendeeCount}</span>
+            </div>
+          )}
         </div>
 
         {/* Action Buttons */}
@@ -159,13 +140,15 @@ export function WorkshopCard({
           >
             View Details
           </Button>
-          <Button
-            variant={isRsvped ? "outline" : "default"}
-            size="sm"
-            onClick={() => onRsvp(event)}
-          >
-            {isRsvped ? "RSVP'd" : "RSVP"}
-          </Button>
+          {!isPast && (
+            <Button
+              variant={isRsvped ? "outline" : "default"}
+              size="sm"
+              onClick={() => onRsvp(event)}
+            >
+              {isRsvped ? "RSVP'd" : "RSVP"}
+            </Button>
+          )}
           {event.eventUrl && /^https?:\/\//i.test(event.eventUrl) && (
             <Button variant="ghost" size="sm" className="ml-auto" asChild>
               <a href={event.eventUrl} target="_blank" rel="noopener noreferrer">
@@ -173,31 +156,33 @@ export function WorkshopCard({
               </a>
             </Button>
           )}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm">
-                <Calendar className="h-4 w-4" />
-                <ChevronDown className="h-3 w-3 ml-1" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={() => onAddToCalendar(event, "google")}
-              >
-                Google Calendar
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => onAddToCalendar(event, "outlook")}
-              >
-                Outlook
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => onAddToCalendar(event, "ical")}
-              >
-                iCal / Apple Calendar
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {!isPast && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <Calendar className="h-4 w-4" />
+                  <ChevronDown className="h-3 w-3 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={() => onAddToCalendar(event, "google")}
+                >
+                  Google Calendar
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => onAddToCalendar(event, "outlook")}
+                >
+                  Outlook
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => onAddToCalendar(event, "ical")}
+                >
+                  iCal / Apple Calendar
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </CardContent>
     </Card>

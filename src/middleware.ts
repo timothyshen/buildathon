@@ -110,8 +110,8 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
 
-    // Judge routes (reviews)
-    if (request.nextUrl.pathname.startsWith("/reviews") && role !== "judge" && role !== "admin") {
+    // Judge/Sponsor routes (reviews)
+    if (request.nextUrl.pathname.startsWith("/reviews") && role !== "judge" && role !== "sponsor" && role !== "admin") {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
   }

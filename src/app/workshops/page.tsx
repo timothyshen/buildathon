@@ -125,6 +125,19 @@ export default function WorkshopsPage() {
 
     if (result.success) {
       setRsvpedEventIds((prev) => new Set([...prev, event.id]));
+      // Optimistically increment attendee count
+      const updatedCount = (event.attendeeCount || 0) + 1;
+      setEvents((prev) =>
+        prev.map((e) =>
+          e.id === event.id
+            ? { ...e, attendeeCount: updatedCount }
+            : e
+        )
+      );
+      // Update the modal's selected event too
+      if (selectedEvent?.id === event.id) {
+        setSelectedEvent({ ...event, attendeeCount: updatedCount });
+      }
       toast.success("RSVP confirmed! You're registered for this event.");
     } else {
       toast.error(result.error || "Failed to RSVP. Please try again.");

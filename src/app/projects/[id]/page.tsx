@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { submissionsService, tracksService, cohortsService, tractionService } from "@/services";
+import { RichTextDisplay } from "@/components/ui/rich-text-editor";
 import { ProjectHero } from "@/components/projects/project-hero";
 import { ProjectGallery } from "@/components/projects/project-gallery";
 import { ProjectTeam } from "@/components/projects/project-team";
@@ -72,9 +73,15 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
     tractionService.getMilestones(id),
   ]);
 
-  // Get the track info if projectTrack exists
+  // Get tracks for this submission
   const tracks = tracksResponse.data;
-  const projectTrack = tracks.find((t) => t.id === submission.trackId);
+  const projectTracks = submission.tracks?.length
+    ? submission.tracks
+    : submission.trackIds?.length
+      ? tracks.filter((t) => submission.trackIds!.includes(t.id))
+      : submission.trackId
+        ? tracks.filter((t) => t.id === submission.trackId)
+        : [];
 
   // Get cohort info for breadcrumb
   const cohort = cohortResponse.data;
@@ -136,7 +143,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
       <div className="max-w-6xl mx-auto">
         <ProjectHero
           project={submission}
-          trackName={projectTrack?.name}
+          trackName={projectTracks.map((t) => t.name).join(", ") || undefined}
           cohortName={cohort?.name}
         />
       </div>
@@ -144,7 +151,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
       {/* Winner Banner */}
       {submission.status === "winner" && (
         <div className="max-w-6xl mx-auto px-4 mt-6">
-          <ProjectWinnerBanner project={submission} trackName={projectTrack?.name} />
+          <ProjectWinnerBanner project={submission} trackName={projectTracks.map((t) => t.name).join(", ") || undefined} />
         </div>
       )}
 
@@ -176,9 +183,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
               <h3 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">
                 About
               </h3>
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                {submission.description}
-              </p>
+              <RichTextDisplay content={submission.description} className="text-sm text-muted-foreground" />
               {submission.builtWithStory && (
                 <div className="flex items-center gap-1.5 text-xs text-primary">
                   <Shield className="h-3.5 w-3.5" />
@@ -206,40 +211,52 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
               </section>
             )}
 
-            {/* Track */}
-            {projectTrack && (
-              <section className="rounded-xl border p-5 space-y-4">
+            {/* Tracks */}
+            {projectTracks.length > 0 && (
+              <section className="space-y-2">
                 <h3 className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">
-                  Track
+                  {projectTracks.length === 1 ? "Track" : "Tracks"}
                 </h3>
-                <div>
-                  <h4 className="text-sm font-semibold">{projectTrack.name}</h4>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {projectTrack.description}
-                  </p>
-                </div>
-                {projectTrack.sponsorName && (
-                  <div className="flex items-center gap-2 pt-3 border-t">
-                    {projectTrack.sponsorLogo && (
-                      <Image
-                        unoptimized
-                        src={projectTrack.sponsorLogo}
-                        alt={projectTrack.sponsorName}
-                        width={24}
-                        height={24}
-                        className="rounded"
-                      />
+                {projectTracks.map((track) => (
+                  <div key={track.id} className="rounded-xl border p-5 space-y-4">
+                    <div>
+                      <h4 className="text-sm font-semibold">{track.name}</h4>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {track.description}
+                      </p>
+                    </div>
+                    {track.sponsorName && (
+                      <div className="flex items-center gap-2 pt-3 border-t">
+                        {track.sponsorLogo && (
+                          <Image
+                            unoptimized
+                            src={track.sponsorLogo}
+                            alt={track.sponsorName}
+                            width={24}
+                            height={24}
+                            className="rounded"
+                          />
+                        )}
+                        <span className="text-xs text-muted-foreground">
+                          Sponsored by {track.sponsorName}
+                        </span>
+                      </div>
                     )}
-                    <span className="text-xs text-muted-foreground">
-                      Sponsored by {projectTrack.sponsorName}
-                    </span>
+                    {track.prizePool && (
+                      <span className="inline-block px-2.5 py-1 text-xs rounded-md border text-muted-foreground">
+                        {track.prizePool} Prize Pool
+                      </span>
+                    )}
+                    {submission.trackDescriptions?.[track.id] && (
+                      <div className="pt-3 border-t">
+                        <p className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-1">Integration</p>
+                        <p className="text-xs text-muted-foreground">
+                          {submission.trackDescriptions[track.id]}
+                        </p>
+                      </div>
+                    )}
                   </div>
-                )}
-                {projectTrack.prizePool && (
-                  <span className="inline-block px-2.5 py-1 text-xs rounded-md border text-muted-foreground">
-                    {projectTrack.prizePool} Prize Pool
-                  </span>
-                )}
+                ))}
               </section>
             )}
           </div>

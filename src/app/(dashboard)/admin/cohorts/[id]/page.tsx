@@ -526,6 +526,7 @@ export default function AdminCohortDetailPage({ params }: AdminCohortDetailPageP
                 <div key={sponsor.id} className="rounded-xl border py-3 px-4 flex items-center gap-4">
                   <div className="w-10 h-10 relative flex-shrink-0">
                     <Image
+                      unoptimized
                       src={sponsor.logo}
                       alt={sponsor.name}
                       fill
@@ -564,6 +565,7 @@ export default function AdminCohortDetailPage({ params }: AdminCohortDetailPageP
                       {track.sponsorLogo && (
                         <div className="w-8 h-8 relative">
                           <Image
+                            unoptimized
                             src={track.sponsorLogo}
                             alt={track.sponsorName}
                             fill

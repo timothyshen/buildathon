@@ -4,6 +4,7 @@ import { CalendarEvent } from "@/types";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { isSameDay, isSameMonth, getMonthDays, getEventsForDate } from "@/lib/workshop-utils";
 
 interface CalendarMonthViewProps {
   currentDate: Date;
@@ -14,60 +15,6 @@ interface CalendarMonthViewProps {
 }
 
 const DAYS_OF_WEEK = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-function isSameDay(date1: Date, date2: Date): boolean {
-  return (
-    date1.getFullYear() === date2.getFullYear() &&
-    date1.getMonth() === date2.getMonth() &&
-    date1.getDate() === date2.getDate()
-  );
-}
-
-function isSameMonth(date1: Date, date2: Date): boolean {
-  return (
-    date1.getFullYear() === date2.getFullYear() &&
-    date1.getMonth() === date2.getMonth()
-  );
-}
-
-function getMonthDays(date: Date): Date[] {
-  const year = date.getFullYear();
-  const month = date.getMonth();
-
-  // Get first day of month and how many days in month
-  const firstDayOfMonth = new Date(year, month, 1);
-  const lastDayOfMonth = new Date(year, month + 1, 0);
-  const daysInMonth = lastDayOfMonth.getDate();
-
-  // Get the day of week the month starts on (0 = Sunday)
-  const startDayOfWeek = firstDayOfMonth.getDay();
-
-  // Get days from previous month to fill the first week
-  const days: Date[] = [];
-  const prevMonth = new Date(year, month, 0);
-  const daysInPrevMonth = prevMonth.getDate();
-
-  for (let i = startDayOfWeek - 1; i >= 0; i--) {
-    days.push(new Date(year, month - 1, daysInPrevMonth - i));
-  }
-
-  // Add all days of current month
-  for (let i = 1; i <= daysInMonth; i++) {
-    days.push(new Date(year, month, i));
-  }
-
-  // Add days from next month to complete the grid (6 rows)
-  const remainingDays = 42 - days.length;
-  for (let i = 1; i <= remainingDays; i++) {
-    days.push(new Date(year, month + 1, i));
-  }
-
-  return days;
-}
-
-function getEventsForDate(date: Date, events: CalendarEvent[]): CalendarEvent[] {
-  return events.filter((event) => isSameDay(new Date(event.startAt), date));
-}
 
 export function CalendarMonthView({
   currentDate,
@@ -175,26 +122,30 @@ export function CalendarMonthView({
                 {/* Event indicators */}
                 {hasEvents && (
                   <div className="mt-1 space-y-1">
-                    {dayEvents.slice(0, 2).map((event) => (
-                      <div
-                        key={event.id}
-                        className={cn(
-                          "text-xs px-1.5 py-0.5 rounded truncate",
-                          event.category.toLowerCase() === "basics" &&
-                            "bg-green-100 text-green-800",
-                          event.category.toLowerCase() === "advanced" &&
-                            "bg-purple-100 text-purple-800",
-                          event.category.toLowerCase() === "business" &&
-                            "bg-blue-100 text-blue-800",
-                          !["basics", "advanced", "business"].includes(
-                            event.category.toLowerCase()
-                          ) && "bg-gray-100 text-gray-800"
-                        )}
-                        title={event.title}
-                      >
-                        {event.title}
-                      </div>
-                    ))}
+                    {dayEvents.slice(0, 2).map((event) => {
+                      const isPast = new Date(event.endAt) < today;
+                      return (
+                        <div
+                          key={event.id}
+                          className={cn(
+                            "text-xs px-1.5 py-0.5 rounded truncate font-medium",
+                            isPast && "opacity-50 line-through",
+                            event.category.toLowerCase() === "basics" &&
+                              "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400",
+                            event.category.toLowerCase() === "advanced" &&
+                              "bg-violet-500/20 text-violet-700 dark:text-violet-400",
+                            event.category.toLowerCase() === "business" &&
+                              "bg-blue-500/20 text-blue-700 dark:text-blue-400",
+                            !["basics", "advanced", "business"].includes(
+                              event.category.toLowerCase()
+                            ) && "bg-muted text-muted-foreground"
+                          )}
+                          title={isPast ? `${event.title} (Ended)` : event.title}
+                        >
+                          {event.title}
+                        </div>
+                      );
+                    })}
                     {dayEvents.length > 2 && (
                       <div className="text-xs text-muted-foreground px-1.5">
                         +{dayEvents.length - 2} more

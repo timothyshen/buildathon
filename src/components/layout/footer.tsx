@@ -6,8 +6,8 @@ const footerLinks = {
     { href: "/about", label: "About" },
   ],
   social: [
-    { href: "https://twitter.com/stlorycreative", label: "Twitter" },
-    { href: "https://discord.gg/story", label: "Discord" },
+    { href: "https://x.com/StoryEngs", label: "Twitter" },
+    { href: "https://discord.gg/PV5jzhW8sc", label: "Discord" },
   ],
 };
 

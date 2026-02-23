@@ -12,12 +12,12 @@ export interface UsersService {
   getById(id: string): Promise<ServiceResponse<User | null>>;
   getByEmail(email: string): Promise<ServiceResponse<User | null>>;
   getByWalletAddress(address: string): Promise<ServiceResponse<User | null>>;
-  list(options?: QueryOptions & { role?: User["role"] }): Promise<PaginatedResponse<User>>;
+  list(options?: QueryOptions & { role?: User["role"]; roles?: User["role"][] }): Promise<PaginatedResponse<User>>;
   update(id: string, data: Partial<User>): Promise<ServiceResponse<User>>;
 }
 
 // Convert database row to User type
-function toUser(row: Record<string, unknown>): User {
+export function toUser(row: Record<string, unknown>): User {
   return {
     id: row.id as string,
     email: row.email as string,
@@ -91,7 +91,7 @@ async function getByWalletAddress(address: string): Promise<ServiceResponse<User
 }
 
 async function list(
-  options?: QueryOptions & { role?: User["role"] }
+  options?: QueryOptions & { role?: User["role"]; roles?: User["role"][] }
 ): Promise<PaginatedResponse<User>> {
   const supabase = createClient();
   const page = options?.page || 1;
@@ -100,8 +100,10 @@ async function list(
 
   let query = supabase.from("users").select("*", { count: "exact" });
 
-  // Filter by role if provided
-  if (options?.role) {
+  // Filter by role(s) if provided
+  if (options?.roles && options.roles.length > 0) {
+    query = query.in("role", options.roles);
+  } else if (options?.role) {
     query = query.eq("role", options.role);
   }
 

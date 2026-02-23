@@ -50,6 +50,7 @@ export const sponsorSchema = z.object({
   description: z.string().optional(),
   tier: z.enum(["platinum", "gold", "silver", "bronze", "community"]),
   prizePoolContribution: z.number().min(0, "Must be 0 or greater"),
+  prizePoolLimit: z.number().min(0, "Must be 0 or greater"),
   hasDedicatedTrack: z.boolean(),
   contactName: z.string().min(1, "Contact name is required"),
   contactEmail: z.string().email("Must be a valid email"),

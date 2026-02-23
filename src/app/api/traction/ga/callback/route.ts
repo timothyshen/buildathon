@@ -7,6 +7,8 @@ import { verifySignedState } from "@/lib/oauth-state";
  * OAuth callback from Google - exchanges code for tokens and saves
  */
 export async function GET(request: Request) {
+  const origin = new URL(request.url).origin;
+
   try {
     const { searchParams } = new URL(request.url);
     const code = searchParams.get("code");
@@ -17,13 +19,13 @@ export async function GET(request: Request) {
     if (error) {
       console.error("[GA Callback] OAuth error:", error);
       return NextResponse.redirect(
-        new URL(`/submissions?error=ga_auth_failed&message=${encodeURIComponent(error)}`, process.env.NEXT_PUBLIC_APP_URL!)
+        new URL(`/submissions?error=ga_auth_failed&message=${encodeURIComponent(error)}`, origin)
       );
     }
 
     if (!code || !state) {
       return NextResponse.redirect(
-        new URL("/submissions?error=ga_auth_failed&message=Missing+code+or+state", process.env.NEXT_PUBLIC_APP_URL!)
+        new URL("/submissions?error=ga_auth_failed&message=Missing+code+or+state", origin)
       );
     }
 
@@ -31,7 +33,7 @@ export async function GET(request: Request) {
     const stateData = verifySignedState(state);
     if (!stateData) {
       return NextResponse.redirect(
-        new URL("/submissions?error=ga_auth_failed&message=Invalid+or+expired+state", process.env.NEXT_PUBLIC_APP_URL!)
+        new URL("/submissions?error=ga_auth_failed&message=Invalid+or+expired+state", origin)
       );
     }
 
@@ -40,7 +42,7 @@ export async function GET(request: Request) {
     // Exchange code for tokens
     const clientId = process.env.GOOGLE_CLIENT_ID!;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET!;
-    const redirectUri = process.env.GOOGLE_REDIRECT_URI || `${process.env.NEXT_PUBLIC_APP_URL}/api/traction/ga/callback`;
+    const redirectUri = process.env.GOOGLE_REDIRECT_URI || `${origin}/api/traction/ga/callback`;
 
     const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
@@ -59,7 +61,7 @@ export async function GET(request: Request) {
     if (!tokenResponse.ok || !tokenData.refresh_token) {
       console.error("[GA Callback] Token exchange failed:", tokenData);
       return NextResponse.redirect(
-        new URL("/submissions?error=ga_auth_failed&message=Token+exchange+failed", process.env.NEXT_PUBLIC_APP_URL!)
+        new URL("/submissions?error=ga_auth_failed&message=Token+exchange+failed", origin)
       );
     }
 
@@ -80,7 +82,7 @@ export async function GET(request: Request) {
     if (!accountsResponse.ok) {
       console.error("[GA Callback] Failed to fetch accounts:", accountsData);
       return NextResponse.redirect(
-        new URL("/submissions?error=ga_auth_failed&message=Could+not+fetch+GA+accounts", process.env.NEXT_PUBLIC_APP_URL!)
+        new URL("/submissions?error=ga_auth_failed&message=Could+not+fetch+GA+accounts", origin)
       );
     }
 
@@ -99,7 +101,7 @@ export async function GET(request: Request) {
 
     if (!propertyId) {
       return NextResponse.redirect(
-        new URL("/submissions?error=ga_auth_failed&message=No+GA4+properties+found", process.env.NEXT_PUBLIC_APP_URL!)
+        new URL("/submissions?error=ga_auth_failed&message=No+GA4+properties+found", origin)
       );
     }
 
@@ -124,18 +126,18 @@ export async function GET(request: Request) {
     if (upsertError) {
       console.error("[GA Callback] Database error:", upsertError);
       return NextResponse.redirect(
-        new URL("/submissions?error=ga_auth_failed&message=Database+error", process.env.NEXT_PUBLIC_APP_URL!)
+        new URL("/submissions?error=ga_auth_failed&message=Database+error", origin)
       );
     }
 
     // Success - redirect back to traction page
     return NextResponse.redirect(
-      new URL(`/submissions/${submissionId}/traction?ga_connected=true`, process.env.NEXT_PUBLIC_APP_URL!)
+      new URL(`/submissions/${submissionId}/traction?ga_connected=true`, origin)
     );
   } catch (error) {
     console.error("[GA Callback] Error:", error);
     return NextResponse.redirect(
-      new URL("/submissions?error=ga_auth_failed&message=Internal+error", process.env.NEXT_PUBLIC_APP_URL!)
+      new URL("/submissions?error=ga_auth_failed&message=Internal+error", origin)
     );
   }
 }
