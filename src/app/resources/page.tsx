@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/auth-context";
 import { workshopsService } from "@/services";
 import type { Workshop } from "@/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,10 +19,12 @@ import Link from "next/link";
 import { Search, Play, FileText, Clock, Users, Loader2, BookOpen, Lightbulb } from "lucide-react";
 
 export default function ResourcesPage() {
+  const { user } = useAuth();
   const [workshops, setWorkshops] = useState<Workshop[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const canSubmitContent = user?.role === "sponsor" || user?.role === "admin";
 
   useEffect(() => {
     async function loadData() {
@@ -247,16 +250,18 @@ export default function ResourcesPage() {
           </div>
         )}
 
-        {/* CTA Section */}
-        <div className="mt-16 rounded-2xl bg-muted p-8 text-center">
-          <h2 className="text-2xl font-bold">Want to contribute?</h2>
-          <p className="mt-2 text-muted-foreground">
-            Are you a partner or expert? Share your knowledge with the community.
-          </p>
-          <Button className="mt-4" asChild>
-            <Link href="/sponsor/workshops/new">Submit Content</Link>
-          </Button>
-        </div>
+        {/* CTA Section — only for sponsors and admins */}
+        {canSubmitContent && (
+          <div className="mt-16 rounded-2xl bg-muted p-8 text-center">
+            <h2 className="text-2xl font-bold">Want to contribute?</h2>
+            <p className="mt-2 text-muted-foreground">
+              Share your knowledge with the community.
+            </p>
+            <Button className="mt-4" asChild>
+              <Link href="/sponsor/workshops/new">Submit Content</Link>
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -178,6 +178,7 @@ export type Database = {
           sponsor_org_id: string;
           tier: "platinum" | "gold" | "silver" | "bronze" | "community";
           prize_pool_contribution: number;
+          prize_pool_limit: number;
           has_dedicated_track: boolean;
           description: string | null;
           created_at: string;
@@ -188,6 +189,7 @@ export type Database = {
           sponsor_org_id: string;
           tier: "platinum" | "gold" | "silver" | "bronze" | "community";
           prize_pool_contribution?: number;
+          prize_pool_limit?: number;
           has_dedicated_track?: boolean;
           description?: string | null;
           created_at?: string;
@@ -198,6 +200,7 @@ export type Database = {
           sponsor_org_id?: string;
           tier?: "platinum" | "gold" | "silver" | "bronze" | "community";
           prize_pool_contribution?: number;
+          prize_pool_limit?: number;
           has_dedicated_track?: boolean;
           description?: string | null;
           created_at?: string;
@@ -439,6 +442,7 @@ export type Database = {
           created_by: string;
           title: string;
           tagline: string | null;
+          logo_url: string | null;
           description: string;
           demo_url: string | null;
           video_url: string | null;
@@ -462,6 +466,7 @@ export type Database = {
           created_by: string;
           title: string;
           tagline?: string | null;
+          logo_url?: string | null;
           description: string;
           demo_url?: string | null;
           video_url?: string | null;
@@ -485,6 +490,7 @@ export type Database = {
           created_by?: string;
           title?: string;
           tagline?: string | null;
+          logo_url?: string | null;
           description?: string;
           demo_url?: string | null;
           video_url?: string | null;
@@ -523,16 +529,19 @@ export type Database = {
           id: string;
           submission_id: string;
           track_id: string;
+          description: string | null;
         };
         Insert: {
           id?: string;
           submission_id: string;
           track_id: string;
+          description?: string | null;
         };
         Update: {
           id?: string;
           submission_id?: string;
           track_id?: string;
+          description?: string | null;
         };
         Relationships: [
           {
