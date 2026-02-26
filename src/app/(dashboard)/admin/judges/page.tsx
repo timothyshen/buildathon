@@ -402,7 +402,7 @@ export default function AdminJudgesPage() {
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <img
-                          src={judge.avatar}
+                          src={judge.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${judge.email}`}
                           alt={judge.name}
                           className="h-8 w-8 rounded-full"
                         />
