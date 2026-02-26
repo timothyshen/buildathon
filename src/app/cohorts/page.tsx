@@ -6,6 +6,8 @@ import Image from "next/image";
 import { cohortsService, tracksService, sponsorsService, submissionsService } from "@/services";
 import type { Cohort, Track, Submission } from "@/types";
 import type { CohortSponsorWithOrg } from "@/services/sponsors.service";
+import { computeCohortStatus } from "@/lib/cohort-utils";
+import { getCohortStatusLabel } from "@/lib/utils/status";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar, Users, Trophy, Clock, ArrowUpRight, Star, Loader2 } from "lucide-react";
@@ -37,11 +39,28 @@ function getCountdown(deadline: Date) {
   return { days, hours };
 }
 
+function getStatusBadgeStyle(status: Cohort["status"]) {
+  switch (status) {
+    case "active":
+      return { className: "bg-status-active/20 text-status-active border-status-active/30", dotClass: "bg-status-active animate-pulse" };
+    case "upcoming":
+      return { className: "bg-blue-500/20 text-blue-400 border-blue-500/30", dotClass: "bg-blue-400" };
+    case "judging":
+      return { className: "bg-amber-500/20 text-amber-400 border-amber-500/30", dotClass: "bg-amber-400" };
+    case "completed":
+      return { className: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30", dotClass: "bg-emerald-400" };
+    default:
+      return { className: "bg-muted-foreground/20 text-muted-foreground border-muted-foreground/30", dotClass: "bg-muted-foreground" };
+  }
+}
+
 function HeroCard({ cohort }: { cohort: EnrichedCohort }) {
   const { tracks, sponsors, submissions } = cohort;
+  const status = computeCohortStatus(cohort);
   const countdown = getCountdown(cohort.submissionDeadline);
   const totalPrize = cohort.prizes?.reduce((sum, p) => sum + parseInt(p.amount.replace(/[^0-9]/g, "") || "0"), 0) || 0;
   const featuredProject = submissions.find(s => s.status === "winner") || submissions[0];
+  const badgeStyle = getStatusBadgeStyle(status);
 
   return (
     <Link href={`/cohorts/${cohort.slug}`} className="group block">
@@ -58,9 +77,9 @@ function HeroCard({ cohort }: { cohort: EnrichedCohort }) {
           {/* Content */}
           <div className="flex flex-col justify-center">
             <div className="flex items-center gap-3 mb-4">
-              <Badge className="bg-status-active/20 text-status-active border-status-active/30">
-                <span className="mr-1.5 h-2 w-2 rounded-full bg-status-active animate-pulse" />
-                Live Now
+              <Badge className={badgeStyle.className}>
+                <span className={`mr-1.5 h-2 w-2 rounded-full ${badgeStyle.dotClass}`} />
+                {getCohortStatusLabel(status)}
               </Badge>
               {countdown && (
                 <Badge variant="outline" className="text-slate-300 border-slate-700">
@@ -154,6 +173,7 @@ function HeroCard({ cohort }: { cohort: EnrichedCohort }) {
 
 function ListCard({ cohort }: { cohort: EnrichedCohort }) {
   const { tracks, sponsors, submissions } = cohort;
+  const status = computeCohortStatus(cohort);
   const totalPrize = cohort.prizes?.reduce((sum, p) => sum + parseInt(p.amount.replace(/[^0-9]/g, "") || "0"), 0) || 0;
 
   return (
@@ -175,7 +195,7 @@ function ListCard({ cohort }: { cohort: EnrichedCohort }) {
           <div className="flex items-start justify-between gap-4">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <Badge variant="outline" className="capitalize">{cohort.status}</Badge>
+                <Badge variant="outline" className="capitalize">{getCohortStatusLabel(status)}</Badge>
                 <span className="text-sm text-muted-foreground">
                   {new Date(cohort.startDate).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
                 </span>
@@ -267,12 +287,13 @@ export default function CohortsPage() {
   }, []);
 
   const filteredCohorts = enrichedCohorts.filter((c) => {
+    const status = computeCohortStatus(c);
     if (filter === "all") return true;
-    if (filter === "completed") return c.status === "completed" || c.status === "judging";
-    return c.status === filter;
+    if (filter === "completed") return status === "completed" || status === "judging";
+    return status === filter;
   });
 
-  const activeCohort = filteredCohorts.find((c) => c.status === "active");
+  const activeCohort = filteredCohorts.find((c) => computeCohortStatus(c) === "active");
   const otherCohorts = filteredCohorts.filter((c) => c.id !== activeCohort?.id);
 
   if (isLoading) {

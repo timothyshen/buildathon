@@ -18,7 +18,6 @@ import { PrizeBadges } from "@/components/ui/prize-badges";
 import { RichTextDisplay } from "@/components/ui/rich-text-editor";
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -194,12 +193,17 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
 
   const handleDelete = async () => {
     setIsDeleting(true);
-    const result = await submissionsService.delete(submission.id);
-    if (result.success) {
-      toast.success("Submission deleted");
-      router.push("/submissions");
-    } else {
+    try {
+      const result = await submissionsService.delete(submission.id);
+      if (result.success) {
+        toast.success("Submission deleted");
+        router.push("/submissions");
+      } else {
+        toast.error(result.error || "Failed to delete submission");
+      }
+    } catch {
       toast.error("Failed to delete submission");
+    } finally {
       setIsDeleting(false);
     }
   };
@@ -258,7 +262,7 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
+                  <Button
                     onClick={handleDelete}
                     disabled={isDeleting}
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -271,7 +275,7 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
                     ) : (
                       "Delete"
                     )}
-                  </AlertDialogAction>
+                  </Button>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>

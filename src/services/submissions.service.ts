@@ -506,13 +506,19 @@ async function update(id: string, data: Partial<Submission>): Promise<ServiceRes
 async function deleteSubmission(id: string): Promise<ServiceResponse<void>> {
   const supabase = createClient();
 
-  const { error: dbError } = await supabase
+  const { data: deletedRow, error: dbError } = await supabase
     .from("submissions")
     .delete()
-    .eq("id", id);
+    .eq("id", id)
+    .select("id")
+    .maybeSingle();
 
   if (dbError) {
     return error(dbError.message, undefined);
+  }
+
+  if (!deletedRow) {
+    return error("Submission not found or you don't have permission to delete it", undefined);
   }
 
   return success(undefined);
