@@ -166,8 +166,8 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
 
   const submissionTracks = submission?.tracks?.length
     ? submission.tracks
-    : submission?.trackId
-      ? tracks.filter((t) => submission.trackIds?.includes(t.id) || t.id === submission.trackId)
+    : submission?.trackIds?.length
+      ? tracks.filter((t) => submission.trackIds!.includes(t.id))
       : [];
 
   if (isLoading || authLoading) {

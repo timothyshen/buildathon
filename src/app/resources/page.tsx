@@ -220,7 +220,7 @@ export default function ResourcesPage() {
                   )}
                   {workshop.articleUrl && (
                     <Button
-                      variant="outline"
+                      variant={workshop.videoUrl ? "outline" : "default"}
                       asChild
                       className="flex-1"
                     >
