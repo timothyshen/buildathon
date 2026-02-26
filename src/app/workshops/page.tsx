@@ -26,7 +26,7 @@ function isSameDay(date1: Date, date2: Date): boolean {
 }
 
 export default function WorkshopsPage() {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
 
   // Data loading state
   const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -42,25 +42,35 @@ export default function WorkshopsPage() {
   const [rsvpedEventIds, setRsvpedEventIds] = useState<Set<string>>(new Set());
 
   // Load events from Luma via our API proxy
+  // Wait for auth to resolve before fetching so RSVPs load alongside events
   useEffect(() => {
+    if (authLoading) return;
+
+    let cancelled = false;
+
     async function loadData() {
       try {
         const result = await eventsService.listEvents();
+        if (cancelled) return;
         setEvents(result.events);
 
         // Load user's existing RSVPs
         if (user) {
           const rsvps = await eventsService.getUserRsvps();
+          if (cancelled) return;
           setRsvpedEventIds(new Set(rsvps));
         }
       } catch (err) {
+        if (cancelled) return;
         setError(err instanceof Error ? err.message : "An unexpected error occurred");
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
     }
     loadData();
-  }, [user]);
+
+    return () => { cancelled = true; };
+  }, [user?.id, authLoading]);
 
   // Get upcoming events (next 5)
   const upcomingEvents = useMemo(() => {

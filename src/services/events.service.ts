@@ -52,7 +52,7 @@ async function rsvp(
 }
 
 async function getUserRsvps(): Promise<string[]> {
-  const res = await fetch("/api/events/rsvp");
+  const res = await fetch("/api/events/rsvp", { cache: "no-store" });
   const data = await res.json();
   return data.rsvps || [];
 }
