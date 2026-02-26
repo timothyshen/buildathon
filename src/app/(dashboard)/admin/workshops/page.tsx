@@ -29,7 +29,6 @@ import {
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -129,38 +128,48 @@ export default function AdminWorkshopPage() {
   const confirmDelete = async () => {
     if (!selectedWorkshop) return;
     setIsDeleting(true);
-    const result = await workshopsService.delete(selectedWorkshop.id);
-    if (result.success) {
-      setWorkshops(prev => prev.filter(w => w.id !== selectedWorkshop.id));
-      toast.success(`"${selectedWorkshop.title}" has been deleted`);
-    } else {
-      toast.error(result.error || "Failed to delete workshop");
+    try {
+      const result = await workshopsService.delete(selectedWorkshop.id);
+      if (result.success) {
+        setWorkshops(prev => prev.filter(w => w.id !== selectedWorkshop.id));
+        toast.success(`"${selectedWorkshop.title}" has been deleted`);
+      } else {
+        toast.error(result.error || "Failed to delete workshop");
+      }
+    } catch {
+      toast.error("Failed to delete workshop");
+    } finally {
+      setIsDeleting(false);
+      setIsDeleteDialogOpen(false);
+      setSelectedWorkshop(null);
     }
-    setIsDeleting(false);
-    setIsDeleteDialogOpen(false);
-    setSelectedWorkshop(null);
   };
 
   const saveEdit = async () => {
     if (!selectedWorkshop) return;
     setIsSaving(true);
-    const result = await workshopsService.update(selectedWorkshop.id, {
-      title: editTitle,
-      description: editDescription,
-      category: editCategory,
-      duration: editDuration || undefined,
-      videoUrl: editVideoUrl || undefined,
-      articleUrl: editArticleUrl || undefined,
-    });
-    if (result.success) {
-      setWorkshops(prev => prev.map(w => w.id === selectedWorkshop.id ? result.data : w));
-      toast.success(`"${editTitle}" updated successfully`);
-    } else {
-      toast.error(result.error || "Failed to update workshop");
+    try {
+      const result = await workshopsService.update(selectedWorkshop.id, {
+        title: editTitle,
+        description: editDescription,
+        category: editCategory,
+        duration: editDuration || undefined,
+        videoUrl: editVideoUrl || undefined,
+        articleUrl: editArticleUrl || undefined,
+      });
+      if (result.success) {
+        setWorkshops(prev => prev.map(w => w.id === selectedWorkshop.id ? result.data : w));
+        toast.success(`"${editTitle}" updated successfully`);
+      } else {
+        toast.error(result.error || "Failed to update workshop");
+      }
+    } catch {
+      toast.error("Failed to update workshop");
+    } finally {
+      setIsSaving(false);
+      setIsEditDialogOpen(false);
+      setSelectedWorkshop(null);
     }
-    setIsSaving(false);
-    setIsEditDialogOpen(false);
-    setSelectedWorkshop(null);
   };
 
   return (
@@ -513,7 +522,7 @@ export default function AdminWorkshopPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
+            <Button
               onClick={confirmDelete}
               disabled={isDeleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -526,7 +535,7 @@ export default function AdminWorkshopPage() {
               ) : (
                 "Delete"
               )}
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

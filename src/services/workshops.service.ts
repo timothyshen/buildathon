@@ -228,13 +228,19 @@ async function update(id: string, data: Partial<Workshop>): Promise<ServiceRespo
   if (data.location !== undefined) dbData.location = data.location;
   if (data.meetingUrl !== undefined) dbData.meeting_url = data.meetingUrl;
 
-  const { error: dbError } = await supabase
+  const { data: updatedRow, error: dbError } = await supabase
     .from("workshops")
     .update(dbData)
-    .eq("id", id);
+    .eq("id", id)
+    .select("id")
+    .maybeSingle();
 
   if (dbError) {
     return error(dbError.message);
+  }
+
+  if (!updatedRow) {
+    return error("Workshop not found or you don't have permission to update it");
   }
 
   // Update cohort associations if provided
@@ -253,7 +259,10 @@ async function update(id: string, data: Partial<Workshop>): Promise<ServiceRespo
   }
 
   const workshop = await fetchWorkshopWithRelations(supabase, id);
-  return success(workshop!);
+  if (!workshop) {
+    return error("Failed to retrieve updated workshop");
+  }
+  return success(workshop);
 }
 
 async function deleteWorkshop(id: string): Promise<ServiceResponse<void>> {
@@ -272,13 +281,19 @@ async function deleteWorkshop(id: string): Promise<ServiceResponse<void>> {
     }
   }
 
-  const { error: dbError } = await supabase
+  const { data: deletedRow, error: dbError } = await supabase
     .from("workshops")
     .delete()
-    .eq("id", id);
+    .eq("id", id)
+    .select("id")
+    .maybeSingle();
 
   if (dbError) {
     return error(dbError.message, undefined);
+  }
+
+  if (!deletedRow) {
+    return error("Workshop not found or you don't have permission to delete it", undefined);
   }
 
   return success(undefined);
