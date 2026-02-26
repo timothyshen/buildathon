@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import Link from "next/link";
+import { stripHtml } from "@/lib/utils";
 import { Search, Play, FileText, Clock, Users, Loader2, BookOpen, Lightbulb } from "lucide-react";
 
 export default function ResourcesPage() {
@@ -194,7 +195,7 @@ export default function ResourcesPage() {
                 </div>
                 <CardTitle className="mt-2 line-clamp-2">{workshop.title}</CardTitle>
                 <CardDescription className="line-clamp-2">
-                  {workshop.description}
+                  {stripHtml(workshop.description ?? "")}
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex flex-1 flex-col justify-end">
