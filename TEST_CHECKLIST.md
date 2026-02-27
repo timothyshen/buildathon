@@ -1,7 +1,7 @@
 # Fix Branch Test Checklist
 
-**Branch:** `fix/login-error-message`
-**Total fixes:** 28
+**Branch:** `main`
+**Total fixes:** 38
 
 ---
 
@@ -21,6 +21,13 @@
 - ++**Timeline status**++ — Open a cohort whose end date has passed → status should show "Completed" not "Active"
 - ++**Cohort description rendering**++ — Open a cohort detail page → description should render as rich text without garbled "/" characters
 
+## Cohorts List Page
+
+- ++**Cohort status consistency**++ — Open `/cohorts` list page → compare status badge on each cohort with its detail page → statuses should match (both computed from dates, not stale DB value)
+- ++**Hero card dynamic status**++ — If a cohort is in "judging" or "completed" phase → hero card should show the correct label (not hardcoded "Live Now")
+- ++**List card status labels**++ — Each cohort in the list should show human-readable labels ("Live Now", "Coming Soon", "Judging", "Completed") instead of raw DB values ("active", "upcoming")
+- ++**Filter by computed status**++ — Click "upcoming" or "completed" filter buttons → cohorts should be filtered by their date-computed status, not stale DB status
+
 ## Explore / Project Pages
 
 - ++**Share button**++ — Open a project detail page → click "Share" → URL should be copied to clipboard with toast confirmation
@@ -34,13 +41,15 @@
 ## Learning Resources
 
 - ++**Submit Content button**++ — Go to `/resources` → click "Submit Workshop Content" → should navigate to `/sponsor/workshops/new`
-- ++**Button styling consistency**++ — On a resource with both "Watch Video" and "Read Guide" → both buttons should have consistent styling (Read Guide always outline)
+- ++**Button styling consistency**++ — On a resource with both "Watch Video" and "Read Guide" → "Read Guide" should use outline variant; when only "Read Guide" is present → it should use default (filled) variant
 
-## Workshops
+## Workshops & Events
 
 - ++**Expired workshops**++ — Open workshop month view → past workshops should appear dimmed with line-through text; workshop cards for past events should show "Ended" badge with no RSVP button or calendar dropdown
 - ++**Workshop tag colors**++ — Month view → category tags should have vibrant colors (emerald for basics, violet for advanced, blue for business) not washed-out pastels
 - **Workshop attendee count** — RSVP'd workshops should display attendee count on cards and in the detail modal
+- **RSVP persists on refresh** — RSVP for an event → refresh the page → RSVP status should still be shown (checkmark/registered state preserved)
+- **RSVP loads after auth** — Log in → navigate to `/workshops` → your previous RSVPs should appear in the sidebar "Your RSVPs" card without needing a second refresh
 
 ## Sponsor Role
 
@@ -50,8 +59,10 @@
 
 ## Admin Role
 
+- **Admin judge avatars** — Admin → Judges page → each judge should display an avatar (dicebear fallback if no custom avatar uploaded)
 - ++**Admin judges filter**++ — Admin → Judges page → list should show both users with "judge" role AND "admin" role
-- ++**Admin workshop save/delete**++ — Admin → Workshops → click edit on a workshop → change title/description → click "Save" → changes persist; click "Delete" → workshop is removed
+- **Admin workshop save** — Admin → Workshops → edit a workshop → change title/description → click "Save" → changes should persist on reload; if RLS blocks the save, an error toast should appear (not silent failure)
+- **Admin workshop delete** — Admin → Workshops → click "Delete" on a workshop → confirm in dialog → workshop should be removed; dialog stays open during deletion with loading spinner; if RLS blocks, error toast appears
 - ++**Admin judge invitation**++ — Admin → Judges → "Add Judge" → enter an existing user's email → user should be assigned judge role (not "invitation sent")
 - ++**Admin sponsor invite wording**++ — Admin → Sponsors → invite form should say "Assign the sponsor role" (not "Send invitation email")
 - ++**Admin prize pool limit**++ — Admin → Edit Cohort → for each sponsor, set a "Prize Limit" value → save → value persists on reload
@@ -59,8 +70,9 @@
 ## Submission Detail Page
 
 - ++**Rich text description**++ — Open a submission detail page → About section should render formatted text (no stray `</p>` tags)
-- ++**Multiple tracks**++ — Edit a submission and select 2 tracks → view submission detail → both tracks should appear in the sidebar
-- **Delete draft submission** — Open a submission in "draft" status → click Delete (trash icon) → confirm in dialog → submission should be deleted and redirect to /submissions
+- **Multiple tracks display** — Edit a submission and select 2 tracks → save → view submission detail → both tracks should appear in the sidebar (not just the first one)
+- ++**Delete draft submission**++ — Open a submission in "draft" status → click Delete (trash icon) → confirm in dialog → dialog stays open with spinner during deletion → submission should be deleted and redirect to `/submissions`; if delete fails, error toast with reason should appear
+- ++**Delete non-draft blocked**++ — Open a submission in "submitted" or later status → Delete button should NOT be visible
 
 ## Team Invitations
 
